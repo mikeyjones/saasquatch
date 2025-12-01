@@ -19,12 +19,15 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FormsSimpleRouteImport } from './routes/forms.simple'
 import { Route as FormsAddressRouteImport } from './routes/forms.address'
+import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
+import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
 import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as ApiTodosRouteImport } from './routes/api.todos'
 import { Route as AppSupportIndexRouteImport } from './routes/app.support.index'
 import { Route as AppSupportTicketsRouteImport } from './routes/app.support.tickets'
 import { Route as AppSupportMembersRouteImport } from './routes/app.support.members'
 import { Route as AppSupportKnowledgeRouteImport } from './routes/app.support.knowledge'
+import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
 
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
@@ -76,6 +79,16 @@ const FormsAddressRoute = FormsAddressRouteImport.update({
   path: '/address',
   getParentRoute: () => FormsRoute,
 } as any)
+const AuthSignUpRoute = AuthSignUpRouteImport.update({
+  id: '/auth/sign-up',
+  path: '/auth/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/auth/sign-in',
+  path: '/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppSupportRoute = AppSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -106,6 +119,11 @@ const AppSupportKnowledgeRoute = AppSupportKnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => AppSupportRoute,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -118,8 +136,11 @@ export interface FileRoutesByFullPath {
   '/todos': typeof TodosRoute
   '/api/todos': typeof ApiTodosRoute
   '/app/support': typeof AppSupportRouteWithChildren
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/support/knowledge': typeof AppSupportKnowledgeRoute
   '/app/support/members': typeof AppSupportMembersRoute
   '/app/support/tickets': typeof AppSupportTicketsRoute
@@ -135,8 +156,11 @@ export interface FileRoutesByTo {
   '/table': typeof TableRoute
   '/todos': typeof TodosRoute
   '/api/todos': typeof ApiTodosRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/support/knowledge': typeof AppSupportKnowledgeRoute
   '/app/support/members': typeof AppSupportMembersRoute
   '/app/support/tickets': typeof AppSupportTicketsRoute
@@ -154,8 +178,11 @@ export interface FileRoutesById {
   '/todos': typeof TodosRoute
   '/api/todos': typeof ApiTodosRoute
   '/app/support': typeof AppSupportRouteWithChildren
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/support/knowledge': typeof AppSupportKnowledgeRoute
   '/app/support/members': typeof AppSupportMembersRoute
   '/app/support/tickets': typeof AppSupportTicketsRoute
@@ -174,8 +201,11 @@ export interface FileRouteTypes {
     | '/todos'
     | '/api/todos'
     | '/app/support'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
     | '/forms/address'
     | '/forms/simple'
+    | '/api/auth/$'
     | '/app/support/knowledge'
     | '/app/support/members'
     | '/app/support/tickets'
@@ -191,8 +221,11 @@ export interface FileRouteTypes {
     | '/table'
     | '/todos'
     | '/api/todos'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
     | '/forms/address'
     | '/forms/simple'
+    | '/api/auth/$'
     | '/app/support/knowledge'
     | '/app/support/members'
     | '/app/support/tickets'
@@ -209,8 +242,11 @@ export interface FileRouteTypes {
     | '/todos'
     | '/api/todos'
     | '/app/support'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
     | '/forms/address'
     | '/forms/simple'
+    | '/api/auth/$'
     | '/app/support/knowledge'
     | '/app/support/members'
     | '/app/support/tickets'
@@ -227,6 +263,9 @@ export interface RootRouteChildren {
   TableRoute: typeof TableRoute
   TodosRoute: typeof TodosRoute
   ApiTodosRoute: typeof ApiTodosRoute
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignUpRoute: typeof AuthSignUpRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -301,6 +340,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormsAddressRouteImport
       parentRoute: typeof FormsRoute
     }
+    '/auth/sign-up': {
+      id: '/auth/sign-up'
+      path: '/auth/sign-up'
+      fullPath: '/auth/sign-up'
+      preLoaderRoute: typeof AuthSignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/support': {
       id: '/app/support'
       path: '/support'
@@ -342,6 +395,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/support/knowledge'
       preLoaderRoute: typeof AppSupportKnowledgeRouteImport
       parentRoute: typeof AppSupportRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -396,6 +456,9 @@ const rootRouteChildren: RootRouteChildren = {
   TableRoute: TableRoute,
   TodosRoute: TodosRoute,
   ApiTodosRoute: ApiTodosRoute,
+  AuthSignInRoute: AuthSignInRoute,
+  AuthSignUpRoute: AuthSignUpRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
