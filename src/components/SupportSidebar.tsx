@@ -11,7 +11,7 @@ import {
 const navItems = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid, path: '/app/support' },
   { id: 'tickets', label: 'Tickets', icon: MessageSquare, path: '/app/support/tickets' },
-  { id: 'members', label: 'Members & Orgs', icon: Users, path: '#' },
+  { id: 'members', label: 'Members & Orgs', icon: Users, path: '/app/support/members' },
   { id: 'knowledge', label: 'Knowledge & Playbooks', icon: BookOpen, path: '#' },
   { id: 'agent', label: 'Agent Apollo', icon: Bot, path: '#' },
 ]

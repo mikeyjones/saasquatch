@@ -23,6 +23,7 @@ import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as ApiTodosRouteImport } from './routes/api.todos'
 import { Route as AppSupportIndexRouteImport } from './routes/app.support.index'
 import { Route as AppSupportTicketsRouteImport } from './routes/app.support.tickets'
+import { Route as AppSupportMembersRouteImport } from './routes/app.support.members'
 
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
@@ -94,6 +95,11 @@ const AppSupportTicketsRoute = AppSupportTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AppSupportRoute,
 } as any)
+const AppSupportMembersRoute = AppSupportMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AppSupportRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/app/support': typeof AppSupportRouteWithChildren
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/app/support/members': typeof AppSupportMembersRoute
   '/app/support/tickets': typeof AppSupportTicketsRoute
   '/app/support/': typeof AppSupportIndexRoute
 }
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/api/todos': typeof ApiTodosRoute
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/app/support/members': typeof AppSupportMembersRoute
   '/app/support/tickets': typeof AppSupportTicketsRoute
   '/app/support': typeof AppSupportIndexRoute
 }
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/app/support': typeof AppSupportRouteWithChildren
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/app/support/members': typeof AppSupportMembersRoute
   '/app/support/tickets': typeof AppSupportTicketsRoute
   '/app/support/': typeof AppSupportIndexRoute
 }
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/forms/address'
     | '/forms/simple'
+    | '/app/support/members'
     | '/app/support/tickets'
     | '/app/support/'
   fileRoutesByTo: FileRoutesByTo
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/api/todos'
     | '/forms/address'
     | '/forms/simple'
+    | '/app/support/members'
     | '/app/support/tickets'
     | '/app/support'
   id:
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/app/support'
     | '/forms/address'
     | '/forms/simple'
+    | '/app/support/members'
     | '/app/support/tickets'
     | '/app/support/'
   fileRoutesById: FileRoutesById
@@ -305,15 +317,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSupportTicketsRouteImport
       parentRoute: typeof AppSupportRoute
     }
+    '/app/support/members': {
+      id: '/app/support/members'
+      path: '/members'
+      fullPath: '/app/support/members'
+      preLoaderRoute: typeof AppSupportMembersRouteImport
+      parentRoute: typeof AppSupportRoute
+    }
   }
 }
 
 interface AppSupportRouteChildren {
+  AppSupportMembersRoute: typeof AppSupportMembersRoute
   AppSupportTicketsRoute: typeof AppSupportTicketsRoute
   AppSupportIndexRoute: typeof AppSupportIndexRoute
 }
 
 const AppSupportRouteChildren: AppSupportRouteChildren = {
+  AppSupportMembersRoute: AppSupportMembersRoute,
   AppSupportTicketsRoute: AppSupportTicketsRoute,
   AppSupportIndexRoute: AppSupportIndexRoute,
 }
