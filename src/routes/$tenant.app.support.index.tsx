@@ -18,7 +18,7 @@ const TicketVolumeChart = lazy(() =>
   }))
 )
 
-export const Route = createFileRoute('/app/support/')({
+export const Route = createFileRoute('/$tenant/app/support/')({
   component: SupportOverview,
 })
 

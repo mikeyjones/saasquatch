@@ -15,19 +15,20 @@ import { Route as StoreRouteImport } from './routes/store'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as FormsRouteImport } from './routes/forms'
 import { Route as DatabaseRouteImport } from './routes/database'
-import { Route as AppRouteImport } from './routes/app'
+import { Route as TenantRouteImport } from './routes/$tenant'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FormsSimpleRouteImport } from './routes/forms.simple'
 import { Route as FormsAddressRouteImport } from './routes/forms.address'
 import { Route as AuthSignUpRouteImport } from './routes/auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth.sign-in'
-import { Route as AppSupportRouteImport } from './routes/app.support'
 import { Route as ApiTodosRouteImport } from './routes/api.todos'
-import { Route as AppSupportIndexRouteImport } from './routes/app.support.index'
-import { Route as AppSupportTicketsRouteImport } from './routes/app.support.tickets'
-import { Route as AppSupportMembersRouteImport } from './routes/app.support.members'
-import { Route as AppSupportKnowledgeRouteImport } from './routes/app.support.knowledge'
+import { Route as TenantAppRouteImport } from './routes/$tenant.app'
 import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
+import { Route as TenantAppSupportRouteImport } from './routes/$tenant.app.support'
+import { Route as TenantAppSupportIndexRouteImport } from './routes/$tenant.app.support.index'
+import { Route as TenantAppSupportTicketsRouteImport } from './routes/$tenant.app.support.tickets'
+import { Route as TenantAppSupportMembersRouteImport } from './routes/$tenant.app.support.members'
+import { Route as TenantAppSupportKnowledgeRouteImport } from './routes/$tenant.app.support.knowledge'
 
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
@@ -59,9 +60,9 @@ const DatabaseRoute = DatabaseRouteImport.update({
   path: '/database',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
+const TenantRoute = TenantRouteImport.update({
+  id: '/$tenant',
+  path: '/$tenant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -89,173 +90,185 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSupportRoute = AppSupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => AppRoute,
-} as any)
 const ApiTodosRoute = ApiTodosRouteImport.update({
   id: '/api/todos',
   path: '/api/todos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSupportIndexRoute = AppSupportIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppSupportRoute,
-} as any)
-const AppSupportTicketsRoute = AppSupportTicketsRouteImport.update({
-  id: '/tickets',
-  path: '/tickets',
-  getParentRoute: () => AppSupportRoute,
-} as any)
-const AppSupportMembersRoute = AppSupportMembersRouteImport.update({
-  id: '/members',
-  path: '/members',
-  getParentRoute: () => AppSupportRoute,
-} as any)
-const AppSupportKnowledgeRoute = AppSupportKnowledgeRouteImport.update({
-  id: '/knowledge',
-  path: '/knowledge',
-  getParentRoute: () => AppSupportRoute,
+const TenantAppRoute = TenantAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => TenantRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TenantAppSupportRoute = TenantAppSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => TenantAppRoute,
+} as any)
+const TenantAppSupportIndexRoute = TenantAppSupportIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TenantAppSupportRoute,
+} as any)
+const TenantAppSupportTicketsRoute = TenantAppSupportTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => TenantAppSupportRoute,
+} as any)
+const TenantAppSupportMembersRoute = TenantAppSupportMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => TenantAppSupportRoute,
+} as any)
+const TenantAppSupportKnowledgeRoute =
+  TenantAppSupportKnowledgeRouteImport.update({
+    id: '/knowledge',
+    path: '/knowledge',
+    getParentRoute: () => TenantAppSupportRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
+  '/$tenant': typeof TenantRouteWithChildren
   '/database': typeof DatabaseRoute
   '/forms': typeof FormsRouteWithChildren
   '/mcp': typeof McpRoute
   '/store': typeof StoreRoute
   '/table': typeof TableRoute
   '/todos': typeof TodosRoute
+  '/$tenant/app': typeof TenantAppRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
-  '/app/support': typeof AppSupportRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/app/support/knowledge': typeof AppSupportKnowledgeRoute
-  '/app/support/members': typeof AppSupportMembersRoute
-  '/app/support/tickets': typeof AppSupportTicketsRoute
-  '/app/support/': typeof AppSupportIndexRoute
+  '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
+  '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
+  '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
+  '/$tenant/app/support/': typeof TenantAppSupportIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
+  '/$tenant': typeof TenantRouteWithChildren
   '/database': typeof DatabaseRoute
   '/forms': typeof FormsRouteWithChildren
   '/mcp': typeof McpRoute
   '/store': typeof StoreRoute
   '/table': typeof TableRoute
   '/todos': typeof TodosRoute
+  '/$tenant/app': typeof TenantAppRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/app/support/knowledge': typeof AppSupportKnowledgeRoute
-  '/app/support/members': typeof AppSupportMembersRoute
-  '/app/support/tickets': typeof AppSupportTicketsRoute
-  '/app/support': typeof AppSupportIndexRoute
+  '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
+  '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
+  '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
+  '/$tenant/app/support': typeof TenantAppSupportIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
+  '/$tenant': typeof TenantRouteWithChildren
   '/database': typeof DatabaseRoute
   '/forms': typeof FormsRouteWithChildren
   '/mcp': typeof McpRoute
   '/store': typeof StoreRoute
   '/table': typeof TableRoute
   '/todos': typeof TodosRoute
+  '/$tenant/app': typeof TenantAppRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
-  '/app/support': typeof AppSupportRouteWithChildren
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
+  '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/app/support/knowledge': typeof AppSupportKnowledgeRoute
-  '/app/support/members': typeof AppSupportMembersRoute
-  '/app/support/tickets': typeof AppSupportTicketsRoute
-  '/app/support/': typeof AppSupportIndexRoute
+  '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
+  '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
+  '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
+  '/$tenant/app/support/': typeof TenantAppSupportIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/app'
+    | '/$tenant'
     | '/database'
     | '/forms'
     | '/mcp'
     | '/store'
     | '/table'
     | '/todos'
+    | '/$tenant/app'
     | '/api/todos'
-    | '/app/support'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/forms/address'
     | '/forms/simple'
+    | '/$tenant/app/support'
     | '/api/auth/$'
-    | '/app/support/knowledge'
-    | '/app/support/members'
-    | '/app/support/tickets'
-    | '/app/support/'
+    | '/$tenant/app/support/knowledge'
+    | '/$tenant/app/support/members'
+    | '/$tenant/app/support/tickets'
+    | '/$tenant/app/support/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/app'
+    | '/$tenant'
     | '/database'
     | '/forms'
     | '/mcp'
     | '/store'
     | '/table'
     | '/todos'
+    | '/$tenant/app'
     | '/api/todos'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/forms/address'
     | '/forms/simple'
     | '/api/auth/$'
-    | '/app/support/knowledge'
-    | '/app/support/members'
-    | '/app/support/tickets'
-    | '/app/support'
+    | '/$tenant/app/support/knowledge'
+    | '/$tenant/app/support/members'
+    | '/$tenant/app/support/tickets'
+    | '/$tenant/app/support'
   id:
     | '__root__'
     | '/'
-    | '/app'
+    | '/$tenant'
     | '/database'
     | '/forms'
     | '/mcp'
     | '/store'
     | '/table'
     | '/todos'
+    | '/$tenant/app'
     | '/api/todos'
-    | '/app/support'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/forms/address'
     | '/forms/simple'
+    | '/$tenant/app/support'
     | '/api/auth/$'
-    | '/app/support/knowledge'
-    | '/app/support/members'
-    | '/app/support/tickets'
-    | '/app/support/'
+    | '/$tenant/app/support/knowledge'
+    | '/$tenant/app/support/members'
+    | '/$tenant/app/support/tickets'
+    | '/$tenant/app/support/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRouteWithChildren
+  TenantRoute: typeof TenantRouteWithChildren
   DatabaseRoute: typeof DatabaseRoute
   FormsRoute: typeof FormsRouteWithChildren
   McpRoute: typeof McpRoute
@@ -312,11 +325,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DatabaseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
+    '/$tenant': {
+      id: '/$tenant'
+      path: '/$tenant'
+      fullPath: '/$tenant'
+      preLoaderRoute: typeof TenantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -354,13 +367,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/support': {
-      id: '/app/support'
-      path: '/support'
-      fullPath: '/app/support'
-      preLoaderRoute: typeof AppSupportRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/api/todos': {
       id: '/api/todos'
       path: '/api/todos'
@@ -368,33 +374,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTodosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/support/': {
-      id: '/app/support/'
-      path: '/'
-      fullPath: '/app/support/'
-      preLoaderRoute: typeof AppSupportIndexRouteImport
-      parentRoute: typeof AppSupportRoute
-    }
-    '/app/support/tickets': {
-      id: '/app/support/tickets'
-      path: '/tickets'
-      fullPath: '/app/support/tickets'
-      preLoaderRoute: typeof AppSupportTicketsRouteImport
-      parentRoute: typeof AppSupportRoute
-    }
-    '/app/support/members': {
-      id: '/app/support/members'
-      path: '/members'
-      fullPath: '/app/support/members'
-      preLoaderRoute: typeof AppSupportMembersRouteImport
-      parentRoute: typeof AppSupportRoute
-    }
-    '/app/support/knowledge': {
-      id: '/app/support/knowledge'
-      path: '/knowledge'
-      fullPath: '/app/support/knowledge'
-      preLoaderRoute: typeof AppSupportKnowledgeRouteImport
-      parentRoute: typeof AppSupportRoute
+    '/$tenant/app': {
+      id: '/$tenant/app'
+      path: '/app'
+      fullPath: '/$tenant/app'
+      preLoaderRoute: typeof TenantAppRouteImport
+      parentRoute: typeof TenantRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -403,36 +388,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$tenant/app/support': {
+      id: '/$tenant/app/support'
+      path: '/support'
+      fullPath: '/$tenant/app/support'
+      preLoaderRoute: typeof TenantAppSupportRouteImport
+      parentRoute: typeof TenantAppRoute
+    }
+    '/$tenant/app/support/': {
+      id: '/$tenant/app/support/'
+      path: '/'
+      fullPath: '/$tenant/app/support/'
+      preLoaderRoute: typeof TenantAppSupportIndexRouteImport
+      parentRoute: typeof TenantAppSupportRoute
+    }
+    '/$tenant/app/support/tickets': {
+      id: '/$tenant/app/support/tickets'
+      path: '/tickets'
+      fullPath: '/$tenant/app/support/tickets'
+      preLoaderRoute: typeof TenantAppSupportTicketsRouteImport
+      parentRoute: typeof TenantAppSupportRoute
+    }
+    '/$tenant/app/support/members': {
+      id: '/$tenant/app/support/members'
+      path: '/members'
+      fullPath: '/$tenant/app/support/members'
+      preLoaderRoute: typeof TenantAppSupportMembersRouteImport
+      parentRoute: typeof TenantAppSupportRoute
+    }
+    '/$tenant/app/support/knowledge': {
+      id: '/$tenant/app/support/knowledge'
+      path: '/knowledge'
+      fullPath: '/$tenant/app/support/knowledge'
+      preLoaderRoute: typeof TenantAppSupportKnowledgeRouteImport
+      parentRoute: typeof TenantAppSupportRoute
+    }
   }
 }
 
-interface AppSupportRouteChildren {
-  AppSupportKnowledgeRoute: typeof AppSupportKnowledgeRoute
-  AppSupportMembersRoute: typeof AppSupportMembersRoute
-  AppSupportTicketsRoute: typeof AppSupportTicketsRoute
-  AppSupportIndexRoute: typeof AppSupportIndexRoute
+interface TenantAppSupportRouteChildren {
+  TenantAppSupportKnowledgeRoute: typeof TenantAppSupportKnowledgeRoute
+  TenantAppSupportMembersRoute: typeof TenantAppSupportMembersRoute
+  TenantAppSupportTicketsRoute: typeof TenantAppSupportTicketsRoute
+  TenantAppSupportIndexRoute: typeof TenantAppSupportIndexRoute
 }
 
-const AppSupportRouteChildren: AppSupportRouteChildren = {
-  AppSupportKnowledgeRoute: AppSupportKnowledgeRoute,
-  AppSupportMembersRoute: AppSupportMembersRoute,
-  AppSupportTicketsRoute: AppSupportTicketsRoute,
-  AppSupportIndexRoute: AppSupportIndexRoute,
+const TenantAppSupportRouteChildren: TenantAppSupportRouteChildren = {
+  TenantAppSupportKnowledgeRoute: TenantAppSupportKnowledgeRoute,
+  TenantAppSupportMembersRoute: TenantAppSupportMembersRoute,
+  TenantAppSupportTicketsRoute: TenantAppSupportTicketsRoute,
+  TenantAppSupportIndexRoute: TenantAppSupportIndexRoute,
 }
 
-const AppSupportRouteWithChildren = AppSupportRoute._addFileChildren(
-  AppSupportRouteChildren,
+const TenantAppSupportRouteWithChildren =
+  TenantAppSupportRoute._addFileChildren(TenantAppSupportRouteChildren)
+
+interface TenantAppRouteChildren {
+  TenantAppSupportRoute: typeof TenantAppSupportRouteWithChildren
+}
+
+const TenantAppRouteChildren: TenantAppRouteChildren = {
+  TenantAppSupportRoute: TenantAppSupportRouteWithChildren,
+}
+
+const TenantAppRouteWithChildren = TenantAppRoute._addFileChildren(
+  TenantAppRouteChildren,
 )
 
-interface AppRouteChildren {
-  AppSupportRoute: typeof AppSupportRouteWithChildren
+interface TenantRouteChildren {
+  TenantAppRoute: typeof TenantAppRouteWithChildren
 }
 
-const AppRouteChildren: AppRouteChildren = {
-  AppSupportRoute: AppSupportRouteWithChildren,
+const TenantRouteChildren: TenantRouteChildren = {
+  TenantAppRoute: TenantAppRouteWithChildren,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const TenantRouteWithChildren =
+  TenantRoute._addFileChildren(TenantRouteChildren)
 
 interface FormsRouteChildren {
   FormsAddressRoute: typeof FormsAddressRoute
@@ -448,7 +480,7 @@ const FormsRouteWithChildren = FormsRoute._addFileChildren(FormsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRouteWithChildren,
+  TenantRoute: TenantRouteWithChildren,
   DatabaseRoute: DatabaseRoute,
   FormsRoute: FormsRouteWithChildren,
   McpRoute: McpRoute,

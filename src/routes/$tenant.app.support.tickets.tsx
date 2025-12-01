@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { tickets, filterOptions, type Ticket } from '@/data/tickets'
 
-export const Route = createFileRoute('/app/support/tickets')({
+export const Route = createFileRoute('/$tenant/app/support/tickets')({
   component: TicketsPage,
 })
 

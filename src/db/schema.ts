@@ -8,11 +8,20 @@ import {
   primaryKey,
 } from 'drizzle-orm/pg-core'
 
-export const todos = pgTable('todos', {
-  id: serial('id').primaryKey(),
-  title: text('title').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-})
+export const todos = pgTable(
+  'todos',
+  {
+    id: serial('id').primaryKey(),
+    title: text('title').notNull(),
+    organizationId: text('organizationId').references(() => organization.id, {
+      onDelete: 'cascade',
+    }),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('todos_organization_idx').on(table.organizationId),
+  }),
+)
 
 // Better Auth tables
 export const user = pgTable(

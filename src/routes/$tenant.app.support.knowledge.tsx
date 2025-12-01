@@ -9,7 +9,7 @@ import {
   type KnowledgeCategory,
 } from '@/data/knowledge'
 
-export const Route = createFileRoute('/app/support/knowledge')({
+export const Route = createFileRoute('/$tenant/app/support/knowledge')({
   component: KnowledgePage,
 })
 

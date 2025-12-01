@@ -15,9 +15,11 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
 
 import type { QueryClient } from '@tanstack/react-query'
+import type { Tenant } from '@/hooks/use-tenant'
 
 interface MyRouterContext {
   queryClient: QueryClient
+  tenant?: Tenant
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({

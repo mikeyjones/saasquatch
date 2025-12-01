@@ -7,22 +7,27 @@ import {
   Bot,
   ChevronDown,
 } from 'lucide-react'
+import { useTenantSlug, useTenant } from '@/hooks/use-tenant'
 
-const navItems = [
-  { id: 'overview', label: 'Overview', icon: LayoutGrid, path: '/app/support' },
-  { id: 'tickets', label: 'Tickets', icon: MessageSquare, path: '/app/support/tickets' },
-  { id: 'members', label: 'Members & Orgs', icon: Users, path: '/app/support/members' },
-  { id: 'knowledge', label: 'Knowledge & Playbooks', icon: BookOpen, path: '/app/support/knowledge' },
+const getNavItems = (tenant: string) => [
+  { id: 'overview', label: 'Overview', icon: LayoutGrid, path: `/${tenant}/app/support` },
+  { id: 'tickets', label: 'Tickets', icon: MessageSquare, path: `/${tenant}/app/support/tickets` },
+  { id: 'members', label: 'Members & Orgs', icon: Users, path: `/${tenant}/app/support/members` },
+  { id: 'knowledge', label: 'Knowledge & Playbooks', icon: BookOpen, path: `/${tenant}/app/support/knowledge` },
   { id: 'agent', label: 'Agent Apollo', icon: Bot, path: '#' },
 ]
 
 export function SupportSidebar() {
   const location = useLocation()
   const currentPath = location.pathname
+  const tenantSlug = useTenantSlug()
+  const tenant = useTenant()
+  
+  const navItems = getNavItems(tenantSlug)
 
   const isActive = (path: string) => {
-    if (path === '/app/support') {
-      return currentPath === '/app/support' || currentPath === '/app/support/'
+    if (path === `/${tenantSlug}/app/support`) {
+      return currentPath === `/${tenantSlug}/app/support` || currentPath === `/${tenantSlug}/app/support/`
     }
     return currentPath.startsWith(path)
   }
@@ -33,9 +38,13 @@ export function SupportSidebar() {
       <div className="p-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+            <span className="text-white font-bold text-sm">
+              {tenant?.name?.charAt(0).toUpperCase() ?? 'S'}
+            </span>
           </div>
-          <span className="text-white font-semibold">SaaSquatch</span>
+          <span className="text-white font-semibold truncate">
+            {tenant?.name ?? 'SaaSquatch'}
+          </span>
         </div>
       </div>
 
@@ -110,4 +119,3 @@ export function SupportSidebar() {
     </aside>
   )
 }
-

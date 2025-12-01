@@ -4,7 +4,7 @@ import { Search, Building, Settings, MoreVertical } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { members, type Member } from '@/data/members'
 
-export const Route = createFileRoute('/app/support/members')({
+export const Route = createFileRoute('/$tenant/app/support/members')({
   component: MembersPage,
 })
 
@@ -154,4 +154,3 @@ function MemberRow({ member }: { member: Member }) {
     </tr>
   )
 }
-

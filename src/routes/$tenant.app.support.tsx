@@ -2,7 +2,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { SupportSidebar } from '@/components/SupportSidebar'
 import { SupportHeader } from '@/components/SupportHeader'
 
-export const Route = createFileRoute('/app/support')({
+export const Route = createFileRoute('/$tenant/app/support')({
   component: SupportLayout,
 })
 
@@ -17,3 +17,4 @@ function SupportLayout() {
     </div>
   )
 }
+
