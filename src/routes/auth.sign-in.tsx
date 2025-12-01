@@ -1,15 +1,25 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
+type SignInSearch = {
+  returnTo?: string
+}
+
 export const Route = createFileRoute('/auth/sign-in')({
+  validateSearch: (search: Record<string, unknown>): SignInSearch => {
+    return {
+      returnTo: typeof search.returnTo === 'string' ? search.returnTo : undefined,
+    }
+  },
   component: SignInPage,
 })
 
 function SignInPage() {
+  const { returnTo } = useSearch({ from: '/auth/sign-in' })
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -29,8 +39,8 @@ function SignInPage() {
       if (result.error) {
         setError(result.error.message || 'Failed to sign in')
       } else {
-        // Redirect to home page on success
-        window.location.href = '/'
+        // Redirect to returnTo URL or home page on success
+        window.location.href = returnTo || '/'
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -50,6 +60,11 @@ function SignInPage() {
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
                 {error}
+              </div>
+            )}
+            {returnTo && (
+              <div className="p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded text-sm">
+                Please sign in to continue
               </div>
             )}
             <div>
@@ -93,4 +108,3 @@ function SignInPage() {
     </div>
   )
 }
-
