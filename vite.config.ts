@@ -17,17 +17,6 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart(),
     viteReact(),
-    // Plugin to prevent server-only modules from being bundled in client
-    {
-      name: 'exclude-server-modules',
-      resolveId(id) {
-        // Prevent pg and related modules from being resolved in client builds
-        if (id === 'pg' || id === 'pg-pool' || id.startsWith('pg/') || id.startsWith('pg-pool/')) {
-          return { id: 'data:text/javascript,export default {}', external: true }
-        }
-        return null
-      },
-    },
   ],
   ssr: {
     noExternal: [],

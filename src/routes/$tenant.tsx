@@ -1,30 +1,44 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
-import { db } from '@/db'
-import { organization } from '@/db/schema'
-import { eq } from 'drizzle-orm'
 
 export const Route = createFileRoute('/$tenant')({
   beforeLoad: async ({ params }) => {
-    // Validate the tenant slug exists
-    const org = await db
-      .select()
-      .from(organization)
-      .where(eq(organization.slug, params.tenant))
-      .limit(1)
+    // Dynamically import db only on server side
+    if (typeof window === 'undefined') {
+      const { db } = await import('@/db')
+      const { organization } = await import('@/db/schema')
+      const { eq } = await import('drizzle-orm')
+      
+      // Validate the tenant slug exists
+      const org = await db
+        .select()
+        .from(organization)
+        .where(eq(organization.slug, params.tenant))
+        .limit(1)
 
-    if (org.length === 0) {
-      throw redirect({
-        to: '/',
-        search: { error: 'invalid-tenant' },
-      })
+      if (org.length === 0) {
+        throw redirect({
+          to: '/',
+          search: { error: 'invalid-tenant' },
+        })
+      }
+
+      return {
+        tenant: {
+          id: org[0].id,
+          name: org[0].name,
+          slug: org[0].slug,
+          logo: org[0].logo,
+        },
+      }
     }
-
+    
+    // Client-side: return minimal data (will be validated on server)
     return {
       tenant: {
-        id: org[0].id,
-        name: org[0].name,
-        slug: org[0].slug,
-        logo: org[0].logo,
+        id: '',
+        name: '',
+        slug: params.tenant,
+        logo: null,
       },
     }
   },
@@ -34,4 +48,3 @@ export const Route = createFileRoute('/$tenant')({
 function TenantLayout() {
   return <Outlet />
 }
-
