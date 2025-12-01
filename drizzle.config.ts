@@ -1,7 +1,9 @@
 import { config } from 'dotenv'
 import { defineConfig } from 'drizzle-kit'
 
-config()
+// Load .env.local first, then .env as fallback
+config({ path: '.env.local' })
+config({ path: '.env' })
 
 export default defineConfig({
   out: './drizzle',

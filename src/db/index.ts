@@ -5,7 +5,9 @@ import { Pool } from 'pg'
 
 import * as schema from './schema.ts'
 
-config()
+// Load .env.local first, then .env as fallback
+config({ path: '.env.local' })
+config({ path: '.env' })
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL!,
