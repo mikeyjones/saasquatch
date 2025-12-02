@@ -24,28 +24,28 @@ Manage members, organizations, and account access.
 
 **User Search & Overview Page**
 
-- View profile, subscription, org, billing history, usage data.
+- [ ] View profile, subscription, org, billing history, usage data.
 
 **User Management Actions**
 
-- Update email/password
-- Reset MFA
-- Adjust roles/permissions
-- Disable/enable user accounts
-- Create users manually
+- [ ] Update email/password
+- [ ] Reset MFA
+- [ ] Adjust roles/permissions
+- [ ] Disable/enable user accounts
+- [ ] Create users manually
 
 **Organization Management**
 
-- Add/remove users from org
-- Update org details
-- Change subscription owner
+- [ ] Add/remove users from org
+- [ ] Update org details
+- [ ] Change subscription owner
 
 **Security & Audit**
 
-- Login attempt history
-- Password reset history
-- "Log in as user" (impersonation)
-- Full audit logs per member and org
+- [ ] Login attempt history
+- [ ] Password reset history
+- [ ] "Log in as user" (impersonation)
+- [ ] Full audit logs per member and org
 
 ---
 
@@ -55,13 +55,13 @@ Support agents can perform select billing actions.
 
 #### Capabilities
 
-- Full or partial refunds
-- Apply credits
-- Adjust next invoice
-- Change plan or subscription parameters
-- View invoice history + download PDF
-- Annotate billing actions with internal comments
-- Permission-based guardrails (high-risk actions require supervisor approval)
+- [ ] Full or partial refunds
+- [ ] Apply credits
+- [ ] Adjust next invoice
+- [ ] Change plan or subscription parameters
+- [ ] View invoice history + download PDF
+- [ ] Annotate billing actions with internal comments
+- [ ] Permission-based guardrails (high-risk actions require supervisor approval)
 
 ---
 
@@ -71,26 +71,26 @@ Centralized ticket management for email + help center submissions.
 
 #### Ticket Channels
 
-- Email → ticket inbox
-- Help center forms
-- Internal notes
-- AI/automation messages logged as system comments
+- [ ] Email → ticket inbox
+- [ ] Help center forms
+- [ ] Internal notes
+- [ ] AI/automation messages logged as system comments
 
 #### Ticket UI
 
-- Status (Open, Pending, Waiting on Customer, Escalated, Closed)
-- Priority (Low, Normal, High, Urgent)
-- SLA countdown
-- Contact info + billing snapshot + subscription status
-- AI-suggested responses
-- Playbook suggestions (based on detected issue type)
+- [ ] Status (Open, Pending, Waiting on Customer, Escalated, Closed)
+- [ ] Priority (Low, Normal, High, Urgent)
+- [ ] SLA countdown
+- [ ] Contact info + billing snapshot + subscription status
+- [ ] AI-suggested responses
+- [ ] Playbook suggestions (based on detected issue type)
 
 #### Agent & AI Collaboration
 
-- Assign to human agent or AI agent
-- AI triage (categorize, prioritize, tag, summarize)
-- AI draft replies → agent review or auto-send depending on rules
-- AI handles repetitive tickets automatically based on rules/playbooks
+- [ ] Assign to human agent or AI agent
+- [ ] AI triage (categorize, prioritize, tag, summarize)
+- [ ] AI draft replies → agent review or auto-send depending on rules
+- [ ] AI handles repetitive tickets automatically based on rules/playbooks
 
 ---
 
@@ -102,20 +102,20 @@ Playbooks combine repeatable workflows (manual) and automation sequences (automa
 
 Agents (human or AI) can run step-by-step guided flows:
 
-- Account troubleshooting steps
-- Migration flows
-- Password reset guides
-- Subscription-change procedures
+- [ ] Account troubleshooting steps
+- [ ] Migration flows
+- [ ] Password reset guides
+- [ ] Subscription-change procedures
 
 #### Automated Playbooks
 
 Trigger-based macros/workflows:
 
-- Auto-tag new tickets
-- Auto-reply with knowledge base article suggestions
-- Auto-assign based on topic
-- Auto-escalate refunds or billing errors
-- Trigger a webhook or update CRM/Analytics fields
+- [ ] Auto-tag new tickets
+- [ ] Auto-reply with knowledge base article suggestions
+- [ ] Auto-assign based on topic
+- [ ] Auto-escalate refunds or billing errors
+- [ ] Trigger a webhook or update CRM/Analytics fields
 
 ---
 
@@ -125,13 +125,13 @@ Quick insights for support performance.
 
 #### Dashboard Widgets
 
-- Ticket volumes
-- Average first response time
-- Resolution time
-- Customer satisfaction (CSAT)
-- AI-resolved vs human-resolved tickets
-- Top issue categories
-- Active account incidents (billing failures, login issues)
+- [ ] Ticket volumes
+- [ ] Average first response time
+- [ ] Resolution time
+- [ ] Customer satisfaction (CSAT)
+- [ ] AI-resolved vs human-resolved tickets
+- [ ] Top issue categories
+- [ ] Active account incidents (billing failures, login issues)
 
 ---
 
@@ -141,13 +141,13 @@ Self-service support + article management.
 
 #### Features
 
-- Categories + articles
-- WYSIWYG editor
-- Version control
-- Drafts, scheduled publishing
-- AI rewrite, summarize, or generate starting drafts
-- AI suggests articles inside the ticket UI
-- Public help center hosting (SaaSquatch-powered)
+- [ ] Categories + articles
+- [ ] WYSIWYG editor
+- [ ] Version control
+- [ ] Drafts, scheduled publishing
+- [ ] AI rewrite, summarize, or generate starting drafts
+- [ ] AI suggests articles inside the ticket UI
+- [ ] Public help center hosting (SaaSquatch-powered)
 
 ---
 
@@ -155,19 +155,19 @@ Self-service support + article management.
 
 ### Autonomous Actions
 
-- Own entire ticket lifecycle
-- Draft and send email replies
-- Run playbooks
-- Perform refunds (if permissioned)
-- Escalate to humans when beyond threshold
-- Suggest account recovery steps
-- Detect user frustration or churn signals in messages
+- [ ] Own entire ticket lifecycle
+- [ ] Draft and send email replies
+- [ ] Run playbooks
+- [ ] Perform refunds (if permissioned)
+- [ ] Escalate to humans when beyond threshold
+- [ ] Suggest account recovery steps
+- [ ] Detect user frustration or churn signals in messages
 
 ### Agent Controls
 
-- Assign work to agents (same UI as assigning to humans)
-- View agent queues
-- Agent performance metrics (SLAs, resolution rates)
+- [ ] Assign work to agents (same UI as assigning to humans)
+- [ ] View agent queues
+- [ ] Agent performance metrics (SLAs, resolution rates)
 
 ---
 
@@ -175,18 +175,18 @@ Self-service support + article management.
 
 Support-specific permission groups:
 
-- **Tier 1 Support:** Basic ticket handling, view accounts
-- **Tier 2 Support:** Billing modifications, refunds, subscription adjustments
-- **Support Admin:** Full access, impersonation, KB publishing, access to playbooks and automation rules
-- **AI Agents:** Custom permission bundles mirroring human roles
+- [ ] **Tier 1 Support:** Basic ticket handling, view accounts
+- [ ] **Tier 2 Support:** Billing modifications, refunds, subscription adjustments
+- [ ] **Support Admin:** Full access, impersonation, KB publishing, access to playbooks and automation rules
+- [ ] **AI Agents:** Custom permission bundles mirroring human roles
 
 ---
 
 ## 5. System Integrations
 
-- **Email integration:** Parsing, threading, auto-replies
-- **Knowledge base integration:** Suggested articles + SEO frontend
-- **CRM integration:** Notes, usage data, subscription info from Sales area
-- **Audit logs:** Shared across SaaSquatch departments
-- **Billing engine:** Refunds, credits, and invoices from Billing area
+- [ ] **Email integration:** Parsing, threading, auto-replies
+- [ ] **Knowledge base integration:** Suggested articles + SEO frontend
+- [ ] **CRM integration:** Notes, usage data, subscription info from Sales area
+- [ ] **Audit logs:** Shared across SaaSquatch departments
+- [ ] **Billing engine:** Refunds, credits, and invoices from Billing area
 
