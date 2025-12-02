@@ -120,3 +120,79 @@ export const invitation = pgTable('invitation', {
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 })
+
+// ============================================================================
+// Tenant Data Tables
+// These tables store customer data that belongs to a support staff organization.
+// Tenant users do NOT have login accounts - they are customers being supported.
+// ============================================================================
+
+/**
+ * Tenant Organization - Customer companies that support staff help
+ * Scoped to a support staff organization (the logged-in user's org)
+ */
+export const tenantOrganization = pgTable(
+  'tenant_organization',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this tenant belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Basic info
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    logo: text('logo'),
+    website: text('website'),
+    industry: text('industry'),
+    // Subscription info
+    subscriptionPlan: text('subscriptionPlan').default('free'),
+    subscriptionStatus: text('subscriptionStatus').default('active'), // active, canceled, past_due, trialing
+    // Billing info
+    billingEmail: text('billingEmail'),
+    billingAddress: text('billingAddress'),
+    // Metadata
+    notes: text('notes'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('tenant_org_organization_idx').on(table.organizationId),
+    slugIdx: index('tenant_org_slug_idx').on(table.organizationId, table.slug),
+  })
+)
+
+/**
+ * Tenant User - Individual customers within tenant organizations
+ * These users do NOT have login accounts - they are customers being supported
+ */
+export const tenantUser = pgTable(
+  'tenant_user',
+  {
+    id: text('id').primaryKey(),
+    // The tenant organization this user belongs to
+    tenantOrganizationId: text('tenantOrganizationId')
+      .notNull()
+      .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
+    // Basic info
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    avatarUrl: text('avatarUrl'),
+    // Role within their organization
+    role: text('role').notNull().default('user'), // owner, admin, user, viewer
+    isOwner: boolean('isOwner').notNull().default(false),
+    // Status
+    status: text('status').notNull().default('active'), // active, suspended, invited
+    // Activity tracking
+    lastActivityAt: timestamp('lastActivityAt'),
+    // Metadata
+    notes: text('notes'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    tenantOrgIdx: index('tenant_user_tenant_org_idx').on(table.tenantOrganizationId),
+    emailIdx: index('tenant_user_email_idx').on(table.tenantOrganizationId, table.email),
+  })
+)

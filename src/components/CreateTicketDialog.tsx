@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useParams } from '@tanstack/react-router'
 import { z } from 'zod'
-import { Search, User, Building } from 'lucide-react'
+import { Search, User, Building, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
-import { members, type Member } from '@/data/members'
+import { fetchMembers, type Member } from '@/data/members'
 import { addTicket, type CreateTicketInput } from '@/data/tickets'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,9 +36,35 @@ export function CreateTicketDialog({
   onOpenChange,
   onTicketCreated,
 }: CreateTicketDialogProps) {
+  // Get tenant from URL params - need to handle the nested route
+  const params = useParams({ strict: false }) as { tenant?: string }
+  const tenant = params.tenant || ''
+
   const [selectedCustomer, setSelectedCustomer] = useState<Member | null>(null)
   const [customerSearch, setCustomerSearch] = useState('')
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
+  const [members, setMembers] = useState<Member[]>([])
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false)
+
+  // Fetch members when dialog opens or search changes
+  useEffect(() => {
+    if (!open || !tenant) return
+
+    const loadMembers = async () => {
+      setIsLoadingMembers(true)
+      try {
+        const data = await fetchMembers(tenant, customerSearch || undefined)
+        setMembers(data)
+      } catch (error) {
+        console.error('Failed to fetch members:', error)
+      } finally {
+        setIsLoadingMembers(false)
+      }
+    }
+
+    // Debounce search
+    const timeoutId = setTimeout(loadMembers, 200)
+    return () => clearTimeout(timeoutId)
+  }, [open, tenant, customerSearch])
 
   const filteredMembers = useMemo(() => {
     if (!customerSearch) return members
@@ -48,7 +75,7 @@ export function CreateTicketDialog({
         member.email.toLowerCase().includes(query) ||
         member.organization.toLowerCase().includes(query)
     )
-  }, [customerSearch])
+  }, [customerSearch, members])
 
   const form = useAppForm({
     defaultValues: {
@@ -89,7 +116,6 @@ export function CreateTicketDialog({
     setSelectedCustomer(member)
     setCustomerSearch(member.name)
     form.setFieldValue('customerId', member.id)
-    setShowCustomerDropdown(false)
   }
 
   const handleDialogClose = (isOpen: boolean) => {
@@ -97,6 +123,7 @@ export function CreateTicketDialog({
       form.reset()
       setSelectedCustomer(null)
       setCustomerSearch('')
+      setMembers([])
     }
     onOpenChange(isOpen)
   }
@@ -142,20 +169,29 @@ export function CreateTicketDialog({
                 value={customerSearch}
                 onChange={(e) => {
                   setCustomerSearch(e.target.value)
-                  setShowCustomerDropdown(true)
                   if (!e.target.value) {
                     setSelectedCustomer(null)
                     form.setFieldValue('customerId', '')
                   }
                 }}
-                onFocus={() => setShowCustomerDropdown(true)}
                 className="pl-9 h-10"
               />
+              {isLoadingMembers && (
+                <RefreshCw
+                  size={16}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin"
+                />
+              )}
 
               {/* Customer Dropdown */}
               {customerSearch && !selectedCustomer && (
                 <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-                  {filteredMembers.length > 0 ? (
+                  {isLoadingMembers ? (
+                    <div className="px-4 py-3 text-sm text-gray-500 text-center flex items-center justify-center gap-2">
+                      <RefreshCw size={14} className="animate-spin" />
+                      Searching...
+                    </div>
+                  ) : filteredMembers.length > 0 ? (
                     filteredMembers.map((member) => (
                       <button
                         key={member.id}
@@ -280,4 +316,3 @@ export function CreateTicketDialog({
     </Dialog>
   )
 }
-

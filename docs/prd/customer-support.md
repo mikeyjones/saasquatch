@@ -198,3 +198,137 @@ Support-specific permission groups:
 - [ ] **Audit logs:** Shared across SaaSquatch departments
 - [ ] **Billing engine:** Refunds, credits, and invoices from Billing area
 
+---
+
+## 6. Development & Testing
+
+### 6.1 Data Model Architecture
+
+The system uses a **multi-tenant architecture** with clear separation between platform users and tenant customers.
+
+#### Platform Tables (Better Auth)
+
+These tables store users who **CAN log in** to the platform:
+
+| Table | Purpose |
+|-------|---------|
+| `user` | Platform user accounts (support staff, admins) |
+| `account` | Better Auth credentials and OAuth providers |
+| `session` | Active user sessions |
+| `organization` | Support staff organizations (tenants of the platform) |
+| `member` | Links users to organizations with roles |
+| `invitation` | Pending organization invitations |
+
+#### Tenant Data Tables
+
+These tables store customer data that **CANNOT log in** - they are managed by support staff:
+
+| Table | Purpose |
+|-------|---------|
+| `tenant_organization` | Customer companies being supported |
+| `tenant_user` | Individual customers within those companies |
+
+**Key Design Decisions:**
+
+1. **Scoped to Support Staff Org:** Tenant organizations belong to a support staff organization via `organizationId` foreign key
+2. **No Login Accounts:** Tenant users have no `account` records - they're customer records, not platform users
+3. **Extended Fields:** Tenant tables include business-specific fields (subscription, billing, industry, etc.)
+
+#### Entity Relationship
+
+```
+organization (support staff)
+    ├── member ← user (can log in)
+    │       └── account (Better Auth)
+    │
+    └── tenant_organization (customer companies)
+            └── tenant_user (customer contacts - NO login)
+```
+
+### 6.2 Database Seeding
+
+The database seed script (`src/db/seed.ts`) creates test data for development and testing.
+
+**Run with:** `bun run db:seed`
+
+#### Two Types of Seeded Data
+
+1. **Support Staff Organizations** - Users who CAN log in
+   - These are employees/agents who use the support platform
+   - Have Better Auth accounts with password authentication
+   - Stored in: `organization`, `user`, `member`, `account` tables
+   - All passwords: `password123`
+
+2. **Tenant Customer Organizations** - Users who CANNOT log in
+   - These are customers that support staff help via tickets
+   - Stored in: `tenant_organization`, `tenant_user` tables
+   - Used for ticket creation and customer management
+
+#### Support Staff Test Credentials
+
+| Organization | URL | Email | Role |
+|--------------|-----|-------|------|
+| Acme Corporation | `/acme/app/support` | alice@acme.test | owner |
+| Acme Corporation | `/acme/app/support` | bob@acme.test | admin |
+| Acme Corporation | `/acme/app/support` | carol@acme.test | member |
+| Globex Industries | `/globex/app/support` | charlie@globex.test | owner |
+| Globex Industries | `/globex/app/support` | diana@globex.test | member |
+
+**Password for all:** `password123`
+
+#### Tenant Customer Organizations (for Acme support staff)
+
+| Organization | Industry | Subscription | Sample Users |
+|--------------|----------|--------------|--------------|
+| Acme Corp | Technology | Enterprise | John Doe, Jane Smith, Tom Wilson |
+| TechFlow | Software | Professional | Sarah Miller, Mike Ross, Lisa Chen |
+| StartUp Inc | Startup | Starter (trial) | Mike Chen, Amy Lee |
+| DataMinds | Analytics | Enterprise | Alex Johnson, Ryan Park, Emma Davis |
+| Global Logistics | Logistics | Professional | Emily Blunt, James Bond |
+
+#### Tenant Customer Organizations (for Globex support staff)
+
+| Organization | Industry | Subscription | Sample Users |
+|--------------|----------|--------------|--------------|
+| MegaCorp International | Conglomerate | Enterprise | Robert CEO, Susan CFO |
+| SmallBiz LLC | Retail | Starter | Pat Owner |
+
+#### Seed Script Features
+
+- [x] Idempotent operations (safe to run multiple times)
+- [x] Environment variable validation
+- [x] Clear logging with status indicators
+- [x] Separate tables for platform users vs tenant customers
+- [x] Automatic membership creation
+- [x] Sample todos for support staff organizations
+
+### 6.3 API Endpoints
+
+#### Tenant Users API
+
+**Endpoint:** `GET /api/tenant/:tenant/users`
+
+Fetches tenant users (customers) scoped to the current support staff organization.
+
+**Query Parameters:**
+- `search` (optional): Filter by name, email, or organization
+
+**Response:**
+```json
+{
+  "users": [
+    {
+      "id": "abc123",
+      "name": "John Doe",
+      "email": "john@acme.com",
+      "initials": "JD",
+      "organization": "Acme Corp",
+      "role": "Admin",
+      "isOwner": true,
+      "status": "Active",
+      "lastLogin": "2h ago"
+    }
+  ]
+}
+```
+

@@ -15,6 +15,13 @@
       "when": 1764605584697,
       "tag": "0001_windy_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764711606116,
+      "tag": "0002_elite_ultragirl",
+      "breakpoints": true
     }
   ]
 }

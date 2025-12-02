@@ -1,24 +1,52 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
-import { Search, Building, Settings, MoreVertical } from 'lucide-react'
+import { createFileRoute, useParams } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
+import { Search, Building, Settings, MoreVertical, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { members, type Member } from '@/data/members'
+import { fetchMembers, type Member } from '@/data/members'
 
 export const Route = createFileRoute('/$tenant/app/support/members')({
   component: MembersPage,
 })
 
 function MembersPage() {
+  const { tenant } = useParams({ from: '/$tenant/app/support/members' })
   const [searchQuery, setSearchQuery] = useState('')
+  const [members, setMembers] = useState<Member[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredMembers = members.filter((member) => {
-    const query = searchQuery.toLowerCase()
-    return (
-      member.name.toLowerCase().includes(query) ||
-      member.email.toLowerCase().includes(query) ||
-      member.organization.toLowerCase().includes(query)
-    )
-  })
+  // Fetch members on mount and when search changes
+  useEffect(() => {
+    const loadMembers = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const data = await fetchMembers(tenant, searchQuery || undefined)
+        setMembers(data)
+      } catch (err) {
+        setError('Failed to load members')
+        console.error(err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    // Debounce search
+    const timeoutId = setTimeout(loadMembers, 300)
+    return () => clearTimeout(timeoutId)
+  }, [tenant, searchQuery])
+
+  const handleRefresh = async () => {
+    setIsLoading(true)
+    try {
+      const data = await fetchMembers(tenant, searchQuery || undefined)
+      setMembers(data)
+    } catch (err) {
+      setError('Failed to refresh members')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <main className="flex-1 overflow-auto p-6">
@@ -29,25 +57,41 @@ function MembersPage() {
             Members & Organizations
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Manage user access, security, and organization settings.
+            Manage customer accounts, access, and organization settings.
           </p>
         </div>
-        <div className="w-64">
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={16}
-            />
-            <Input
-              type="text"
-              placeholder="Search by name, email, or org..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 text-sm bg-gray-50 border-gray-200"
-            />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+          </button>
+          <div className="w-64">
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={16}
+              />
+              <Input
+                type="text"
+                placeholder="Search by name, email, or org..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-sm bg-gray-50 border-gray-200"
+              />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Members Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -67,7 +111,7 @@ function MembersPage() {
                 Status
               </th>
               <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Login
+                Last Activity
               </th>
               <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -75,12 +119,34 @@ function MembersPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredMembers.map((member) => (
-              <MemberRow key={member.id} member={member} />
-            ))}
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <RefreshCw size={24} className="animate-spin mx-auto mb-2" />
+                  Loading members...
+                </td>
+              </tr>
+            ) : members.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  {searchQuery ? 'No members found matching your search.' : 'No members found.'}
+                </td>
+              </tr>
+            ) : (
+              members.map((member) => (
+                <MemberRow key={member.id} member={member} />
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Footer Info */}
+      {!isLoading && members.length > 0 && (
+        <div className="mt-4 text-sm text-gray-500">
+          Showing {members.length} member{members.length !== 1 ? 's' : ''}
+        </div>
+      )}
     </main>
   )
 }
@@ -128,7 +194,7 @@ function MemberRow({ member }: { member: Member }) {
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border ${roleStyles[member.role]}`}
         >
           {member.isOwner && <Settings size={12} />}
-          {member.isOwner ? 'O ' : ''}
+          {member.isOwner ? 'Owner · ' : ''}
           {member.role}
         </span>
       </td>
@@ -140,7 +206,7 @@ function MemberRow({ member }: { member: Member }) {
         </span>
       </td>
 
-      {/* Last Login */}
+      {/* Last Activity */}
       <td className="px-6 py-4">
         <span className="text-gray-500 text-sm">{member.lastLogin}</span>
       </td>
