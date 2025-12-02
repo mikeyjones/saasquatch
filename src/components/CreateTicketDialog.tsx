@@ -25,6 +25,97 @@ const ticketSchema = z.object({
   message: z.string().min(1, 'Message is required'),
 })
 
+/**
+ * Fuzzy match score - returns a score based on how well the query matches the text
+ */
+function fuzzyScore(text: string, query: string): number {
+  const textLower = text.toLowerCase()
+  const queryLower = query.toLowerCase()
+  
+  if (textLower === queryLower) return 100
+  if (textLower.startsWith(queryLower)) return 90
+  if (textLower.includes(queryLower)) return 80
+  
+  // Word boundary match (initials)
+  const words = textLower.split(/\s+/)
+  const initials = words.map(w => w[0]).join('')
+  if (initials.includes(queryLower)) return 75
+  
+  // Fuzzy character matching
+  let queryIndex = 0
+  let score = 0
+  let consecutiveBonus = 0
+  let lastMatchIndex = -2
+  
+  for (let i = 0; i < textLower.length && queryIndex < queryLower.length; i++) {
+    if (textLower[i] === queryLower[queryIndex]) {
+      if (i === lastMatchIndex + 1) consecutiveBonus += 5
+      if (i === 0 || textLower[i - 1] === ' ' || textLower[i - 1] === '@' || textLower[i - 1] === '.') {
+        score += 10
+      } else {
+        score += 5
+      }
+      lastMatchIndex = i
+      queryIndex++
+    }
+  }
+  
+  if (queryIndex < queryLower.length) return 0
+  score += consecutiveBonus
+  score = score * (1 - (textLower.length - queryLower.length) / 100)
+  
+  return Math.max(0, Math.min(70, score))
+}
+
+function getMemberScore(member: Member, query: string): number {
+  if (!query) return 100
+  return Math.max(
+    fuzzyScore(member.name, query),
+    fuzzyScore(member.email, query),
+    fuzzyScore(member.organization, query)
+  )
+}
+
+/**
+ * Highlight matching parts of text
+ */
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>
+  
+  const textLower = text.toLowerCase()
+  const queryLower = query.toLowerCase()
+  
+  const index = textLower.indexOf(queryLower)
+  if (index !== -1) {
+    return (
+      <>
+        {text.slice(0, index)}
+        <mark className="bg-yellow-200 text-inherit rounded px-0.5">{text.slice(index, index + query.length)}</mark>
+        {text.slice(index + query.length)}
+      </>
+    )
+  }
+  
+  // Fuzzy highlight
+  const result: React.ReactNode[] = []
+  let queryIndex = 0
+  
+  for (let i = 0; i < text.length; i++) {
+    if (queryIndex < queryLower.length && textLower[i] === queryLower[queryIndex]) {
+      result.push(
+        <mark key={i} className="bg-yellow-200 text-inherit rounded-sm">
+          {text[i]}
+        </mark>
+      )
+      queryIndex++
+    } else {
+      result.push(text[i])
+    }
+  }
+  
+  return <>{result}</>
+}
+
 interface CreateTicketDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -36,24 +127,23 @@ export function CreateTicketDialog({
   onOpenChange,
   onTicketCreated,
 }: CreateTicketDialogProps) {
-  // Get tenant from URL params - need to handle the nested route
   const params = useParams({ strict: false }) as { tenant?: string }
   const tenant = params.tenant || ''
 
   const [selectedCustomer, setSelectedCustomer] = useState<Member | null>(null)
   const [customerSearch, setCustomerSearch] = useState('')
-  const [members, setMembers] = useState<Member[]>([])
+  const [allMembers, setAllMembers] = useState<Member[]>([])
   const [isLoadingMembers, setIsLoadingMembers] = useState(false)
 
-  // Fetch members when dialog opens or search changes
+  // Fetch all members when dialog opens
   useEffect(() => {
     if (!open || !tenant) return
 
     const loadMembers = async () => {
       setIsLoadingMembers(true)
       try {
-        const data = await fetchMembers(tenant, customerSearch || undefined)
-        setMembers(data)
+        const data = await fetchMembers(tenant)
+        setAllMembers(data)
       } catch (error) {
         console.error('Failed to fetch members:', error)
       } finally {
@@ -61,21 +151,21 @@ export function CreateTicketDialog({
       }
     }
 
-    // Debounce search
-    const timeoutId = setTimeout(loadMembers, 200)
-    return () => clearTimeout(timeoutId)
-  }, [open, tenant, customerSearch])
+    loadMembers()
+  }, [open, tenant])
 
+  // Fuzzy filter and sort members
   const filteredMembers = useMemo(() => {
-    if (!customerSearch) return members
-    const query = customerSearch.toLowerCase()
-    return members.filter(
-      (member) =>
-        member.name.toLowerCase().includes(query) ||
-        member.email.toLowerCase().includes(query) ||
-        member.organization.toLowerCase().includes(query)
-    )
-  }, [customerSearch, members])
+    if (!customerSearch.trim()) return allMembers.slice(0, 10) // Show first 10 when no search
+    
+    const query = customerSearch.trim()
+    return allMembers
+      .map(member => ({ member, score: getMemberScore(member, query) }))
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10) // Limit results
+      .map(item => item.member)
+  }, [allMembers, customerSearch])
 
   const form = useAppForm({
     defaultValues: {
@@ -103,7 +193,6 @@ export function CreateTicketDialog({
 
       addTicket(ticketInput)
 
-      // Reset form and close dialog
       form.reset()
       setSelectedCustomer(null)
       setCustomerSearch('')
@@ -123,7 +212,7 @@ export function CreateTicketDialog({
       form.reset()
       setSelectedCustomer(null)
       setCustomerSearch('')
-      setMembers([])
+      setAllMembers([])
     }
     onOpenChange(isOpen)
   }
@@ -165,7 +254,7 @@ export function CreateTicketDialog({
               />
               <Input
                 type="text"
-                placeholder="Search by name, email, or organization..."
+                placeholder="Fuzzy search by name, email, or org..."
                 value={customerSearch}
                 onChange={(e) => {
                   setCustomerSearch(e.target.value)
@@ -184,14 +273,9 @@ export function CreateTicketDialog({
               )}
 
               {/* Customer Dropdown */}
-              {customerSearch && !selectedCustomer && (
+              {customerSearch && !selectedCustomer && !isLoadingMembers && (
                 <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
-                  {isLoadingMembers ? (
-                    <div className="px-4 py-3 text-sm text-gray-500 text-center flex items-center justify-center gap-2">
-                      <RefreshCw size={14} className="animate-spin" />
-                      Searching...
-                    </div>
-                  ) : filteredMembers.length > 0 ? (
+                  {filteredMembers.length > 0 ? (
                     filteredMembers.map((member) => (
                       <button
                         key={member.id}
@@ -208,26 +292,36 @@ export function CreateTicketDialog({
                           <div className="flex items-center gap-2">
                             <User size={14} className="text-gray-400" />
                             <span className="font-medium text-gray-900 text-sm">
-                              {member.name}
+                              <HighlightedText text={member.name} query={customerSearch} />
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Building size={14} className="text-gray-400" />
                             <span className="text-gray-500 text-xs">
-                              {member.organization}
+                              <HighlightedText text={member.organization} query={customerSearch} />
                             </span>
                           </div>
                           <p className="text-gray-400 text-xs mt-0.5 truncate">
-                            {member.email}
+                            <HighlightedText text={member.email} query={customerSearch} />
                           </p>
                         </div>
                       </button>
                     ))
                   ) : (
                     <div className="px-4 py-3 text-sm text-gray-500 text-center">
-                      No customers found
+                      No customers found for "{customerSearch}"
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Loading state for dropdown */}
+              {customerSearch && !selectedCustomer && isLoadingMembers && (
+                <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <div className="px-4 py-3 text-sm text-gray-500 text-center flex items-center justify-center gap-2">
+                    <RefreshCw size={14} className="animate-spin" />
+                    Loading customers...
+                  </div>
                 </div>
               )}
             </div>
