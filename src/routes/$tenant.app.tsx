@@ -1,55 +1,113 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet, useParams } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { authClient } from '@/lib/auth-client'
+
+type AuthState = 'checking' | 'not-authenticated' | 'not-member' | 'authenticated'
+
+async function checkTenantMembership(tenantSlug: string): Promise<{ isMember: boolean; role?: string; error?: string }> {
+  try {
+    const response = await fetch(`/api/tenant/${tenantSlug}/membership`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      return { isMember: data.isMember, role: data.role }
+    }
+    
+    if (response.status === 403) {
+      return { isMember: false, error: 'You are not a member of this organization' }
+    }
+    
+    if (response.status === 401) {
+      return { isMember: false, error: 'Not authenticated' }
+    }
+    
+    return { isMember: false, error: 'Failed to check membership' }
+  } catch {
+    return { isMember: false, error: 'Failed to check membership' }
+  }
+}
 
 export const Route = createFileRoute('/$tenant/app')({
   component: AppLayout,
 })
 
 function AppLayout() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
-  const [isChecking, setIsChecking] = useState(true)
+  const { tenant: tenantSlug } = useParams({ from: '/$tenant/app' })
+  const [authState, setAuthState] = useState<AuthState>('checking')
+  
+  // Check if we're on the login page - skip auth check for login route
+  const isLoginPage = typeof window !== 'undefined' && window.location.pathname.endsWith('/app/login')
 
   useEffect(() => {
-    // Check authentication by calling Better Auth API directly (no imports of server code)
-    const checkAuth = async () => {
+    // Skip auth check on login page
+    if (isLoginPage) {
+      setAuthState('authenticated') // Allow rendering the login page
+      return
+    }
+
+    // Check authentication and membership with retry logic
+    const checkAuth = async (retryCount = 0) => {
       try {
-        // Call the Better Auth session endpoint
-        const response = await fetch('/api/auth/session', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+        // Use Better Auth client to get session
+        const session = await authClient.getSession()
         
-        if (response.ok) {
-          const data = await response.json()
-          setIsAuthenticated(!!data?.session)
-        } else {
-          setIsAuthenticated(false)
+        if (session?.data?.session) {
+          // User is authenticated, now check membership
+          const membershipResult = await checkTenantMembership(tenantSlug)
+          
+          if (membershipResult.isMember) {
+            setAuthState('authenticated')
+            return
+          } else {
+            setAuthState('not-member')
+            return
+          }
         }
+
+        // If no session and we haven't retried yet, wait and retry (for race conditions after login)
+        if (retryCount < 5) {
+          const delay = retryCount === 0 ? 500 : 1000
+          await new Promise(resolve => setTimeout(resolve, delay))
+          return checkAuth(retryCount + 1)
+        }
+
+        setAuthState('not-authenticated')
       } catch (error) {
         console.error('Auth check failed:', error)
-        setIsAuthenticated(false)
-      } finally {
-        setIsChecking(false)
+        // Retry on error too
+        if (retryCount < 5) {
+          const delay = retryCount === 0 ? 500 : 1000
+          await new Promise(resolve => setTimeout(resolve, delay))
+          return checkAuth(retryCount + 1)
+        }
+        setAuthState('not-authenticated')
       }
     }
 
     checkAuth()
-  }, [])
+  }, [tenantSlug, isLoginPage])
 
   useEffect(() => {
-    // Redirect if not authenticated (after session check completes)
-    if (!isChecking && !isAuthenticated) {
+    // Don't redirect if on login page
+    if (isLoginPage) return
+    
+    // Redirect if not authenticated or not a member
+    if (authState === 'not-authenticated' || authState === 'not-member') {
       const currentPath = window.location.pathname
       const returnTo = encodeURIComponent(currentPath)
-      window.location.href = `/auth/sign-in?returnTo=${returnTo}`
+      const errorParam = authState === 'not-member' ? '&error=not-member' : ''
+      window.location.href = `/${tenantSlug}/app/login?returnTo=${returnTo}${errorParam}`
     }
-  }, [isAuthenticated, isChecking])
+  }, [authState, tenantSlug, isLoginPage])
 
-  // Show loading while checking
-  if (isChecking) {
+  // Show loading while checking (but not on login page)
+  if (authState === 'checking' && !isLoginPage) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-gray-500">Checking authentication...</div>
@@ -57,8 +115,8 @@ function AppLayout() {
     )
   }
 
-  // If not authenticated, show redirect message (redirect is happening)
-  if (!isAuthenticated) {
+  // If not authenticated or not a member, show redirect message (but not on login page)
+  if ((authState === 'not-authenticated' || authState === 'not-member') && !isLoginPage) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-gray-500">Redirecting to sign in...</div>
@@ -66,6 +124,6 @@ function AppLayout() {
     )
   }
 
-  // If authenticated, render the outlet
+  // If authenticated and is a member (or on login page), render the outlet
   return <Outlet />
 }

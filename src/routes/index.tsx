@@ -98,23 +98,9 @@ function Home() {
                 </p>
                 {feature.link && (
                   <div className="mt-4">
-                    {feature.external ? (
-                      <a
-                        href={feature.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-cyan-400 hover:text-cyan-300 font-medium"
-                      >
-                        Learn more →
-                      </a>
-                    ) : (
-                      <Link
-                        to={feature.link}
-                        className="text-cyan-400 hover:text-cyan-300 font-medium"
-                      >
-                        View demo →
-                      </Link>
-                    )}
+                    <span className="text-cyan-400 hover:text-cyan-300 font-medium">
+                      {feature.external ? 'Learn more →' : 'View demo →'}
+                    </span>
                   </div>
                 )}
               </div>

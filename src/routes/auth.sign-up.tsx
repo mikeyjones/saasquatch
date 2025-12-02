@@ -98,10 +98,7 @@ function SignUpPage() {
               {loading ? 'Creating account...' : 'Sign Up'}
             </Button>
             <div className="text-center text-sm text-gray-600">
-              Already have an account?{' '}
-              <a href="/auth/sign-in" className="text-emerald-600 hover:underline">
-                Sign in
-              </a>
+              Already have an account? Sign in at your organization's login page.
             </div>
           </form>
         </CardContent>

@@ -10,6 +10,7 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import * as schema from './schema'
+import { hashPassword } from 'better-auth/crypto'
 
 // Load environment variables
 config({ path: '.env.local' })
@@ -23,17 +24,6 @@ const db = drizzle(pool, { schema })
 // Generate a simple ID (compatible with Better Auth format)
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-}
-
-// Hash password (simple bcrypt-like format for testing - NOT for production)
-// Better Auth uses bcrypt, but for seeding we'll create accounts with credential provider
-async function hashPassword(password: string): Promise<string> {
-  // Using a simple hash for seed data - Better Auth will handle real password hashing
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
 interface TenantSeedData {
@@ -99,8 +89,27 @@ async function seed() {
         if (existingUser) {
           userId = existingUser.id
           console.log(`   ℹ User already exists: ${userData.email}`)
+          
+          // Update password using Better Auth's hashPassword function
+          const existingAccount = await db.query.account.findFirst({
+            where: (account, { and, eq }) =>
+              and(
+                eq(account.userId, userId),
+                eq(account.providerId, 'credential')
+              ),
+          })
+          
+          if (existingAccount) {
+            // Use Better Auth's password hashing function
+            const hashedPassword = await hashPassword('password123')
+            await db.update(schema.account)
+              .set({ password: hashedPassword })
+              .where(eq(schema.account.id, existingAccount.id))
+            console.log(`   ✓ Password updated for: ${userData.email}`)
+          }
         } else {
           userId = generateId()
+          // Use Better Auth's password hashing function
           const hashedPassword = await hashPassword('password123')
 
           // Create user
