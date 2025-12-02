@@ -1,4 +1,4 @@
-import { Link, useLocation } from '@tanstack/react-router'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import {
   LayoutGrid,
   MessageSquare,
@@ -6,8 +6,21 @@ import {
   BookOpen,
   Bot,
   ChevronDown,
+  ChevronUp,
+  LogOut,
+  Settings,
+  User,
 } from 'lucide-react'
 import { useTenantSlug, useTenant } from '@/hooks/use-tenant'
+import { useSession, signOut } from '@/lib/auth-client'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const getNavItems = (tenant: string) => [
   { id: 'overview', label: 'Overview', icon: LayoutGrid, path: `/${tenant}/app/support` },
@@ -19,11 +32,28 @@ const getNavItems = (tenant: string) => [
 
 export function SupportSidebar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const currentPath = location.pathname
   const tenantSlug = useTenantSlug()
   const tenant = useTenant()
+  const { data: session } = useSession()
   
   const navItems = getNavItems(tenantSlug)
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate({ to: '/$tenant/app/login', params: { tenant: tenantSlug } })
+  }
+
+  // Get user initials for avatar fallback
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   const isActive = (path: string) => {
     if (path === `/${tenantSlug}/app/support`) {
@@ -33,7 +63,7 @@ export function SupportSidebar() {
   }
 
   return (
-    <aside className="w-56 bg-slate-800 flex flex-col">
+    <aside className="w-56 h-full bg-slate-800 flex flex-col">
       {/* Logo */}
       <div className="p-4">
         <div className="flex items-center gap-2">
@@ -98,23 +128,58 @@ export function SupportSidebar() {
 
       {/* User Profile */}
       <div className="p-4 border-t border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face"
-              alt="Jane Doe"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                e.currentTarget.parentElement!.innerHTML = '<span class="text-white text-sm font-medium">JD</span>'
-              }}
-            />
-          </div>
-          <div>
-            <p className="text-white text-sm font-medium">Jane Doe</p>
-            <p className="text-slate-400 text-xs">Support Lead</p>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-slate-700 transition-colors">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center overflow-hidden">
+                {session?.user?.image ? (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || 'User'}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <span className="text-white text-sm font-medium">
+                    {session?.user?.name ? getUserInitials(session.user.name) : 'U'}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-white text-sm font-medium truncate">
+                  {session?.user?.name || 'User'}
+                </p>
+                <p className="text-slate-400 text-xs truncate">
+                  {session?.user?.email || ''}
+                </p>
+              </div>
+              <ChevronUp size={16} className="text-slate-400" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="top"
+            align="start"
+            className="w-56 mb-2"
+          >
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <User size={16} />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings size={16} />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} variant="destructive">
+              <LogOut size={16} />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   )
