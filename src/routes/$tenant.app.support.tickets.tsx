@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useStore } from '@tanstack/react-store'
 import {
   Search,
   Filter,
@@ -11,24 +12,28 @@ import {
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { tickets, filterOptions, type Ticket } from '@/data/tickets'
+import { ticketsStore, filterOptions, type Ticket } from '@/data/tickets'
 
 export const Route = createFileRoute('/$tenant/app/support/tickets')({
   component: TicketsPage,
 })
 
 function TicketsPage() {
+  const tickets = useStore(ticketsStore)
   const [selectedTicketId, setSelectedTicketId] = useState<string>(tickets[0]?.id || '')
   const [activeFilter, setActiveFilter] = useState('all')
   
-  const selectedTicket = tickets.find((t) => t.id === selectedTicketId) || tickets[0]
+  const selectedTicket = useMemo(() => 
+    tickets.find((t) => t.id === selectedTicketId) || tickets[0],
+    [tickets, selectedTicketId]
+  )
 
-  const filteredTickets = tickets.filter((ticket) => {
+  const filteredTickets = useMemo(() => tickets.filter((ticket) => {
     if (activeFilter === 'all') return true
     if (activeFilter === 'open') return ticket.status === 'open'
     if (activeFilter === 'urgent') return ticket.priority === 'urgent'
     return true
-  })
+  }), [tickets, activeFilter])
 
   return (
     <main className="flex-1 flex overflow-hidden">

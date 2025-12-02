@@ -1,3 +1,5 @@
+import { Store } from '@tanstack/store'
+
 export interface Ticket {
   id: string
   title: string
@@ -28,7 +30,18 @@ export interface Ticket {
   }
 }
 
-export const tickets: Ticket[] = [
+export interface CreateTicketInput {
+  title: string
+  priority: 'urgent' | 'high' | 'normal' | 'low'
+  message: string
+  customer: {
+    name: string
+    company: string
+    initials: string
+  }
+}
+
+const initialTickets: Ticket[] = [
   {
     id: '1',
     title: 'Login Failure on SSO',
@@ -147,10 +160,45 @@ Our current plan is Enterprise and we're willing to discuss pricing for higher l
   },
 ]
 
+// Create a store for tickets
+export const ticketsStore = new Store<Ticket[]>(initialTickets)
+
+// Helper to get current tickets (for backwards compatibility)
+export const tickets = initialTickets
+
+// Track the next ticket number
+let nextTicketNumber = 9943
+
+// Function to add a new ticket
+export function addTicket(input: CreateTicketInput): Ticket {
+  const newTicket: Ticket = {
+    id: String(Date.now()),
+    title: input.title,
+    company: input.customer.company,
+    ticketNumber: `#${nextTicketNumber++}`,
+    priority: input.priority,
+    status: 'open',
+    timeAgo: 'Just now',
+    preview: input.message.slice(0, 60) + (input.message.length > 60 ? '...' : ''),
+    customer: input.customer,
+    messages: [
+      {
+        type: 'customer',
+        author: input.customer.name,
+        timestamp: 'Just now',
+        content: input.message,
+      },
+    ],
+  }
+
+  ticketsStore.setState((prev) => [newTicket, ...prev])
+
+  return newTicket
+}
+
 export const filterOptions = [
   { id: 'all', label: 'All' },
   { id: 'open', label: 'Open' },
   { id: 'my-tickets', label: 'My Tickets' },
   { id: 'urgent', label: 'Urgent' },
 ]
-

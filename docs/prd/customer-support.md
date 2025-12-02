@@ -69,6 +69,14 @@ Support agents can perform select billing actions.
 
 Centralized ticket management for email + help center submissions.
 
+#### Ticket Creation
+
+- [x] Create ticket form (TanStack Form with Zod validation)
+- [x] Customer search/selection from members
+- [x] Priority selection (Low, Normal, High, Urgent)
+- [x] Initial message input
+- [x] Dialog-based UI accessible from header
+
 #### Ticket Channels
 
 - [ ] Email → ticket inbox
@@ -78,8 +86,8 @@ Centralized ticket management for email + help center submissions.
 
 #### Ticket UI
 
-- [ ] Status (Open, Pending, Waiting on Customer, Escalated, Closed)
-- [ ] Priority (Low, Normal, High, Urgent)
+- [x] Status (Open, Pending, Waiting on Customer, Escalated, Closed)
+- [x] Priority (Low, Normal, High, Urgent)
 - [ ] SLA countdown
 - [ ] Contact info + billing snapshot + subscription status
 - [ ] AI-suggested responses
