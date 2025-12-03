@@ -35,7 +35,9 @@ import { Route as ApiTenantTenantMembershipRouteImport } from './routes/api.tena
 import { Route as TenantAppSupportTicketsRouteImport } from './routes/$tenant.app.support.tickets'
 import { Route as TenantAppSupportMembersRouteImport } from './routes/$tenant.app.support.members'
 import { Route as TenantAppSupportKnowledgeRouteImport } from './routes/$tenant.app.support.knowledge'
+import { Route as TenantAppSalesProductCatalogRouteImport } from './routes/$tenant.app.sales.product-catalog'
 import { Route as TenantAppSalesPipelineRouteImport } from './routes/$tenant.app.sales.pipeline'
+import { Route as TenantAppSalesCrmRouteImport } from './routes/$tenant.app.sales.crm'
 import { Route as ApiTenantTenantTicketsTicketIdRouteImport } from './routes/api.tenant.$tenant.tickets.$ticketId'
 import { Route as ApiTenantTenantKnowledgeSearchRouteImport } from './routes/api.tenant.$tenant.knowledge.search'
 import { Route as ApiTenantTenantKnowledgePlaybooksRouteImport } from './routes/api.tenant.$tenant.knowledge.playbooks'
@@ -173,9 +175,20 @@ const TenantAppSupportKnowledgeRoute =
     path: '/knowledge',
     getParentRoute: () => TenantAppSupportRoute,
   } as any)
+const TenantAppSalesProductCatalogRoute =
+  TenantAppSalesProductCatalogRouteImport.update({
+    id: '/product-catalog',
+    path: '/product-catalog',
+    getParentRoute: () => TenantAppSalesRoute,
+  } as any)
 const TenantAppSalesPipelineRoute = TenantAppSalesPipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
+  getParentRoute: () => TenantAppSalesRoute,
+} as any)
+const TenantAppSalesCrmRoute = TenantAppSalesCrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => TenantAppSalesRoute,
 } as any)
 const ApiTenantTenantTicketsTicketIdRoute =
@@ -222,7 +235,9 @@ export interface FileRoutesByFullPath {
   '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
+  '/$tenant/app/sales/crm': typeof TenantAppSalesCrmRoute
   '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
+  '/$tenant/app/sales/product-catalog': typeof TenantAppSalesProductCatalogRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
@@ -253,7 +268,9 @@ export interface FileRoutesByTo {
   '/$tenant/app/login': typeof TenantAppLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
+  '/$tenant/app/sales/crm': typeof TenantAppSalesCrmRoute
   '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
+  '/$tenant/app/sales/product-catalog': typeof TenantAppSalesProductCatalogRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
@@ -287,7 +304,9 @@ export interface FileRoutesById {
   '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
+  '/$tenant/app/sales/crm': typeof TenantAppSalesCrmRoute
   '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
+  '/$tenant/app/sales/product-catalog': typeof TenantAppSalesProductCatalogRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
@@ -322,7 +341,9 @@ export interface FileRouteTypes {
     | '/$tenant/app/support'
     | '/api/auth/$'
     | '/api/user/organizations'
+    | '/$tenant/app/sales/crm'
     | '/$tenant/app/sales/pipeline'
+    | '/$tenant/app/sales/product-catalog'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
@@ -353,7 +374,9 @@ export interface FileRouteTypes {
     | '/$tenant/app/login'
     | '/api/auth/$'
     | '/api/user/organizations'
+    | '/$tenant/app/sales/crm'
     | '/$tenant/app/sales/pipeline'
+    | '/$tenant/app/sales/product-catalog'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
@@ -386,7 +409,9 @@ export interface FileRouteTypes {
     | '/$tenant/app/support'
     | '/api/auth/$'
     | '/api/user/organizations'
+    | '/$tenant/app/sales/crm'
     | '/$tenant/app/sales/pipeline'
+    | '/$tenant/app/sales/product-catalog'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
@@ -606,11 +631,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TenantAppSupportKnowledgeRouteImport
       parentRoute: typeof TenantAppSupportRoute
     }
+    '/$tenant/app/sales/product-catalog': {
+      id: '/$tenant/app/sales/product-catalog'
+      path: '/product-catalog'
+      fullPath: '/$tenant/app/sales/product-catalog'
+      preLoaderRoute: typeof TenantAppSalesProductCatalogRouteImport
+      parentRoute: typeof TenantAppSalesRoute
+    }
     '/$tenant/app/sales/pipeline': {
       id: '/$tenant/app/sales/pipeline'
       path: '/pipeline'
       fullPath: '/$tenant/app/sales/pipeline'
       preLoaderRoute: typeof TenantAppSalesPipelineRouteImport
+      parentRoute: typeof TenantAppSalesRoute
+    }
+    '/$tenant/app/sales/crm': {
+      id: '/$tenant/app/sales/crm'
+      path: '/crm'
+      fullPath: '/$tenant/app/sales/crm'
+      preLoaderRoute: typeof TenantAppSalesCrmRouteImport
       parentRoute: typeof TenantAppSalesRoute
     }
     '/api/tenant/$tenant/tickets/$ticketId': {
@@ -645,12 +684,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface TenantAppSalesRouteChildren {
+  TenantAppSalesCrmRoute: typeof TenantAppSalesCrmRoute
   TenantAppSalesPipelineRoute: typeof TenantAppSalesPipelineRoute
+  TenantAppSalesProductCatalogRoute: typeof TenantAppSalesProductCatalogRoute
   TenantAppSalesIndexRoute: typeof TenantAppSalesIndexRoute
 }
 
 const TenantAppSalesRouteChildren: TenantAppSalesRouteChildren = {
+  TenantAppSalesCrmRoute: TenantAppSalesCrmRoute,
   TenantAppSalesPipelineRoute: TenantAppSalesPipelineRoute,
+  TenantAppSalesProductCatalogRoute: TenantAppSalesProductCatalogRoute,
   TenantAppSalesIndexRoute: TenantAppSalesIndexRoute,
 }
 
