@@ -31,7 +31,7 @@ const getNavItems = (tenant: string) => [
   { id: 'pipeline', label: 'Pipeline', icon: GitBranch, path: `/${tenant}/app/sales/pipeline` },
   { id: 'product-catalog', label: 'Product Catalog', icon: Package, path: `/${tenant}/app/sales/product-catalog` },
   { id: 'crm', label: 'CRM', icon: Users, path: `/${tenant}/app/sales/crm` },
-  { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '#' },
+  { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: `/${tenant}/app/sales/subscriptions` },
   { id: 'agent', label: 'Agent Apollo', icon: Bot, path: '#' },
 ]
 
