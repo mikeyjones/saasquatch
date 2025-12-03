@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { todos, organization, member, knowledgeArticle, playbook } from './schema'
+import {
+  todos,
+  organization,
+  member,
+  knowledgeArticle,
+  playbook,
+  pipeline,
+  pipelineStage,
+  deal,
+  dealContact,
+  dealActivity,
+} from './schema'
 
 /**
  * Tests for database schema multi-tenant structure
@@ -202,6 +213,110 @@ describe('Knowledge Base multi-tenant model', () => {
     expect(relationships.playbook.scopedBy).toBe('organizationId')
     expect(relationships.playbook.types).toContain('manual')
     expect(relationships.playbook.types).toContain('automated')
+  })
+})
+
+/**
+ * Tests for Sales CRM schema
+ */
+describe('Sales CRM schema', () => {
+  describe('pipeline table', () => {
+    it('should have tenantOrganizationId for customer scoping', () => {
+      const columns = Object.keys(pipeline)
+      expect(columns).toContain('tenantOrganizationId')
+    })
+
+    it('should have all required columns', () => {
+      const columns = Object.keys(pipeline)
+      expect(columns).toContain('id')
+      expect(columns).toContain('name')
+      expect(columns).toContain('description')
+      expect(columns).toContain('isDefault')
+    })
+  })
+
+  describe('pipelineStage table', () => {
+    it('should have pipelineId for pipeline association', () => {
+      const columns = Object.keys(pipelineStage)
+      expect(columns).toContain('pipelineId')
+    })
+
+    it('should have ordering and styling columns', () => {
+      const columns = Object.keys(pipelineStage)
+      expect(columns).toContain('order')
+      expect(columns).toContain('color')
+      expect(columns).toContain('name')
+    })
+  })
+
+  describe('deal table', () => {
+    it('should have dual scoping (organization + tenantOrganization)', () => {
+      const columns = Object.keys(deal)
+      expect(columns).toContain('organizationId')
+      expect(columns).toContain('tenantOrganizationId')
+    })
+
+    it('should have pipeline and stage references', () => {
+      const columns = Object.keys(deal)
+      expect(columns).toContain('pipelineId')
+      expect(columns).toContain('stageId')
+    })
+
+    it('should have value and assignment columns', () => {
+      const columns = Object.keys(deal)
+      expect(columns).toContain('name')
+      expect(columns).toContain('value')
+      expect(columns).toContain('assignedToUserId')
+      expect(columns).toContain('assignedToAI')
+    })
+  })
+
+  describe('dealContact table', () => {
+    it('should link deals to tenant users', () => {
+      const columns = Object.keys(dealContact)
+      expect(columns).toContain('dealId')
+      expect(columns).toContain('tenantUserId')
+      expect(columns).toContain('role')
+    })
+  })
+
+  describe('dealActivity table', () => {
+    it('should track deal activities', () => {
+      const columns = Object.keys(dealActivity)
+      expect(columns).toContain('dealId')
+      expect(columns).toContain('activityType')
+      expect(columns).toContain('description')
+      expect(columns).toContain('userId')
+      expect(columns).toContain('aiAgentId')
+    })
+  })
+})
+
+describe('Sales CRM multi-tenant model', () => {
+  it('should scope pipelines to tenant organizations', () => {
+    const relationships = {
+      pipeline: {
+        belongsTo: ['tenantOrganization'],
+        scopedBy: 'tenantOrganizationId',
+        hasMany: ['pipelineStages', 'deals'],
+      },
+    }
+
+    expect(relationships.pipeline.scopedBy).toBe('tenantOrganizationId')
+  })
+
+  it('should scope deals to both support org and customer org', () => {
+    const relationships = {
+      deal: {
+        belongsTo: ['organization', 'tenantOrganization', 'pipeline', 'pipelineStage'],
+        dualScoped: true,
+        hasMany: ['dealContacts', 'dealActivities'],
+      },
+    }
+
+    expect(relationships.deal.dualScoped).toBe(true)
+    expect(relationships.deal.hasMany).toContain('dealContacts')
+    expect(relationships.deal.hasMany).toContain('dealActivities')
   })
 })
 

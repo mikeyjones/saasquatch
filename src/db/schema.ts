@@ -404,3 +404,168 @@ export const playbook = pgTable(
     categoryIdx: index('playbook_category_idx').on(table.organizationId, table.category),
   })
 )
+
+// ============================================================================
+// Sales CRM Tables
+// Pipelines, deals, and sales activities
+// ============================================================================
+
+/**
+ * Pipeline - Sales pipeline definitions
+ * Scoped to a tenant organization (customer company)
+ */
+export const pipeline = pgTable(
+  'pipeline',
+  {
+    id: text('id').primaryKey(),
+    // The tenant organization this pipeline belongs to
+    tenantOrganizationId: text('tenantOrganizationId')
+      .notNull()
+      .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
+    // Pipeline info
+    name: text('name').notNull(), // e.g., "Enterprise Pipeline", "SMB Pipeline"
+    description: text('description'),
+    // Default pipeline for the org
+    isDefault: boolean('isDefault').notNull().default(false),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    tenantOrgIdx: index('pipeline_tenant_org_idx').on(table.tenantOrganizationId),
+  })
+)
+
+/**
+ * Pipeline Stage - Stages within a pipeline
+ */
+export const pipelineStage = pgTable(
+  'pipeline_stage',
+  {
+    id: text('id').primaryKey(),
+    // The pipeline this stage belongs to
+    pipelineId: text('pipelineId')
+      .notNull()
+      .references(() => pipeline.id, { onDelete: 'cascade' }),
+    // Stage info
+    name: text('name').notNull(), // e.g., "Lead", "Meeting", "Negotiation"
+    order: integer('order').notNull(), // Display order
+    color: text('color').notNull().default('gray'), // Color code for UI
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    pipelineIdx: index('pipeline_stage_pipeline_idx').on(table.pipelineId),
+    orderIdx: index('pipeline_stage_order_idx').on(table.pipelineId, table.order),
+  })
+)
+
+/**
+ * Deal - Sales deals/opportunities
+ * Scoped to support staff organization but linked to tenant organization (customer)
+ */
+export const deal = pgTable(
+  'deal',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization managing this deal
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // The customer organization this deal is for
+    tenantOrganizationId: text('tenantOrganizationId')
+      .notNull()
+      .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
+    // Pipeline and stage
+    pipelineId: text('pipelineId')
+      .notNull()
+      .references(() => pipeline.id, { onDelete: 'cascade' }),
+    stageId: text('stageId')
+      .notNull()
+      .references(() => pipelineStage.id, { onDelete: 'cascade' }),
+    // Deal info
+    name: text('name').notNull(), // Deal name/description
+    value: integer('value').notNull().default(0), // Deal value in cents
+    // Assignment
+    assignedToUserId: text('assignedToUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    assignedToAI: boolean('assignedToAI').notNull().default(false),
+    // Linked records
+    linkedSubscriptionId: text('linkedSubscriptionId'),
+    linkedTrialId: text('linkedTrialId'),
+    // Scoring
+    manualScore: integer('manualScore'), // Manual deal score (1-100)
+    aiScore: integer('aiScore'), // AI predicted score (1-100)
+    // Additional data
+    badges: text('badges'), // JSON array of badges (e.g., ["Hot", "Enterprise"])
+    customFields: text('customFields'), // JSON object for custom fields
+    nextTask: text('nextTask'),
+    notes: text('notes'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('deal_organization_idx').on(table.organizationId),
+    tenantOrgIdx: index('deal_tenant_org_idx').on(table.tenantOrganizationId),
+    pipelineIdx: index('deal_pipeline_idx').on(table.pipelineId),
+    stageIdx: index('deal_stage_idx').on(table.stageId),
+    assignedIdx: index('deal_assigned_idx').on(table.assignedToUserId),
+  })
+)
+
+/**
+ * Deal Contact - Contacts associated with deals (many-to-many)
+ */
+export const dealContact = pgTable(
+  'deal_contact',
+  {
+    // The deal
+    dealId: text('dealId')
+      .notNull()
+      .references(() => deal.id, { onDelete: 'cascade' }),
+    // The tenant user (contact)
+    tenantUserId: text('tenantUserId')
+      .notNull()
+      .references(() => tenantUser.id, { onDelete: 'cascade' }),
+    // Role in the deal
+    role: text('role').notNull().default('contact'), // decision_maker, influencer, user, contact
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.dealId, table.tenantUserId] }),
+    dealIdx: index('deal_contact_deal_idx').on(table.dealId),
+    tenantUserIdx: index('deal_contact_tenant_user_idx').on(table.tenantUserId),
+  })
+)
+
+/**
+ * Deal Activity - Activity timeline for deals
+ */
+export const dealActivity = pgTable(
+  'deal_activity',
+  {
+    id: text('id').primaryKey(),
+    // The deal
+    dealId: text('dealId')
+      .notNull()
+      .references(() => deal.id, { onDelete: 'cascade' }),
+    // Activity info
+    activityType: text('activityType').notNull(), // stage_change, note_added, email_sent, task_completed, etc.
+    description: text('description').notNull(),
+    // Actor info
+    userId: text('userId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    aiAgentId: text('aiAgentId'), // If done by AI agent
+    // Additional data
+    metadata: text('metadata'), // JSON object for additional data (e.g., old stage, new stage)
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    dealIdx: index('deal_activity_deal_idx').on(table.dealId),
+    createdAtIdx: index('deal_activity_created_idx').on(table.dealId, table.createdAt),
+  })
+)

@@ -7,8 +7,9 @@ import { MoreHorizontal } from 'lucide-react'
 import { DealCard, type Deal } from './DealCard'
 
 export interface PipelineStage {
-  id: 'lead' | 'meeting' | 'negotiation' | 'closed_won'
+  id: string
   name: string
+  order: number
   color: string
   bgColor: string
   dotColor: string
@@ -26,13 +27,15 @@ export function PipelineColumn({ stage, deals, totalPotential }: PipelineColumnP
   })
 
   const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`
+    // Amount is in cents
+    const dollars = amount / 100
+    if (dollars >= 1000000) {
+      return `$${(dollars / 1000000).toFixed(1)}M`
     }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`
+    if (dollars >= 1000) {
+      return `$${(dollars / 1000).toFixed(0)}K`
     }
-    return `$${amount.toLocaleString()}`
+    return `$${dollars.toLocaleString()}`
   }
 
   return (
@@ -97,4 +100,3 @@ export function PipelineColumn({ stage, deals, totalPotential }: PipelineColumnP
     </div>
   )
 }
-

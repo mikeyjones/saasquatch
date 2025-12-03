@@ -158,6 +158,28 @@ interface PlaybookSeedData {
   actions?: Array<{ type: string; config: Record<string, unknown> }>
 }
 
+interface PipelineStageSeedData {
+  name: string
+  order: number
+  color: string
+}
+
+interface PipelineSeedData {
+  name: string
+  description: string
+  isDefault: boolean
+  stages: PipelineStageSeedData[]
+}
+
+interface DealSeedData {
+  name: string
+  value: number // in cents
+  stageName: string
+  assignedToEmail?: string
+  badges?: string[]
+  notes?: string
+}
+
 // ============================================================================
 // Seed Data
 // ============================================================================
@@ -903,6 +925,217 @@ const playbooksPerStaff: Record<string, PlaybookSeedData[]> = {
   ],
 }
 
+/**
+ * Sales Pipelines per tenant organization
+ * Key: tenant org slug
+ */
+const pipelinesPerTenantOrg: Record<string, PipelineSeedData[]> = {
+  'acme-corp': [
+    {
+      name: 'Enterprise Pipeline',
+      description: 'Main sales pipeline for enterprise deals',
+      isDefault: true,
+      stages: [
+        { name: 'Lead', order: 1, color: 'gray' },
+        { name: 'Meeting', order: 2, color: 'blue' },
+        { name: 'Negotiation', order: 3, color: 'amber' },
+        { name: 'Closed Won', order: 4, color: 'emerald' },
+      ],
+    },
+  ],
+  techflow: [
+    {
+      name: 'SMB Pipeline',
+      description: 'Pipeline for small and medium business deals',
+      isDefault: true,
+      stages: [
+        { name: 'Lead', order: 1, color: 'gray' },
+        { name: 'Qualified', order: 2, color: 'sky' },
+        { name: 'Demo', order: 3, color: 'blue' },
+        { name: 'Proposal', order: 4, color: 'amber' },
+        { name: 'Closed Won', order: 5, color: 'emerald' },
+        { name: 'Closed Lost', order: 6, color: 'rose' },
+      ],
+    },
+  ],
+  'startup-inc': [
+    {
+      name: 'Startup Pipeline',
+      description: 'Fast-track pipeline for startup accounts',
+      isDefault: true,
+      stages: [
+        { name: 'Trial', order: 1, color: 'violet' },
+        { name: 'Evaluation', order: 2, color: 'blue' },
+        { name: 'Conversion', order: 3, color: 'amber' },
+        { name: 'Active', order: 4, color: 'emerald' },
+      ],
+    },
+  ],
+  dataminds: [
+    {
+      name: 'API Partners Pipeline',
+      description: 'Pipeline for API integration partners',
+      isDefault: true,
+      stages: [
+        { name: 'Discovery', order: 1, color: 'gray' },
+        { name: 'Technical Review', order: 2, color: 'sky' },
+        { name: 'Integration', order: 3, color: 'blue' },
+        { name: 'Contract', order: 4, color: 'amber' },
+        { name: 'Live', order: 5, color: 'emerald' },
+      ],
+    },
+  ],
+  'global-logistics': [
+    {
+      name: 'Enterprise Pipeline',
+      description: 'Enterprise logistics deals',
+      isDefault: true,
+      stages: [
+        { name: 'Lead', order: 1, color: 'gray' },
+        { name: 'Meeting', order: 2, color: 'blue' },
+        { name: 'Negotiation', order: 3, color: 'amber' },
+        { name: 'Closed Won', order: 4, color: 'emerald' },
+      ],
+    },
+  ],
+  megacorp: [
+    {
+      name: 'Corporate Pipeline',
+      description: 'High-value corporate deals',
+      isDefault: true,
+      stages: [
+        { name: 'Prospect', order: 1, color: 'gray' },
+        { name: 'Discovery', order: 2, color: 'sky' },
+        { name: 'Evaluation', order: 3, color: 'blue' },
+        { name: 'Negotiation', order: 4, color: 'amber' },
+        { name: 'Closed', order: 5, color: 'emerald' },
+      ],
+    },
+  ],
+  smallbiz: [
+    {
+      name: 'Small Business Pipeline',
+      description: 'Quick conversion pipeline for small businesses',
+      isDefault: true,
+      stages: [
+        { name: 'Lead', order: 1, color: 'gray' },
+        { name: 'Demo', order: 2, color: 'blue' },
+        { name: 'Closed', order: 3, color: 'emerald' },
+      ],
+    },
+  ],
+}
+
+/**
+ * Sample deals per tenant organization
+ * Key: tenant org slug
+ */
+const dealsPerTenantOrg: Record<string, DealSeedData[]> = {
+  'acme-corp': [
+    {
+      name: 'Enterprise License - 500 Seats',
+      value: 12000000, // $120,000
+      stageName: 'Negotiation',
+      assignedToEmail: 'alice@acme.test',
+      badges: ['Hot'],
+      notes: 'Large enterprise deal with potential for multi-year contract',
+    },
+    {
+      name: 'Annual Renewal + Expansion',
+      value: 8500000, // $85,000
+      stageName: 'Meeting',
+      assignedToEmail: 'bob@acme.test',
+    },
+  ],
+  techflow: [
+    {
+      name: 'Pro Plan Upgrade',
+      value: 2500000, // $25,000
+      stageName: 'Demo',
+      assignedToEmail: 'carol@acme.test',
+    },
+    {
+      name: 'New Account - Marketing Team',
+      value: 1500000, // $15,000
+      stageName: 'Lead',
+      assignedToEmail: 'alice@acme.test',
+    },
+    {
+      name: 'Department Expansion',
+      value: 4500000, // $45,000
+      stageName: 'Proposal',
+      assignedToEmail: 'bob@acme.test',
+      badges: ['Enterprise'],
+    },
+  ],
+  'startup-inc': [
+    {
+      name: 'Starter Plan - Annual',
+      value: 500000, // $5,000
+      stageName: 'Trial',
+      assignedToEmail: 'carol@acme.test',
+    },
+    {
+      name: 'Trial Extension Request',
+      value: 800000, // $8,000
+      stageName: 'Evaluation',
+      assignedToEmail: 'alice@acme.test',
+    },
+  ],
+  dataminds: [
+    {
+      name: 'API Access Tier 3',
+      value: 4500000, // $45,000
+      stageName: 'Integration',
+      assignedToEmail: 'bob@acme.test',
+    },
+    {
+      name: 'Enterprise API License',
+      value: 15000000, // $150,000
+      stageName: 'Contract',
+      assignedToEmail: 'alice@acme.test',
+      badges: ['Hot', 'Enterprise'],
+    },
+  ],
+  'global-logistics': [
+    {
+      name: 'Custom Integration',
+      value: 8500000, // $85,000
+      stageName: 'Closed Won',
+      assignedToEmail: 'alice@acme.test',
+    },
+    {
+      name: 'Fleet Management Add-on',
+      value: 3500000, // $35,000
+      stageName: 'Meeting',
+      assignedToEmail: 'carol@acme.test',
+    },
+  ],
+  megacorp: [
+    {
+      name: 'Global Rollout Phase 1',
+      value: 50000000, // $500,000
+      stageName: 'Evaluation',
+      assignedToEmail: 'charlie@globex.test',
+      badges: ['Strategic'],
+    },
+    {
+      name: 'Regional Expansion - APAC',
+      value: 25000000, // $250,000
+      stageName: 'Discovery',
+      assignedToEmail: 'diana@globex.test',
+    },
+  ],
+  smallbiz: [
+    {
+      name: 'Retail POS Integration',
+      value: 120000, // $1,200
+      stageName: 'Demo',
+      assignedToEmail: 'charlie@globex.test',
+    },
+  ],
+}
+
 const tenantOrgsPerStaff: Record<string, TenantOrgData[]> = {
   // Tenant customers for Acme Corporation support staff
   acme: [
@@ -1467,6 +1700,144 @@ async function ensurePlaybook(
   logSuccess(`Playbook created: ${typeLabel} ${playbookData.name} (${playbookData.status})`)
 }
 
+/**
+ * Create a pipeline with its stages
+ */
+async function ensurePipeline(
+  db: ReturnType<typeof drizzle>,
+  tenantOrgId: string,
+  pipelineData: PipelineSeedData
+): Promise<{ pipelineId: string; stageMap: Map<string, string> }> {
+  // Check if pipeline already exists
+  const existing = await db.query.pipeline.findFirst({
+    where: (p, { and, eq: eqFn }) =>
+      and(
+        eqFn(p.tenantOrganizationId, tenantOrgId),
+        eqFn(p.name, pipelineData.name)
+      ),
+  })
+
+  const stageMap = new Map<string, string>()
+
+  if (existing) {
+    logInfo(`Pipeline already exists: ${pipelineData.name}`)
+    // Get existing stages
+    const existingStages = await db.query.pipelineStage.findMany({
+      where: eq(schema.pipelineStage.pipelineId, existing.id),
+    })
+    for (const stage of existingStages) {
+      stageMap.set(stage.name, stage.id)
+    }
+    return { pipelineId: existing.id, stageMap }
+  }
+
+  const pipelineId = generateId()
+  const now = new Date()
+
+  await db.insert(schema.pipeline).values({
+    id: pipelineId,
+    tenantOrganizationId: tenantOrgId,
+    name: pipelineData.name,
+    description: pipelineData.description,
+    isDefault: pipelineData.isDefault,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  // Create stages
+  for (const stage of pipelineData.stages) {
+    const stageId = generateId()
+    await db.insert(schema.pipelineStage).values({
+      id: stageId,
+      pipelineId,
+      name: stage.name,
+      order: stage.order,
+      color: stage.color,
+      createdAt: now,
+      updatedAt: now,
+    })
+    stageMap.set(stage.name, stageId)
+  }
+
+  logSuccess(`Pipeline created: ${pipelineData.name} with ${pipelineData.stages.length} stages`)
+  return { pipelineId, stageMap }
+}
+
+/**
+ * Create a deal
+ */
+async function ensureDeal(
+  db: ReturnType<typeof drizzle>,
+  staffOrgId: string,
+  tenantOrgId: string,
+  pipelineId: string,
+  stageMap: Map<string, string>,
+  dealData: DealSeedData,
+  supportStaffMap: Map<string, { id: string; name: string }>
+): Promise<void> {
+  // Check if deal already exists
+  const existing = await db.query.deal.findFirst({
+    where: (d, { and, eq: eqFn }) =>
+      and(
+        eqFn(d.organizationId, staffOrgId),
+        eqFn(d.name, dealData.name)
+      ),
+  })
+
+  if (existing) {
+    logInfo(`Deal already exists: ${dealData.name}`)
+    return
+  }
+
+  const stageId = stageMap.get(dealData.stageName)
+  if (!stageId) {
+    console.error(`   ⚠ Stage not found: ${dealData.stageName}`)
+    return
+  }
+
+  const dealId = generateId()
+  const now = new Date()
+
+  // Get assigned user ID if provided
+  let assignedToUserId: string | null = null
+  if (dealData.assignedToEmail) {
+    const assignedUser = supportStaffMap.get(dealData.assignedToEmail)
+    if (assignedUser) {
+      assignedToUserId = assignedUser.id
+    }
+  }
+
+  await db.insert(schema.deal).values({
+    id: dealId,
+    organizationId: staffOrgId,
+    tenantOrganizationId: tenantOrgId,
+    pipelineId,
+    stageId,
+    name: dealData.name,
+    value: dealData.value,
+    assignedToUserId,
+    assignedToAI: false,
+    badges: dealData.badges ? JSON.stringify(dealData.badges) : null,
+    notes: dealData.notes,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  // Create initial activity
+  await db.insert(schema.dealActivity).values({
+    id: generateId(),
+    dealId,
+    activityType: 'deal_created',
+    description: `Deal created: ${dealData.name}`,
+    userId: assignedToUserId,
+    metadata: JSON.stringify({ value: dealData.value, stage: dealData.stageName }),
+    createdAt: now,
+  })
+
+  const formattedValue = `$${(dealData.value / 100).toLocaleString()}`
+  logSuccess(`Deal created: ${dealData.name} (${formattedValue}, ${dealData.stageName})`)
+}
+
 // ============================================================================
 // Main Seed Function
 // ============================================================================
@@ -1485,6 +1856,8 @@ async function seed(): Promise<void> {
   try {
     // Store org IDs for later use
     const staffOrgIds: Record<string, string> = {}
+    // Store tenant org IDs (slug -> { id, staffOrgId })
+    const tenantOrgIds: Record<string, { id: string; staffOrgId: string }> = {}
     // Map support staff emails to their IDs and names
     const supportStaffMap = new Map<string, { id: string; name: string }>()
     // Map tenant user keys (orgSlug:email) to their IDs and info
@@ -1532,6 +1905,7 @@ async function seed(): Promise<void> {
         console.log(`   ${tenantOrg.description}`)
 
         const tenantOrgId = await ensureTenantOrganization(db, staffOrgId, tenantOrg)
+        tenantOrgIds[tenantOrg.slug] = { id: tenantOrgId, staffOrgId }
 
         for (const user of tenantOrg.users) {
           const userId = await ensureTenantUser(db, tenantOrgId, user)
@@ -1620,6 +1994,41 @@ async function seed(): Promise<void> {
     }
 
     // ========================================================================
+    // Seed Sales Pipelines and Deals
+    // ========================================================================
+    console.log('\n\n📋 SALES PIPELINES & DEALS')
+    console.log('─'.repeat(60))
+
+    for (const tenantOrgSlug of Object.keys(pipelinesPerTenantOrg)) {
+      const tenantOrgInfo = tenantOrgIds[tenantOrgSlug]
+      if (!tenantOrgInfo) {
+        console.error(`   ⚠ Tenant org not found for pipelines: ${tenantOrgSlug}`)
+        continue
+      }
+
+      console.log(`\n   For tenant org: ${tenantOrgSlug}`)
+      console.log('   ' + '─'.repeat(40))
+
+      for (const pipelineData of pipelinesPerTenantOrg[tenantOrgSlug]) {
+        const { pipelineId, stageMap } = await ensurePipeline(db, tenantOrgInfo.id, pipelineData)
+
+        // Seed deals for this pipeline
+        const deals = dealsPerTenantOrg[tenantOrgSlug] || []
+        for (const dealData of deals) {
+          await ensureDeal(
+            db,
+            tenantOrgInfo.staffOrgId,
+            tenantOrgInfo.id,
+            pipelineId,
+            stageMap,
+            dealData,
+            supportStaffMap
+          )
+        }
+      }
+    }
+
+    // ========================================================================
     // Summary
     // ========================================================================
     console.log('\n\n' + '═'.repeat(60))
@@ -1672,6 +2081,21 @@ async function seed(): Promise<void> {
       for (const playbookItem of playbooksPerStaff[staffOrgSlug]) {
         const typeIcon = playbookItem.type === 'manual' ? '📋' : '⚡'
         console.log(`   ${typeIcon} ${playbookItem.name} (${playbookItem.type}, ${playbookItem.status})`)
+      }
+    }
+
+    console.log('\n\n📋 SALES PIPELINES & DEALS')
+    console.log('─'.repeat(60))
+    for (const tenantOrgSlug of Object.keys(pipelinesPerTenantOrg)) {
+      console.log(`\n   Tenant Org: ${tenantOrgSlug}`)
+      for (const pipelineData of pipelinesPerTenantOrg[tenantOrgSlug]) {
+        console.log(`   🔀 ${pipelineData.name}`)
+        console.log(`      Stages: ${pipelineData.stages.map(s => s.name).join(' → ')}`)
+        const deals = dealsPerTenantOrg[tenantOrgSlug] || []
+        for (const deal of deals) {
+          const formattedValue = `$${(deal.value / 100).toLocaleString()}`
+          console.log(`      💰 ${deal.name} (${formattedValue}, ${deal.stageName})`)
+        }
       }
     }
 
