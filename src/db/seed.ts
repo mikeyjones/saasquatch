@@ -133,6 +133,31 @@ interface TicketSeedData {
   hasAI?: boolean
 }
 
+interface KnowledgeArticleSeedData {
+  title: string
+  content: string
+  category: string
+  tags: string[]
+  status: 'draft' | 'published' | 'archived'
+}
+
+interface PlaybookSeedData {
+  name: string
+  description: string
+  type: 'manual' | 'automated'
+  category: string
+  tags: string[]
+  status: 'draft' | 'active' | 'inactive'
+  steps?: Array<{
+    order: number
+    title: string
+    description: string
+    action?: string
+  }>
+  triggers?: Array<{ type: string; condition: string }>
+  actions?: Array<{ type: string; config: Record<string, unknown> }>
+}
+
 // ============================================================================
 // Seed Data
 // ============================================================================
@@ -371,6 +396,507 @@ I've reported this to our engineering team as a bug. They're investigating and I
 
 In the meantime, you can export to CSV as a workaround.`,
           hoursAgo: 10,
+        },
+      ],
+    },
+  ],
+}
+
+/**
+ * Sample Knowledge Articles for testing
+ * Key: support staff org slug
+ */
+const knowledgeArticlesPerStaff: Record<string, KnowledgeArticleSeedData[]> = {
+  acme: [
+    {
+      title: 'Setting up Okta SSO',
+      content: `# Setting up Okta SSO Integration
+
+This guide walks you through configuring Okta Single Sign-On with your account.
+
+## Prerequisites
+- Okta administrator access
+- Professional or Enterprise subscription plan
+
+## Step 1: Create SAML Application in Okta
+1. Log in to your Okta Admin Console
+2. Navigate to Applications > Applications
+3. Click "Create App Integration"
+4. Select SAML 2.0 and click Next
+
+## Step 2: Configure SAML Settings
+- **Single Sign-On URL**: \`https://app.example.com/sso/saml\`
+- **Audience URI**: \`https://app.example.com\`
+- **Name ID format**: EmailAddress
+
+## Step 3: Download Metadata
+Download the Identity Provider metadata XML file from Okta.
+
+## Step 4: Configure in Our App
+1. Go to Settings > Security > SSO Configuration
+2. Upload the metadata XML file
+3. Test the connection
+
+## Troubleshooting
+- **500 Error**: Check that the metadata URL is accessible
+- **Invalid Certificate**: Ensure certificates haven't expired
+- **User Not Found**: Verify email matching settings
+
+For further assistance, contact support.`,
+      category: 'AUTHENTICATION',
+      tags: ['sso', 'okta', 'saml', 'security'],
+      status: 'published',
+    },
+    {
+      title: 'Understanding Your Invoice',
+      content: `# Understanding Your Invoice
+
+This article explains each section of your monthly invoice.
+
+## Invoice Sections
+
+### Header
+- Invoice number and date
+- Billing period covered
+- Your organization details
+
+### Subscription Details
+- Current plan name
+- Per-user pricing
+- Number of active users
+
+### Usage Breakdown
+- Base subscription cost
+- Additional users (if over plan limit)
+- Add-on features
+- Overages (API calls, storage, etc.)
+
+### Tax Information
+- Applicable taxes based on your location
+- Tax ID if provided
+
+## Common Questions
+
+**Q: Why did my bill increase?**
+A: Common reasons include:
+- Added new team members
+- Upgraded plan
+- Exceeded usage limits
+
+**Q: How do I get a receipt?**
+A: Download PDF invoices from Settings > Billing > Invoice History
+
+**Q: Can I change my billing date?**
+A: Contact support to adjust your billing cycle.`,
+      category: 'BILLING',
+      tags: ['billing', 'invoice', 'payment'],
+      status: 'published',
+    },
+    {
+      title: 'API Rate Limits Explained',
+      content: `# API Rate Limits
+
+Understanding and working within our API rate limits.
+
+## Default Limits
+
+| Plan | Requests/Minute | Requests/Day |
+|------|-----------------|--------------|
+| Starter | 100 | 10,000 |
+| Professional | 1,000 | 100,000 |
+| Enterprise | 10,000 | 1,000,000 |
+
+## Rate Limit Headers
+Every API response includes:
+- \`X-RateLimit-Limit\`: Your limit
+- \`X-RateLimit-Remaining\`: Requests left
+- \`X-RateLimit-Reset\`: When limit resets (Unix timestamp)
+
+## Handling 429 Errors
+When you exceed limits, you'll receive a 429 response. Implement exponential backoff:
+
+\`\`\`javascript
+async function fetchWithRetry(url, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    const response = await fetch(url);
+    if (response.status !== 429) return response;
+    const delay = Math.pow(2, i) * 1000;
+    await new Promise(r => setTimeout(r, delay));
+  }
+  throw new Error('Rate limit exceeded');
+}
+\`\`\`
+
+## Requesting Higher Limits
+Enterprise customers can request limit increases by contacting support.`,
+      category: 'DEVELOPER',
+      tags: ['api', 'rate-limits', 'developer'],
+      status: 'draft',
+    },
+    {
+      title: 'Managing Team Members',
+      content: `# Managing Team Members
+
+Learn how to add, remove, and manage team member access.
+
+## Adding Team Members
+1. Go to Settings > Team
+2. Click "Invite Member"
+3. Enter email address
+4. Select role (Admin, Member, Viewer)
+5. Click Send Invitation
+
+## Roles and Permissions
+
+### Admin
+- Full access to all features
+- Can manage billing
+- Can invite/remove members
+
+### Member
+- Access to main features
+- Cannot manage billing
+- Cannot remove other members
+
+### Viewer
+- Read-only access
+- Cannot modify data
+
+## Removing Members
+1. Go to Settings > Team
+2. Find the member
+3. Click the ⋯ menu
+4. Select "Remove from team"
+
+Note: Removing a member doesn't delete their data.`,
+      category: 'AUTHENTICATION',
+      tags: ['team', 'members', 'roles', 'permissions'],
+      status: 'published',
+    },
+    {
+      title: 'Webhook Configuration Guide',
+      content: `# Webhook Configuration
+
+Set up webhooks to receive real-time notifications.
+
+## Supported Events
+- \`ticket.created\`
+- \`ticket.updated\`
+- \`ticket.closed\`
+- \`user.created\`
+- \`payment.received\`
+
+## Setting Up Webhooks
+1. Navigate to Settings > Integrations > Webhooks
+2. Click "Add Endpoint"
+3. Enter your endpoint URL
+4. Select events to subscribe to
+5. Save configuration
+
+## Webhook Payload
+\`\`\`json
+{
+  "event": "ticket.created",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "data": {
+    "id": "tk_123",
+    "title": "Help needed",
+    "status": "open"
+  }
+}
+\`\`\`
+
+## Verifying Signatures
+We sign webhooks with HMAC-SHA256. Verify using your webhook secret.`,
+      category: 'DEVELOPER',
+      tags: ['webhooks', 'integrations', 'api', 'developer'],
+      status: 'published',
+    },
+  ],
+  globex: [
+    {
+      title: 'Getting Started Guide',
+      content: `# Getting Started
+
+Welcome! This guide will help you set up your account.
+
+## First Steps
+1. Complete your profile
+2. Invite your team
+3. Configure your first project
+
+## Dashboard Overview
+The dashboard shows:
+- Active tickets
+- Team activity
+- Key metrics
+
+## Need Help?
+Contact support or check our other articles.`,
+      category: 'GENERAL',
+      tags: ['getting-started', 'onboarding'],
+      status: 'published',
+    },
+    {
+      title: 'Export and Reporting Features',
+      content: `# Export and Reporting
+
+Learn how to export data and generate reports.
+
+## Available Exports
+- CSV export
+- PDF reports
+- Excel spreadsheets
+
+## Generating Reports
+1. Go to Reports section
+2. Select report type
+3. Choose date range
+4. Click Generate
+
+## Scheduled Reports
+Set up automatic report delivery via email.`,
+      category: 'GENERAL',
+      tags: ['export', 'reports', 'data'],
+      status: 'published',
+    },
+  ],
+}
+
+/**
+ * Sample Playbooks for testing
+ * Key: support staff org slug
+ */
+const playbooksPerStaff: Record<string, PlaybookSeedData[]> = {
+  acme: [
+    {
+      name: 'SSO Troubleshooting Guide',
+      description: 'Step-by-step guide for diagnosing and resolving SSO issues',
+      type: 'manual',
+      category: 'AUTHENTICATION',
+      tags: ['sso', 'troubleshooting', 'authentication'],
+      status: 'active',
+      steps: [
+        {
+          order: 1,
+          title: 'Verify SSO Configuration',
+          description: 'Check that SSO is properly configured in Settings > Security > SSO',
+          action: 'Navigate to settings and verify configuration',
+        },
+        {
+          order: 2,
+          title: 'Check Error Logs',
+          description: 'Review authentication error logs for specific error codes',
+          action: 'Go to Settings > Logs > Authentication',
+        },
+        {
+          order: 3,
+          title: 'Verify IdP Metadata',
+          description: 'Ensure the Identity Provider metadata is up to date and certificates are valid',
+          action: 'Check certificate expiration dates',
+        },
+        {
+          order: 4,
+          title: 'Test Connection',
+          description: 'Use the SSO test tool to verify the connection',
+          action: 'Click "Test SSO Connection" button',
+        },
+        {
+          order: 5,
+          title: 'Escalate if Needed',
+          description: 'If issues persist, escalate to engineering team',
+          action: 'Create engineering ticket',
+        },
+      ],
+    },
+    {
+      name: 'New Admin Onboarding',
+      description: 'Checklist for helping new administrators get set up',
+      type: 'manual',
+      category: 'ONBOARDING',
+      tags: ['onboarding', 'admin', 'setup'],
+      status: 'active',
+      steps: [
+        {
+          order: 1,
+          title: 'Welcome and Verify Access',
+          description: 'Confirm the user has admin access and can log in',
+        },
+        {
+          order: 2,
+          title: 'Tour the Dashboard',
+          description: 'Walk through the main dashboard features',
+        },
+        {
+          order: 3,
+          title: 'Team Management',
+          description: 'Show how to invite and manage team members',
+        },
+        {
+          order: 4,
+          title: 'Billing Overview',
+          description: 'Explain billing section and invoice history',
+        },
+        {
+          order: 5,
+          title: 'Documentation Links',
+          description: 'Share links to relevant documentation and guides',
+        },
+      ],
+    },
+    {
+      name: 'Billing Issue Resolution',
+      description: 'Process for handling billing disputes and refund requests',
+      type: 'manual',
+      category: 'BILLING',
+      tags: ['billing', 'refund', 'dispute'],
+      status: 'active',
+      steps: [
+        {
+          order: 1,
+          title: 'Review Account History',
+          description: 'Check billing history and recent invoices',
+        },
+        {
+          order: 2,
+          title: 'Identify the Issue',
+          description: 'Determine if it is overcharge, duplicate payment, or feature not working',
+        },
+        {
+          order: 3,
+          title: 'Calculate Adjustment',
+          description: 'Determine appropriate credit or refund amount',
+        },
+        {
+          order: 4,
+          title: 'Process Adjustment',
+          description: 'Apply credit or initiate refund through billing system',
+        },
+        {
+          order: 5,
+          title: 'Confirm with Customer',
+          description: 'Send confirmation email with adjustment details',
+        },
+      ],
+    },
+    {
+      name: 'Auto-Tag New Tickets',
+      description: 'Automatically categorize and tag incoming tickets based on content',
+      type: 'automated',
+      category: 'AUTOMATION',
+      tags: ['automation', 'tickets', 'tagging'],
+      status: 'active',
+      triggers: [
+        { type: 'event', condition: 'ticket.created' },
+      ],
+      actions: [
+        {
+          type: 'analyze_content',
+          config: { fields: ['title', 'message'] },
+        },
+        {
+          type: 'add_tags',
+          config: {
+            rules: [
+              { keyword: 'sso', tag: 'authentication' },
+              { keyword: 'login', tag: 'authentication' },
+              { keyword: 'invoice', tag: 'billing' },
+              { keyword: 'payment', tag: 'billing' },
+              { keyword: 'api', tag: 'developer' },
+            ],
+          },
+        },
+        {
+          type: 'set_priority',
+          config: {
+            rules: [
+              { keyword: 'urgent', priority: 'high' },
+              { keyword: 'asap', priority: 'high' },
+              { keyword: 'production', priority: 'high' },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      name: 'Auto-Reply with KB Suggestions',
+      description: 'Suggest relevant knowledge base articles based on ticket content',
+      type: 'automated',
+      category: 'AUTOMATION',
+      tags: ['automation', 'knowledge-base', 'ai'],
+      status: 'draft',
+      triggers: [
+        { type: 'event', condition: 'ticket.created' },
+        { type: 'condition', condition: 'ticket.hasNoAgentReply' },
+      ],
+      actions: [
+        {
+          type: 'search_knowledge_base',
+          config: { searchFields: ['title', 'message'], maxResults: 3 },
+        },
+        {
+          type: 'send_auto_reply',
+          config: {
+            template: 'kb_suggestions',
+            onlyIfResults: true,
+          },
+        },
+      ],
+    },
+  ],
+  globex: [
+    {
+      name: 'Password Reset Procedure',
+      description: 'Guide for assisting users with password reset',
+      type: 'manual',
+      category: 'AUTHENTICATION',
+      tags: ['password', 'reset', 'security'],
+      status: 'active',
+      steps: [
+        {
+          order: 1,
+          title: 'Verify User Identity',
+          description: 'Confirm the user identity using security questions or email verification',
+        },
+        {
+          order: 2,
+          title: 'Initiate Reset',
+          description: 'Send password reset link to registered email',
+        },
+        {
+          order: 3,
+          title: 'Confirm Reset',
+          description: 'Verify user has successfully reset their password',
+        },
+      ],
+    },
+    {
+      name: 'Escalation Workflow',
+      description: 'Process for escalating tickets to senior support or engineering',
+      type: 'manual',
+      category: 'GENERAL',
+      tags: ['escalation', 'workflow'],
+      status: 'active',
+      steps: [
+        {
+          order: 1,
+          title: 'Document Issue Thoroughly',
+          description: 'Ensure all troubleshooting steps are documented',
+        },
+        {
+          order: 2,
+          title: 'Identify Escalation Path',
+          description: 'Determine if this goes to senior support, engineering, or management',
+        },
+        {
+          order: 3,
+          title: 'Create Escalation Note',
+          description: 'Write summary of issue and steps taken',
+        },
+        {
+          order: 4,
+          title: 'Assign to Appropriate Team',
+          description: 'Transfer ticket with all context',
         },
       ],
     },
@@ -832,6 +1358,115 @@ async function ensureTicket(
   logSuccess(`Ticket #${ticketNumber}: ${ticketData.title} (${ticketData.status})`)
 }
 
+/**
+ * Generate a URL-friendly slug from a title
+ */
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .substring(0, 100)
+}
+
+/**
+ * Create a knowledge article
+ */
+async function ensureKnowledgeArticle(
+  db: ReturnType<typeof drizzle>,
+  staffOrgId: string,
+  articleData: KnowledgeArticleSeedData,
+  createdByUserId: string
+): Promise<void> {
+  const slug = generateSlug(articleData.title)
+
+  // Check if article already exists
+  const existing = await db.query.knowledgeArticle.findFirst({
+    where: (ka, { and, eq: eqFn }) =>
+      and(
+        eqFn(ka.organizationId, staffOrgId),
+        eqFn(ka.slug, slug)
+      ),
+  })
+
+  if (existing) {
+    logInfo(`Knowledge article already exists: ${articleData.title}`)
+    return
+  }
+
+  const id = generateId()
+  const now = new Date()
+
+  await db.insert(schema.knowledgeArticle).values({
+    id,
+    organizationId: staffOrgId,
+    title: articleData.title,
+    content: articleData.content,
+    slug,
+    category: articleData.category,
+    tags: JSON.stringify(articleData.tags),
+    status: articleData.status,
+    views: Math.floor(Math.random() * 1000), // Random view count for demo
+    publishedAt: articleData.status === 'published' ? now : null,
+    createdByUserId,
+    updatedByUserId: createdByUserId,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  logSuccess(`Knowledge article created: ${articleData.title} (${articleData.status})`)
+}
+
+/**
+ * Create a playbook
+ */
+async function ensurePlaybook(
+  db: ReturnType<typeof drizzle>,
+  staffOrgId: string,
+  playbookData: PlaybookSeedData,
+  createdByUserId: string
+): Promise<void> {
+  // Check if playbook already exists
+  const existing = await db.query.playbook.findFirst({
+    where: (pb, { and, eq: eqFn }) =>
+      and(
+        eqFn(pb.organizationId, staffOrgId),
+        eqFn(pb.name, playbookData.name)
+      ),
+  })
+
+  if (existing) {
+    logInfo(`Playbook already exists: ${playbookData.name}`)
+    return
+  }
+
+  const id = generateId()
+  const now = new Date()
+
+  await db.insert(schema.playbook).values({
+    id,
+    organizationId: staffOrgId,
+    name: playbookData.name,
+    description: playbookData.description,
+    type: playbookData.type,
+    category: playbookData.category,
+    tags: JSON.stringify(playbookData.tags),
+    status: playbookData.status,
+    steps: playbookData.steps ? JSON.stringify(playbookData.steps) : null,
+    triggers: playbookData.triggers ? JSON.stringify(playbookData.triggers) : null,
+    actions: playbookData.actions ? JSON.stringify(playbookData.actions) : null,
+    createdByUserId,
+    updatedByUserId: createdByUserId,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  const typeLabel = playbookData.type === 'manual' ? '📋' : '⚡'
+  logSuccess(`Playbook created: ${typeLabel} ${playbookData.name} (${playbookData.status})`)
+}
+
 // ============================================================================
 // Main Seed Function
 // ============================================================================
@@ -931,6 +1566,60 @@ async function seed(): Promise<void> {
     }
 
     // ========================================================================
+    // Seed Knowledge Articles
+    // ========================================================================
+    console.log('\n\n📋 KNOWLEDGE ARTICLES')
+    console.log('─'.repeat(60))
+
+    for (const staffOrgSlug of Object.keys(knowledgeArticlesPerStaff)) {
+      const staffOrgId = staffOrgIds[staffOrgSlug]
+      if (!staffOrgId) {
+        console.error(`   ⚠ Staff org not found for articles: ${staffOrgSlug}`)
+        continue
+      }
+
+      // Get first user of the org for createdBy
+      const orgUsers = supportStaffOrgs.find(o => o.slug === staffOrgSlug)?.users || []
+      const firstUserEmail = orgUsers[0]?.email
+      const creatorInfo = firstUserEmail ? supportStaffMap.get(firstUserEmail) : null
+      const creatorId = creatorInfo?.id || ''
+
+      console.log(`\n   For support staff: ${staffOrgSlug}`)
+      console.log('   ' + '─'.repeat(40))
+
+      for (const article of knowledgeArticlesPerStaff[staffOrgSlug]) {
+        await ensureKnowledgeArticle(db, staffOrgId, article, creatorId)
+      }
+    }
+
+    // ========================================================================
+    // Seed Playbooks
+    // ========================================================================
+    console.log('\n\n📋 PLAYBOOKS')
+    console.log('─'.repeat(60))
+
+    for (const staffOrgSlug of Object.keys(playbooksPerStaff)) {
+      const staffOrgId = staffOrgIds[staffOrgSlug]
+      if (!staffOrgId) {
+        console.error(`   ⚠ Staff org not found for playbooks: ${staffOrgSlug}`)
+        continue
+      }
+
+      // Get first user of the org for createdBy
+      const orgUsers = supportStaffOrgs.find(o => o.slug === staffOrgSlug)?.users || []
+      const firstUserEmail = orgUsers[0]?.email
+      const creatorInfo = firstUserEmail ? supportStaffMap.get(firstUserEmail) : null
+      const creatorId = creatorInfo?.id || ''
+
+      console.log(`\n   For support staff: ${staffOrgSlug}`)
+      console.log('   ' + '─'.repeat(40))
+
+      for (const playbookItem of playbooksPerStaff[staffOrgSlug]) {
+        await ensurePlaybook(db, staffOrgId, playbookItem, creatorId)
+      }
+    }
+
+    // ========================================================================
     // Summary
     // ========================================================================
     console.log('\n\n' + '═'.repeat(60))
@@ -963,6 +1652,26 @@ async function seed(): Promise<void> {
       for (const ticket of ticketsPerStaff[staffOrgSlug]) {
         const statusIcon = ticket.status === 'closed' ? '✓' : ticket.status === 'open' ? '○' : '◐'
         console.log(`   ${statusIcon} ${ticket.title} (${ticket.priority}, ${ticket.status})`)
+      }
+    }
+
+    console.log('\n\n📋 KNOWLEDGE ARTICLES')
+    console.log('─'.repeat(60))
+    for (const staffOrgSlug of Object.keys(knowledgeArticlesPerStaff)) {
+      console.log(`\n   Support Staff: ${staffOrgSlug}`)
+      for (const article of knowledgeArticlesPerStaff[staffOrgSlug]) {
+        const statusIcon = article.status === 'published' ? '✓' : '○'
+        console.log(`   ${statusIcon} ${article.title} (${article.category}, ${article.status})`)
+      }
+    }
+
+    console.log('\n\n📋 PLAYBOOKS')
+    console.log('─'.repeat(60))
+    for (const staffOrgSlug of Object.keys(playbooksPerStaff)) {
+      console.log(`\n   Support Staff: ${staffOrgSlug}`)
+      for (const playbookItem of playbooksPerStaff[staffOrgSlug]) {
+        const typeIcon = playbookItem.type === 'manual' ? '📋' : '⚡'
+        console.log(`   ${typeIcon} ${playbookItem.name} (${playbookItem.type}, ${playbookItem.status})`)
       }
     }
 

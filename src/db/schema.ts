@@ -313,3 +313,94 @@ export const ticketAiTriage = pgTable(
     ticketIdx: index('ticket_ai_triage_ticket_idx').on(table.ticketId),
   })
 )
+
+// ============================================================================
+// Knowledge Base Tables
+// Help articles and playbooks for support staff and AI agents
+// ============================================================================
+
+/**
+ * Knowledge Article - Help center articles for self-service support
+ * Scoped to a support staff organization
+ */
+export const knowledgeArticle = pgTable(
+  'knowledge_article',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this article belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Article content
+    title: text('title').notNull(),
+    content: text('content'), // Article body/content (markdown or HTML)
+    slug: text('slug').notNull(), // URL-friendly identifier
+    // Categorization
+    category: text('category'), // AUTHENTICATION, BILLING, DEVELOPER, etc.
+    tags: text('tags'), // JSON array of tags
+    // Status workflow
+    status: text('status').notNull().default('draft'), // draft, published, archived
+    // Analytics
+    views: integer('views').notNull().default(0),
+    // Publishing info
+    publishedAt: timestamp('publishedAt'),
+    // Authorship
+    createdByUserId: text('createdByUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    updatedByUserId: text('updatedByUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('knowledge_article_organization_idx').on(table.organizationId),
+    statusIdx: index('knowledge_article_status_idx').on(table.organizationId, table.status),
+    categoryIdx: index('knowledge_article_category_idx').on(table.organizationId, table.category),
+    slugIdx: index('knowledge_article_slug_idx').on(table.organizationId, table.slug),
+  })
+)
+
+/**
+ * Playbook - Guided workflows for support agents (manual or automated)
+ * Scoped to a support staff organization
+ */
+export const playbook = pgTable(
+  'playbook',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this playbook belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Playbook info
+    name: text('name').notNull(),
+    description: text('description'), // What the playbook does
+    // Type determines how the playbook is used
+    type: text('type').notNull().default('manual'), // manual, automated
+    // For manual playbooks: step-by-step guide
+    steps: text('steps'), // JSON array of step objects: { order, title, description, action? }
+    // For automated playbooks: trigger conditions and actions
+    triggers: text('triggers'), // JSON array of trigger conditions
+    actions: text('actions'), // JSON array of actions to execute
+    // Categorization
+    category: text('category'),
+    tags: text('tags'), // JSON array of tags
+    // Status
+    status: text('status').notNull().default('draft'), // draft, active, inactive
+    // Authorship
+    createdByUserId: text('createdByUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    updatedByUserId: text('updatedByUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('playbook_organization_idx').on(table.organizationId),
+    typeIdx: index('playbook_type_idx').on(table.organizationId, table.type),
+    statusIdx: index('playbook_status_idx').on(table.organizationId, table.status),
+    categoryIdx: index('playbook_category_idx').on(table.organizationId, table.category),
+  })
+)

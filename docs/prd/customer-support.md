@@ -106,10 +106,20 @@ Centralized ticket management for email + help center submissions.
 
 Playbooks combine repeatable workflows (manual) and automation sequences (automatic).
 
+#### Database Implementation
+
+- [x] Playbook table with organization scoping
+- [x] Support for manual and automated playbook types
+- [x] JSON storage for steps, triggers, and actions
+- [x] Category and tags for organization
+- [x] Status workflow (draft, active, inactive)
+- [x] Authorship tracking (createdBy, updatedBy)
+
 #### Manual Playbooks
 
 Agents (human or AI) can run step-by-step guided flows:
 
+- [x] Playbook steps stored as JSON array
 - [ ] Account troubleshooting steps
 - [ ] Migration flows
 - [ ] Password reset guides
@@ -119,6 +129,8 @@ Agents (human or AI) can run step-by-step guided flows:
 
 Trigger-based macros/workflows:
 
+- [x] Trigger conditions stored as JSON
+- [x] Actions stored as JSON configuration
 - [ ] Auto-tag new tickets
 - [ ] Auto-reply with knowledge base article suggestions
 - [ ] Auto-assign based on topic
@@ -147,12 +159,25 @@ Quick insights for support performance.
 
 Self-service support + article management.
 
+#### Database Implementation
+
+- [x] Knowledge article table with organization scoping
+- [x] Title, content (markdown/HTML), and slug fields
+- [x] Category and tags for organization
+- [x] Status workflow (draft, published, archived)
+- [x] View count tracking
+- [x] Publishing timestamp
+- [x] Authorship tracking (createdBy, updatedBy)
+- [x] Server-side fuzzy search using PostgreSQL pg_trgm
+
 #### Features
 
-- [ ] Categories + articles
+- [x] Categories + articles (database and API)
+- [x] Fuzzy search across title, content, category, tags
+- [x] Drafts and published status
 - [ ] WYSIWYG editor
 - [ ] Version control
-- [ ] Drafts, scheduled publishing
+- [ ] Scheduled publishing
 - [ ] AI rewrite, summarize, or generate starting drafts
 - [ ] AI suggests articles inside the ticket UI
 - [ ] Public help center hosting (SaaSquatch-powered)
@@ -228,6 +253,33 @@ These tables store customer data that **CANNOT log in** - they are managed by su
 | `tenant_organization` | Customer companies being supported |
 | `tenant_user` | Individual customers within those companies |
 
+#### Knowledge Base Tables
+
+These tables store help articles and playbooks:
+
+| Table | Purpose |
+|-------|---------|
+| `knowledge_article` | Help center articles with content, categories, and view tracking |
+| `playbook` | Manual guides and automated workflows for support agents |
+
+**Knowledge Article Fields:**
+- `organizationId` - Scoped to support staff organization
+- `title`, `content`, `slug` - Article content
+- `category`, `tags` - Categorization (JSON array for tags)
+- `status` - draft, published, archived
+- `views` - View count tracking
+- `publishedAt` - When article was first published
+- `createdByUserId`, `updatedByUserId` - Authorship tracking
+
+**Playbook Fields:**
+- `organizationId` - Scoped to support staff organization
+- `name`, `description` - Playbook info
+- `type` - manual or automated
+- `steps` - JSON array of step objects for manual playbooks
+- `triggers`, `actions` - JSON config for automated playbooks
+- `category`, `tags` - Categorization
+- `status` - draft, active, inactive
+
 **Key Design Decisions:**
 
 1. **Scoped to Support Staff Org:** Tenant organizations belong to a support staff organization via `organizationId` foreign key
@@ -241,8 +293,14 @@ organization (support staff)
     ├── member ← user (can log in)
     │       └── account (Better Auth)
     │
-    └── tenant_organization (customer companies)
-            └── tenant_user (customer contacts - NO login)
+    ├── tenant_organization (customer companies)
+    │       └── tenant_user (customer contacts - NO login)
+    │
+    ├── knowledge_article (help center content)
+    │       └── createdBy/updatedBy → user
+    │
+    └── playbook (manual guides + automations)
+            └── createdBy/updatedBy → user
 ```
 
 ### 6.2 Database Seeding
@@ -301,6 +359,28 @@ The database seed script (`src/db/seed.ts`) creates test data for development an
 - [x] Separate tables for platform users vs tenant customers
 - [x] Automatic membership creation
 - [x] Sample todos for support staff organizations
+- [x] Sample knowledge articles (5 for Acme, 2 for Globex)
+- [x] Sample playbooks (5 for Acme, 2 for Globex)
+
+#### Sample Knowledge Articles (Acme)
+
+| Title | Category | Status |
+|-------|----------|--------|
+| Setting up Okta SSO | AUTHENTICATION | Published |
+| Understanding Your Invoice | BILLING | Published |
+| API Rate Limits Explained | DEVELOPER | Draft |
+| Managing Team Members | AUTHENTICATION | Published |
+| Webhook Configuration Guide | DEVELOPER | Published |
+
+#### Sample Playbooks (Acme)
+
+| Name | Type | Status |
+|------|------|--------|
+| SSO Troubleshooting Guide | Manual | Active |
+| New Admin Onboarding | Manual | Active |
+| Billing Issue Resolution | Manual | Active |
+| Auto-Tag New Tickets | Automated | Active |
+| Auto-Reply with KB Suggestions | Automated | Draft |
 
 ### 6.3 API Endpoints
 
@@ -331,4 +411,146 @@ Fetches tenant users (customers) scoped to the current support staff organizatio
   ]
 }
 ```
+
+#### Knowledge Search API
+
+**Endpoint:** `GET /api/tenant/:tenant/knowledge/search`
+
+Fuzzy search across knowledge articles and playbooks using PostgreSQL pg_trgm extension.
+
+**Query Parameters:**
+- `q` (required): Search query string
+- `type` (optional): `article`, `playbook`, or `all` (default: `all`)
+- `status` (optional): Filter by status
+- `category` (optional): Filter by category
+- `limit` (optional): Max results (default: 20, max: 100)
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "id": "art_123",
+      "type": "article",
+      "title": "Setting up Okta SSO",
+      "description": "This guide walks you through...",
+      "category": "AUTHENTICATION",
+      "status": "published",
+      "tags": ["sso", "okta", "saml"],
+      "score": 0.85,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "query": "okta sso",
+  "total": 1
+}
+```
+
+**Note:** Requires PostgreSQL `pg_trgm` extension:
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+```
+
+#### Knowledge Articles API
+
+**Endpoint:** `GET /api/tenant/:tenant/knowledge/articles`
+
+List all knowledge articles with optional filtering.
+
+**Query Parameters:**
+- `status` (optional): Filter by status (draft, published, archived)
+- `category` (optional): Filter by category
+
+**Endpoint:** `POST /api/tenant/:tenant/knowledge/articles`
+
+Create a new knowledge article.
+
+**Request Body:**
+```json
+{
+  "title": "Article Title",
+  "content": "Markdown content...",
+  "category": "AUTHENTICATION",
+  "tags": ["tag1", "tag2"],
+  "status": "draft"
+}
+```
+
+**Endpoint:** `PUT /api/tenant/:tenant/knowledge/articles`
+
+Update an existing article.
+
+**Request Body:**
+```json
+{
+  "id": "art_123",
+  "title": "Updated Title",
+  "status": "published"
+}
+```
+
+**Endpoint:** `DELETE /api/tenant/:tenant/knowledge/articles?id=art_123`
+
+Delete a knowledge article.
+
+#### Playbooks API
+
+**Endpoint:** `GET /api/tenant/:tenant/knowledge/playbooks`
+
+List all playbooks with optional filtering.
+
+**Query Parameters:**
+- `type` (optional): Filter by type (manual, automated)
+- `status` (optional): Filter by status (draft, active, inactive)
+- `category` (optional): Filter by category
+
+**Endpoint:** `POST /api/tenant/:tenant/knowledge/playbooks`
+
+Create a new playbook.
+
+**Request Body (Manual Playbook):**
+```json
+{
+  "name": "SSO Troubleshooting Guide",
+  "description": "Step-by-step SSO diagnosis",
+  "type": "manual",
+  "category": "AUTHENTICATION",
+  "tags": ["sso", "troubleshooting"],
+  "status": "active",
+  "steps": [
+    {
+      "order": 1,
+      "title": "Verify Configuration",
+      "description": "Check SSO settings...",
+      "action": "Navigate to settings"
+    }
+  ]
+}
+```
+
+**Request Body (Automated Playbook):**
+```json
+{
+  "name": "Auto-Tag New Tickets",
+  "description": "Automatically tag tickets based on content",
+  "type": "automated",
+  "category": "AUTOMATION",
+  "status": "active",
+  "triggers": [
+    { "type": "event", "condition": "ticket.created" }
+  ],
+  "actions": [
+    { "type": "add_tags", "config": { "rules": [...] } }
+  ]
+}
+```
+
+**Endpoint:** `PUT /api/tenant/:tenant/knowledge/playbooks`
+
+Update an existing playbook (include `id` in body).
+
+**Endpoint:** `DELETE /api/tenant/:tenant/knowledge/playbooks?id=pb_123`
+
+Delete a playbook.
 
