@@ -5,7 +5,7 @@ import { Search, User, Building, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
 import { fetchMembers, type Member } from '@/data/members'
-import { addTicket, type CreateTicketInput } from '@/data/tickets'
+import { createTicket, type CreateTicketInput } from '@/data/tickets'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -177,13 +177,14 @@ export function CreateTicketDialog({
     validators: {
       onBlur: ticketSchema,
     },
-    onSubmit: ({ value }) => {
-      if (!selectedCustomer) return
+    onSubmit: async ({ value }) => {
+      if (!selectedCustomer || !tenant) return
 
       const ticketInput: CreateTicketInput = {
         title: value.title,
         priority: value.priority,
         message: value.message,
+        customerId: selectedCustomer.id,
         customer: {
           name: selectedCustomer.name,
           company: selectedCustomer.organization,
@@ -191,7 +192,7 @@ export function CreateTicketDialog({
         },
       }
 
-      addTicket(ticketInput)
+      await createTicket(tenant, ticketInput)
 
       form.reset()
       setSelectedCustomer(null)

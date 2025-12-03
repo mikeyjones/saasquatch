@@ -28,10 +28,12 @@ import { Route as TenantAppSupportRouteImport } from './routes/$tenant.app.suppo
 import { Route as TenantAppLoginRouteImport } from './routes/$tenant.app.login'
 import { Route as TenantAppSupportIndexRouteImport } from './routes/$tenant.app.support.index'
 import { Route as ApiTenantTenantUsersRouteImport } from './routes/api.tenant.$tenant.users'
+import { Route as ApiTenantTenantTicketsRouteImport } from './routes/api.tenant.$tenant.tickets'
 import { Route as ApiTenantTenantMembershipRouteImport } from './routes/api.tenant.$tenant.membership'
 import { Route as TenantAppSupportTicketsRouteImport } from './routes/$tenant.app.support.tickets'
 import { Route as TenantAppSupportMembersRouteImport } from './routes/$tenant.app.support.members'
 import { Route as TenantAppSupportKnowledgeRouteImport } from './routes/$tenant.app.support.knowledge'
+import { Route as ApiTenantTenantTicketsTicketIdRouteImport } from './routes/api.tenant.$tenant.tickets.$ticketId'
 
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
@@ -128,6 +130,11 @@ const ApiTenantTenantUsersRoute = ApiTenantTenantUsersRouteImport.update({
   path: '/api/tenant/$tenant/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTenantTenantTicketsRoute = ApiTenantTenantTicketsRouteImport.update({
+  id: '/api/tenant/$tenant/tickets',
+  path: '/api/tenant/$tenant/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTenantTenantMembershipRoute =
   ApiTenantTenantMembershipRouteImport.update({
     id: '/api/tenant/$tenant/membership',
@@ -149,6 +156,12 @@ const TenantAppSupportKnowledgeRoute =
     id: '/knowledge',
     path: '/knowledge',
     getParentRoute: () => TenantAppSupportRoute,
+  } as any)
+const ApiTenantTenantTicketsTicketIdRoute =
+  ApiTenantTenantTicketsTicketIdRouteImport.update({
+    id: '/$ticketId',
+    path: '/$ticketId',
+    getParentRoute: () => ApiTenantTenantTicketsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -173,8 +186,10 @@ export interface FileRoutesByFullPath {
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
   '/api/tenant/$tenant/membership': typeof ApiTenantTenantMembershipRoute
+  '/api/tenant/$tenant/tickets': typeof ApiTenantTenantTicketsRouteWithChildren
   '/api/tenant/$tenant/users': typeof ApiTenantTenantUsersRoute
   '/$tenant/app/support/': typeof TenantAppSupportIndexRoute
+  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -197,8 +212,10 @@ export interface FileRoutesByTo {
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
   '/api/tenant/$tenant/membership': typeof ApiTenantTenantMembershipRoute
+  '/api/tenant/$tenant/tickets': typeof ApiTenantTenantTicketsRouteWithChildren
   '/api/tenant/$tenant/users': typeof ApiTenantTenantUsersRoute
   '/$tenant/app/support': typeof TenantAppSupportIndexRoute
+  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -223,8 +240,10 @@ export interface FileRoutesById {
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
   '/api/tenant/$tenant/membership': typeof ApiTenantTenantMembershipRoute
+  '/api/tenant/$tenant/tickets': typeof ApiTenantTenantTicketsRouteWithChildren
   '/api/tenant/$tenant/users': typeof ApiTenantTenantUsersRoute
   '/$tenant/app/support/': typeof TenantAppSupportIndexRoute
+  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -250,8 +269,10 @@ export interface FileRouteTypes {
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
     | '/api/tenant/$tenant/membership'
+    | '/api/tenant/$tenant/tickets'
     | '/api/tenant/$tenant/users'
     | '/$tenant/app/support/'
+    | '/api/tenant/$tenant/tickets/$ticketId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -274,8 +295,10 @@ export interface FileRouteTypes {
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
     | '/api/tenant/$tenant/membership'
+    | '/api/tenant/$tenant/tickets'
     | '/api/tenant/$tenant/users'
     | '/$tenant/app/support'
+    | '/api/tenant/$tenant/tickets/$ticketId'
   id:
     | '__root__'
     | '/'
@@ -299,8 +322,10 @@ export interface FileRouteTypes {
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
     | '/api/tenant/$tenant/membership'
+    | '/api/tenant/$tenant/tickets'
     | '/api/tenant/$tenant/users'
     | '/$tenant/app/support/'
+    | '/api/tenant/$tenant/tickets/$ticketId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -317,6 +342,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiUserOrganizationsRoute: typeof ApiUserOrganizationsRoute
   ApiTenantTenantMembershipRoute: typeof ApiTenantTenantMembershipRoute
+  ApiTenantTenantTicketsRoute: typeof ApiTenantTenantTicketsRouteWithChildren
   ApiTenantTenantUsersRoute: typeof ApiTenantTenantUsersRoute
 }
 
@@ -455,6 +481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTenantTenantUsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tenant/$tenant/tickets': {
+      id: '/api/tenant/$tenant/tickets'
+      path: '/api/tenant/$tenant/tickets'
+      fullPath: '/api/tenant/$tenant/tickets'
+      preLoaderRoute: typeof ApiTenantTenantTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/tenant/$tenant/membership': {
       id: '/api/tenant/$tenant/membership'
       path: '/api/tenant/$tenant/membership'
@@ -482,6 +515,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$tenant/app/support/knowledge'
       preLoaderRoute: typeof TenantAppSupportKnowledgeRouteImport
       parentRoute: typeof TenantAppSupportRoute
+    }
+    '/api/tenant/$tenant/tickets/$ticketId': {
+      id: '/api/tenant/$tenant/tickets/$ticketId'
+      path: '/$ticketId'
+      fullPath: '/api/tenant/$tenant/tickets/$ticketId'
+      preLoaderRoute: typeof ApiTenantTenantTicketsTicketIdRouteImport
+      parentRoute: typeof ApiTenantTenantTicketsRoute
     }
   }
 }
@@ -540,6 +580,20 @@ const FormsRouteChildren: FormsRouteChildren = {
 
 const FormsRouteWithChildren = FormsRoute._addFileChildren(FormsRouteChildren)
 
+interface ApiTenantTenantTicketsRouteChildren {
+  ApiTenantTenantTicketsTicketIdRoute: typeof ApiTenantTenantTicketsTicketIdRoute
+}
+
+const ApiTenantTenantTicketsRouteChildren: ApiTenantTenantTicketsRouteChildren =
+  {
+    ApiTenantTenantTicketsTicketIdRoute: ApiTenantTenantTicketsTicketIdRoute,
+  }
+
+const ApiTenantTenantTicketsRouteWithChildren =
+  ApiTenantTenantTicketsRoute._addFileChildren(
+    ApiTenantTenantTicketsRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   TenantRoute: TenantRouteWithChildren,
@@ -554,6 +608,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiUserOrganizationsRoute: ApiUserOrganizationsRoute,
   ApiTenantTenantMembershipRoute: ApiTenantTenantMembershipRoute,
+  ApiTenantTenantTicketsRoute: ApiTenantTenantTicketsRouteWithChildren,
   ApiTenantTenantUsersRoute: ApiTenantTenantUsersRoute,
 }
 export const routeTree = rootRouteImport

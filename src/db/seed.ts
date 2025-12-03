@@ -110,6 +110,29 @@ interface TenantOrgData {
   }[]
 }
 
+interface TicketSeedData {
+  title: string
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  status: 'open' | 'pending' | 'waiting_on_customer' | 'escalated' | 'closed'
+  tenantOrgSlug: string // Which tenant org's user submitted this
+  tenantUserEmail: string // Which user submitted
+  messages: {
+    type: 'customer' | 'agent' | 'ai' | 'system'
+    authorEmail?: string // For agent messages
+    content: string
+    isInternal?: boolean
+    hoursAgo: number // How many hours ago this message was sent
+  }[]
+  aiTriage?: {
+    category: string
+    sentiment: string
+    urgencyScore: number
+    suggestedAction: string
+    suggestedPlaybook?: string
+  }
+  hasAI?: boolean
+}
+
 // ============================================================================
 // Seed Data
 // ============================================================================
@@ -148,6 +171,212 @@ const supportStaffOrgs: SupportStaffOrg[] = [
  * Key: support staff org slug
  * Value: array of tenant organizations for that support staff org
  */
+/**
+ * Sample tickets for testing
+ * Key: support staff org slug
+ */
+const ticketsPerStaff: Record<string, TicketSeedData[]> = {
+  acme: [
+    {
+      title: 'Login Failure on SSO',
+      priority: 'urgent',
+      status: 'open',
+      tenantOrgSlug: 'acme-corp',
+      tenantUserEmail: 'john@acme.com',
+      messages: [
+        {
+          type: 'customer',
+          content: `Hi Team,
+
+We are unable to login using our Okta SSO integration on the staging environment. It was working yesterday. Getting a 500 error.
+
+This is blocking our UAT testing. Please help ASAP.`,
+          hoursAgo: 2,
+        },
+      ],
+      aiTriage: {
+        category: 'Authentication / SSO',
+        sentiment: 'Negative (Urgency Detected)',
+        urgencyScore: 9,
+        suggestedAction: "Check Error Logs for 'Okta Connection Timeout'.",
+        suggestedPlaybook: 'SSO Troubleshooting Guide',
+      },
+    },
+    {
+      title: 'Billing question for Nov invoice',
+      priority: 'normal',
+      status: 'open',
+      tenantOrgSlug: 'techflow',
+      tenantUserEmail: 'sarah@techflow.io',
+      messages: [
+        {
+          type: 'customer',
+          content: `Hello,
+
+I have a question about our November invoice. There seems to be a discrepancy in the number of users billed vs our actual usage.
+
+Can someone review this?`,
+          hoursAgo: 4,
+        },
+      ],
+    },
+    {
+      title: 'How to add new users?',
+      priority: 'low',
+      status: 'open',
+      tenantOrgSlug: 'startup-inc',
+      tenantUserEmail: 'mike@startup.io',
+      hasAI: true,
+      messages: [
+        {
+          type: 'customer',
+          content: `Hi there,
+
+I'm a new admin and trying to figure out how to add new users to our account. Can you point me to the right documentation?
+
+Thanks!`,
+          hoursAgo: 24,
+        },
+        {
+          type: 'ai',
+          content: `Hi Mike,
+
+I can help you with adding new users! Here's how:
+
+1. Go to Settings → Team Members
+2. Click "Invite User"
+3. Enter their email and select a role
+
+You can also check out our documentation: [Adding Team Members](https://docs.example.com/team-members)
+
+Let me know if you have any questions!`,
+          hoursAgo: 23,
+        },
+      ],
+      aiTriage: {
+        category: 'Onboarding / How-to',
+        sentiment: 'Neutral',
+        urgencyScore: 2,
+        suggestedAction: 'Provide documentation link for user management',
+        suggestedPlaybook: 'New Admin Onboarding',
+      },
+    },
+    {
+      title: 'API Rate Limit increase request',
+      priority: 'high',
+      status: 'open',
+      tenantOrgSlug: 'dataminds',
+      tenantUserEmail: 'alex@dataminds.com',
+      messages: [
+        {
+          type: 'customer',
+          content: `Hello Support,
+
+We're hitting our API rate limits frequently now that we've scaled up our integration. We'd like to request an increase to our current limits.
+
+Our current plan is Enterprise and we're willing to discuss pricing for higher limits.`,
+          hoursAgo: 48,
+        },
+        {
+          type: 'agent',
+          authorEmail: 'bob@acme.test',
+          content: `Hi Alex,
+
+Thanks for reaching out. I can see you're on our Enterprise plan and have been hitting the 10,000 requests/minute limit.
+
+I've escalated this to our API team to review your usage patterns and discuss options. They'll be in touch within 24 hours.
+
+In the meantime, I've temporarily increased your limit to 15,000 requests/minute.`,
+          hoursAgo: 46,
+        },
+        {
+          type: 'customer',
+          content: `Thank you Bob! The temporary increase helps a lot. Looking forward to hearing from the API team.`,
+          hoursAgo: 45,
+        },
+      ],
+      aiTriage: {
+        category: 'API / Technical',
+        sentiment: 'Neutral',
+        urgencyScore: 6,
+        suggestedAction: 'Review API usage and escalate to API team for limit increase',
+      },
+    },
+    {
+      title: 'Feature request: Dark mode',
+      priority: 'low',
+      status: 'closed',
+      tenantOrgSlug: 'global-logistics',
+      tenantUserEmail: 'emily@logistics.global',
+      messages: [
+        {
+          type: 'customer',
+          content: `Hi,
+
+Would love to see a dark mode option in the dashboard. Our team works late nights and it would really help with eye strain.
+
+Thanks for considering!`,
+          hoursAgo: 168, // 7 days ago
+        },
+        {
+          type: 'agent',
+          authorEmail: 'carol@acme.test',
+          content: `Hi Emily,
+
+Thank you for the feature suggestion! I've added this to our product roadmap.
+
+Dark mode is actually something we're actively working on and expect to release in Q1 next year. I'll make sure you're notified when it's available.
+
+Is there anything else I can help you with?`,
+          hoursAgo: 166,
+        },
+        {
+          type: 'customer',
+          content: `That's great news! Thanks for the quick response. Nothing else for now.`,
+          hoursAgo: 165,
+        },
+        {
+          type: 'system',
+          content: 'Ticket closed by Carol Support',
+          hoursAgo: 165,
+        },
+      ],
+    },
+  ],
+  globex: [
+    {
+      title: 'Cannot export reports to PDF',
+      priority: 'normal',
+      status: 'pending',
+      tenantOrgSlug: 'megacorp',
+      tenantUserEmail: 'robert@megacorp.com',
+      messages: [
+        {
+          type: 'customer',
+          content: `Hello,
+
+When I try to export our monthly reports to PDF, the download starts but the file is corrupted. This happens in both Chrome and Firefox.
+
+Can you help?`,
+          hoursAgo: 12,
+        },
+        {
+          type: 'agent',
+          authorEmail: 'charlie@globex.test',
+          content: `Hi Robert,
+
+Sorry to hear you're having trouble with PDF exports. I've tested this on our end and can reproduce the issue.
+
+I've reported this to our engineering team as a bug. They're investigating and I'll update you as soon as we have a fix.
+
+In the meantime, you can export to CSV as a workaround.`,
+          hoursAgo: 10,
+        },
+      ],
+    },
+  ],
+}
+
 const tenantOrgsPerStaff: Record<string, TenantOrgData[]> = {
   // Tenant customers for Acme Corporation support staff
   acme: [
@@ -474,6 +703,135 @@ async function ensureTenantUser(
   return id
 }
 
+/**
+ * Get the next ticket number for an organization
+ */
+async function getNextTicketNumber(
+  db: ReturnType<typeof drizzle>,
+  orgId: string
+): Promise<number> {
+  const result = await db.query.ticket.findFirst({
+    where: eq(schema.ticket.organizationId, orgId),
+    orderBy: (ticket, { desc }) => [desc(ticket.ticketNumber)],
+  })
+  return (result?.ticketNumber ?? 9900) + 1
+}
+
+/**
+ * Create a ticket with messages and AI triage
+ */
+async function ensureTicket(
+  db: ReturnType<typeof drizzle>,
+  staffOrgId: string,
+  ticketData: TicketSeedData,
+  tenantUserMap: Map<string, { id: string; name: string; tenantOrgName: string }>,
+  supportStaffMap: Map<string, { id: string; name: string }>
+): Promise<void> {
+  // Find the tenant user
+  const tenantUserKey = `${ticketData.tenantOrgSlug}:${ticketData.tenantUserEmail}`
+  const tenantUser = tenantUserMap.get(tenantUserKey)
+  
+  if (!tenantUser) {
+    console.error(`   ⚠ Tenant user not found: ${tenantUserKey}`)
+    return
+  }
+
+  // Check if ticket already exists (by title and tenant user)
+  const existing = await db.query.ticket.findFirst({
+    where: (t, { and, eq: eqFn }) =>
+      and(
+        eqFn(t.organizationId, staffOrgId),
+        eqFn(t.title, ticketData.title),
+        eqFn(t.tenantUserId, tenantUser.id)
+      ),
+  })
+
+  if (existing) {
+    logInfo(`Ticket already exists: ${ticketData.title}`)
+    return
+  }
+
+  const ticketId = generateId()
+  const ticketNumber = await getNextTicketNumber(db, staffOrgId)
+
+  // Calculate timestamps based on hoursAgo
+  const now = new Date()
+  const oldestMessageHours = Math.max(...ticketData.messages.map(m => m.hoursAgo))
+  const createdAt = new Date(now.getTime() - oldestMessageHours * 60 * 60 * 1000)
+
+  // Create the ticket
+  await db.insert(schema.ticket).values({
+    id: ticketId,
+    organizationId: staffOrgId,
+    ticketNumber,
+    tenantUserId: tenantUser.id,
+    title: ticketData.title,
+    status: ticketData.status,
+    priority: ticketData.priority,
+    assignedToAI: ticketData.hasAI ?? false,
+    channel: 'web',
+    createdAt,
+    updatedAt: now,
+    resolvedAt: ticketData.status === 'closed' ? now : null,
+  })
+
+  // Create messages
+  for (const msg of ticketData.messages) {
+    const messageId = generateId()
+    const messageTime = new Date(now.getTime() - msg.hoursAgo * 60 * 60 * 1000)
+    
+    let authorName = ''
+    let authorTenantUserId: string | null = null
+    let authorUserId: string | null = null
+
+    if (msg.type === 'customer') {
+      authorName = tenantUser.name
+      authorTenantUserId = tenantUser.id
+    } else if (msg.type === 'agent' && msg.authorEmail) {
+      const agent = supportStaffMap.get(msg.authorEmail)
+      if (agent) {
+        authorName = agent.name
+        authorUserId = agent.id
+      } else {
+        authorName = 'Support Agent'
+      }
+    } else if (msg.type === 'ai') {
+      authorName = 'AI Assistant'
+    } else if (msg.type === 'system') {
+      authorName = 'System'
+    }
+
+    await db.insert(schema.ticketMessage).values({
+      id: messageId,
+      ticketId,
+      messageType: msg.type,
+      authorTenantUserId,
+      authorUserId,
+      authorName,
+      content: msg.content,
+      isInternal: msg.isInternal ?? false,
+      createdAt: messageTime,
+      updatedAt: messageTime,
+    })
+  }
+
+  // Create AI triage if present
+  if (ticketData.aiTriage) {
+    await db.insert(schema.ticketAiTriage).values({
+      id: generateId(),
+      ticketId,
+      category: ticketData.aiTriage.category,
+      sentiment: ticketData.aiTriage.sentiment,
+      urgencyScore: ticketData.aiTriage.urgencyScore,
+      suggestedAction: ticketData.aiTriage.suggestedAction,
+      suggestedPlaybook: ticketData.aiTriage.suggestedPlaybook,
+      confidence: 85,
+    })
+  }
+
+  logSuccess(`Ticket #${ticketNumber}: ${ticketData.title} (${ticketData.status})`)
+}
+
 // ============================================================================
 // Main Seed Function
 // ============================================================================
@@ -492,6 +850,10 @@ async function seed(): Promise<void> {
   try {
     // Store org IDs for later use
     const staffOrgIds: Record<string, string> = {}
+    // Map support staff emails to their IDs and names
+    const supportStaffMap = new Map<string, { id: string; name: string }>()
+    // Map tenant user keys (orgSlug:email) to their IDs and info
+    const tenantUserMap = new Map<string, { id: string; name: string; tenantOrgName: string }>()
 
     // ========================================================================
     // Seed Support Staff Organizations (with login)
@@ -507,7 +869,8 @@ async function seed(): Promise<void> {
       staffOrgIds[org.slug] = orgId
 
       for (const user of org.users) {
-        await ensureSupportStaffUser(db, orgId, user)
+        const userId = await ensureSupportStaffUser(db, orgId, user)
+        supportStaffMap.set(user.email, { id: userId, name: user.name })
       }
 
       await ensureSampleTodos(db, orgId, org.name)
@@ -536,8 +899,34 @@ async function seed(): Promise<void> {
         const tenantOrgId = await ensureTenantOrganization(db, staffOrgId, tenantOrg)
 
         for (const user of tenantOrg.users) {
-          await ensureTenantUser(db, tenantOrgId, user)
+          const userId = await ensureTenantUser(db, tenantOrgId, user)
+          tenantUserMap.set(`${tenantOrg.slug}:${user.email}`, {
+            id: userId,
+            name: user.name,
+            tenantOrgName: tenantOrg.name,
+          })
         }
+      }
+    }
+
+    // ========================================================================
+    // Seed Support Tickets
+    // ========================================================================
+    console.log('\n\n📋 SUPPORT TICKETS')
+    console.log('─'.repeat(60))
+
+    for (const staffOrgSlug of Object.keys(ticketsPerStaff)) {
+      const staffOrgId = staffOrgIds[staffOrgSlug]
+      if (!staffOrgId) {
+        console.error(`   ⚠ Staff org not found for tickets: ${staffOrgSlug}`)
+        continue
+      }
+
+      console.log(`\n   For support staff: ${staffOrgSlug}`)
+      console.log('   ' + '─'.repeat(40))
+
+      for (const ticketData of ticketsPerStaff[staffOrgSlug]) {
+        await ensureTicket(db, staffOrgId, ticketData, tenantUserMap, supportStaffMap)
       }
     }
 
@@ -564,6 +953,16 @@ async function seed(): Promise<void> {
       for (const org of tenantOrgsPerStaff[staffOrgSlug]) {
         console.log(`   🏢 ${org.name}`)
         console.log(`      Users: ${org.users.map((u) => u.name).join(', ')}`)
+      }
+    }
+
+    console.log('\n\n📋 SAMPLE TICKETS')
+    console.log('─'.repeat(60))
+    for (const staffOrgSlug of Object.keys(ticketsPerStaff)) {
+      console.log(`\n   Support Staff: ${staffOrgSlug}`)
+      for (const ticket of ticketsPerStaff[staffOrgSlug]) {
+        const statusIcon = ticket.status === 'closed' ? '✓' : ticket.status === 'open' ? '○' : '◐'
+        console.log(`   ${statusIcon} ${ticket.title} (${ticket.priority}, ${ticket.status})`)
       }
     }
 

@@ -6,6 +6,7 @@ import {
   boolean,
   index,
   primaryKey,
+  integer,
 } from 'drizzle-orm/pg-core'
 
 export const todos = pgTable(
@@ -194,5 +195,121 @@ export const tenantUser = pgTable(
   (table) => ({
     tenantOrgIdx: index('tenant_user_tenant_org_idx').on(table.tenantOrganizationId),
     emailIdx: index('tenant_user_email_idx').on(table.tenantOrganizationId, table.email),
+  })
+)
+
+// ============================================================================
+// Support Ticket Tables
+// ============================================================================
+
+/**
+ * Ticket - Support tickets created by or for tenant users
+ * Scoped to a support staff organization
+ */
+export const ticket = pgTable(
+  'ticket',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this ticket belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Ticket number (human-readable, auto-incremented per org)
+    ticketNumber: integer('ticketNumber').notNull(),
+    // The tenant user who submitted/is associated with this ticket
+    tenantUserId: text('tenantUserId')
+      .references(() => tenantUser.id, { onDelete: 'set null' }),
+    // Ticket details
+    title: text('title').notNull(),
+    status: text('status').notNull().default('open'), // open, pending, waiting_on_customer, escalated, closed
+    priority: text('priority').notNull().default('normal'), // low, normal, high, urgent
+    // Assignment
+    assignedToUserId: text('assignedToUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    assignedToAI: boolean('assignedToAI').notNull().default(false),
+    // Channel info
+    channel: text('channel').notNull().default('web'), // web, email, api
+    // SLA tracking
+    slaDeadline: timestamp('slaDeadline'),
+    firstResponseAt: timestamp('firstResponseAt'),
+    resolvedAt: timestamp('resolvedAt'),
+    // Metadata
+    tags: text('tags'), // JSON array of tags
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('ticket_organization_idx').on(table.organizationId),
+    statusIdx: index('ticket_status_idx').on(table.organizationId, table.status),
+    priorityIdx: index('ticket_priority_idx').on(table.organizationId, table.priority),
+    assignedIdx: index('ticket_assigned_idx').on(table.assignedToUserId),
+    tenantUserIdx: index('ticket_tenant_user_idx').on(table.tenantUserId),
+    ticketNumberIdx: index('ticket_number_idx').on(table.organizationId, table.ticketNumber),
+  })
+)
+
+/**
+ * Ticket Message - Individual messages within a ticket thread
+ */
+export const ticketMessage = pgTable(
+  'ticket_message',
+  {
+    id: text('id').primaryKey(),
+    ticketId: text('ticketId')
+      .notNull()
+      .references(() => ticket.id, { onDelete: 'cascade' }),
+    // Message type: customer, agent (support staff), ai, system
+    messageType: text('messageType').notNull().default('customer'),
+    // Author info - can be tenant user, support staff, or AI
+    authorTenantUserId: text('authorTenantUserId')
+      .references(() => tenantUser.id, { onDelete: 'set null' }),
+    authorUserId: text('authorUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    authorName: text('authorName').notNull(), // Denormalized for display
+    // Content
+    content: text('content').notNull(),
+    // For internal notes (not visible to customer)
+    isInternal: boolean('isInternal').notNull().default(false),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    ticketIdx: index('ticket_message_ticket_idx').on(table.ticketId),
+    createdAtIdx: index('ticket_message_created_idx').on(table.ticketId, table.createdAt),
+  })
+)
+
+/**
+ * Ticket AI Triage - AI-generated analysis and suggestions for tickets
+ */
+export const ticketAiTriage = pgTable(
+  'ticket_ai_triage',
+  {
+    id: text('id').primaryKey(),
+    ticketId: text('ticketId')
+      .notNull()
+      .references(() => ticket.id, { onDelete: 'cascade' })
+      .unique(), // One triage per ticket
+    // AI Analysis
+    category: text('category'), // e.g., "Authentication / SSO", "Billing", "General"
+    sentiment: text('sentiment'), // e.g., "Negative (Urgency Detected)", "Neutral", "Positive"
+    urgencyScore: integer('urgencyScore'), // 1-10 score
+    // Suggestions
+    suggestedAction: text('suggestedAction'),
+    suggestedPlaybook: text('suggestedPlaybook'),
+    suggestedPlaybookLink: text('suggestedPlaybookLink'),
+    // AI-generated summary
+    summary: text('summary'),
+    // Draft response (if AI generated one)
+    draftResponse: text('draftResponse'),
+    // Confidence score
+    confidence: integer('confidence'), // 0-100
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    ticketIdx: index('ticket_ai_triage_ticket_idx').on(table.ticketId),
   })
 )

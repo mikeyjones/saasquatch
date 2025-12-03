@@ -6,7 +6,7 @@ export interface Ticket {
   company: string
   ticketNumber: string
   priority: 'urgent' | 'high' | 'normal' | 'low'
-  status: 'open' | 'closed' | 'pending'
+  status: 'open' | 'closed' | 'pending' | 'waiting_on_customer' | 'escalated'
   timeAgo: string
   preview: string
   hasAI?: boolean
@@ -16,7 +16,7 @@ export interface Ticket {
     initials: string
   }
   messages: Array<{
-    type: 'customer' | 'agent' | 'ai'
+    type: 'customer' | 'agent' | 'ai' | 'system'
     author: string
     timestamp: string
     content: string
@@ -30,10 +30,46 @@ export interface Ticket {
   }
 }
 
+export interface TicketDetail extends Ticket {
+  createdAt: string
+  updatedAt: string
+  resolvedAt?: string
+  slaDeadline?: string
+  firstResponseAt?: string
+  channel: string
+  customer: {
+    id?: string
+    name: string
+    email?: string
+    company: string
+    initials: string
+    subscriptionPlan?: string
+    subscriptionStatus?: string
+  }
+  assignedTo?: {
+    id: string
+    name: string
+    email: string
+    initials: string
+  } | null
+  aiTriage?: {
+    category: string
+    sentiment: string
+    urgencyScore?: number
+    suggestedAction: string
+    playbook?: string
+    playbookLink: string
+    summary?: string
+    draftResponse?: string
+    confidence?: number
+  }
+}
+
 export interface CreateTicketInput {
   title: string
   priority: 'urgent' | 'high' | 'normal' | 'low'
   message: string
+  customerId: string
   customer: {
     name: string
     company: string
@@ -41,141 +77,176 @@ export interface CreateTicketInput {
   }
 }
 
-const initialTickets: Ticket[] = [
-  {
-    id: '1',
-    title: 'Login Failure on SSO',
-    company: 'Acme Corp',
-    ticketNumber: '#9942',
-    priority: 'urgent',
-    status: 'open',
-    timeAgo: '2h ago',
-    preview: 'Customer reported an issue with login via SSO on the stagin...',
-    customer: {
-      name: 'John Doe',
-      company: 'Acme Corp',
-      initials: 'JD',
-    },
-    messages: [
-      {
-        type: 'customer',
-        author: 'John Doe',
-        timestamp: '2h ago',
-        content: `Hi Team,
+// Create a store for tickets (used for optimistic updates)
+export const ticketsStore = new Store<Ticket[]>([])
 
-We are unable to login using our Okta SSO integration on the staging environment. It was working yesterday. Getting a 500 error.
+/**
+ * Fetch all tickets from the API
+ */
+export async function fetchTickets(
+  tenantSlug: string,
+  filters?: { status?: string; priority?: string; search?: string }
+): Promise<Ticket[]> {
+  try {
+    const url = new URL(`/api/tenant/${tenantSlug}/tickets`, window.location.origin)
+    
+    if (filters?.status) url.searchParams.set('status', filters.status)
+    if (filters?.priority) url.searchParams.set('priority', filters.priority)
+    if (filters?.search) url.searchParams.set('search', filters.search)
 
-This is blocking our UAT testing. Please help ASAP.`,
-      },
-    ],
-    aiTriage: {
-      category: 'Authentication / SSO',
-      sentiment: 'Negative (Urgency Detected)',
-      suggestedAction: "Check Error Logs for 'Okta Connection Timeout'.",
-      playbook: 'SSO Troubleshooting Guide',
-      playbookLink: '#',
-    },
-  },
-  {
-    id: '2',
-    title: 'Billing question for Nov invoice',
-    company: 'TechFlow',
-    ticketNumber: '#9941',
-    priority: 'normal',
-    status: 'open',
-    timeAgo: '4h ago',
-    preview: 'Customer reported an issue with login via SSO on the stagin...',
-    customer: {
-      name: 'Sarah Miller',
-      company: 'TechFlow',
-      initials: 'SM',
-    },
-    messages: [
-      {
-        type: 'customer',
-        author: 'Sarah Miller',
-        timestamp: '4h ago',
-        content: `Hello,
+    const response = await fetch(url.toString(), {
+      credentials: 'include',
+    })
 
-I have a question about our November invoice. There seems to be a discrepancy in the number of users billed vs our actual usage.
+    if (!response.ok) {
+      console.error('Failed to fetch tickets:', response.statusText)
+      return []
+    }
 
-Can someone review this?`,
-      },
-    ],
-  },
-  {
-    id: '3',
-    title: 'How to add new users?',
-    company: 'StartUp Inc',
-    ticketNumber: '#9938',
-    priority: 'low',
-    status: 'open',
-    timeAgo: '1d ago',
-    preview: 'Customer reported an issue with login via SSO on the stagin...',
-    hasAI: true,
-    customer: {
-      name: 'Mike Chen',
-      company: 'StartUp Inc',
-      initials: 'MC',
-    },
-    messages: [
-      {
-        type: 'customer',
-        author: 'Mike Chen',
-        timestamp: '1d ago',
-        content: `Hi there,
+    const data = await response.json()
+    const tickets = data.tickets || []
+    
+    // Update the store
+    ticketsStore.setState(() => tickets)
+    
+    return tickets
+  } catch (error) {
+    console.error('Error fetching tickets:', error)
+    return []
+  }
+}
 
-I'm a new admin and trying to figure out how to add new users to our account. Can you point me to the right documentation?
+/**
+ * Fetch a single ticket with all details
+ */
+export async function fetchTicket(
+  tenantSlug: string,
+  ticketId: string
+): Promise<TicketDetail | null> {
+  try {
+    const response = await fetch(
+      `/api/tenant/${tenantSlug}/tickets/${ticketId}`,
+      { credentials: 'include' }
+    )
 
-Thanks!`,
-      },
-    ],
-  },
-  {
-    id: '4',
-    title: 'API Rate Limit increase request',
-    company: 'DataMinds',
-    ticketNumber: '#9920',
-    priority: 'high',
-    status: 'open',
-    timeAgo: '2d ago',
-    preview: 'Customer reported an issue with login via SSO on the stagin...',
-    customer: {
-      name: 'Alex Johnson',
-      company: 'DataMinds',
-      initials: 'AJ',
-    },
-    messages: [
-      {
-        type: 'customer',
-        author: 'Alex Johnson',
-        timestamp: '2d ago',
-        content: `Hello Support,
+    if (!response.ok) {
+      console.error('Failed to fetch ticket:', response.statusText)
+      return null
+    }
 
-We're hitting our API rate limits frequently now that we've scaled up our integration. We'd like to request an increase to our current limits.
+    const data = await response.json()
+    return data.ticket || null
+  } catch (error) {
+    console.error('Error fetching ticket:', error)
+    return null
+  }
+}
 
-Our current plan is Enterprise and we're willing to discuss pricing for higher limits.`,
-      },
-    ],
-  },
-]
+/**
+ * Create a new ticket via API
+ */
+export async function createTicket(
+  tenantSlug: string,
+  input: CreateTicketInput
+): Promise<Ticket | null> {
+  try {
+    const response = await fetch(`/api/tenant/${tenantSlug}/tickets`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: input.title,
+        priority: input.priority,
+        message: input.message,
+        customerId: input.customerId,
+      }),
+    })
 
-// Create a store for tickets
-export const ticketsStore = new Store<Ticket[]>(initialTickets)
+    if (!response.ok) {
+      console.error('Failed to create ticket:', response.statusText)
+      return null
+    }
 
-// Helper to get current tickets (for backwards compatibility)
-export const tickets = initialTickets
+    const data = await response.json()
+    const newTicket = data.ticket
 
-// Track the next ticket number
-let nextTicketNumber = 9943
+    if (newTicket) {
+      // Add to store optimistically
+      const ticket: Ticket = {
+        id: newTicket.id,
+        title: newTicket.title,
+        company: newTicket.company,
+        ticketNumber: newTicket.ticketNumber,
+        priority: input.priority,
+        status: 'open',
+        timeAgo: 'Just now',
+        preview: input.message.slice(0, 60) + (input.message.length > 60 ? '...' : ''),
+        customer: input.customer,
+        messages: [
+          {
+            type: 'customer',
+            author: input.customer.name,
+            timestamp: 'Just now',
+            content: input.message,
+          },
+        ],
+      }
+      
+      ticketsStore.setState((prev) => [ticket, ...prev])
+      return ticket
+    }
 
-// Function to add a new ticket
-export function addTicket(input: CreateTicketInput): Ticket {
+    return null
+  } catch (error) {
+    console.error('Error creating ticket:', error)
+    return null
+  }
+}
+
+/**
+ * Update ticket status, priority, or assignment
+ */
+export async function updateTicket(
+  tenantSlug: string,
+  ticketId: string,
+  updates: { status?: string; priority?: string; assignedToUserId?: string | null }
+): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/tenant/${tenantSlug}/tickets/${ticketId}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+
+    if (!response.ok) {
+      console.error('Failed to update ticket:', response.statusText)
+      return false
+    }
+
+    // Update store optimistically
+    ticketsStore.setState((prev) =>
+      prev.map((t) =>
+        t.id === ticketId
+          ? { ...t, ...updates, status: updates.status as Ticket['status'] ?? t.status }
+          : t
+      )
+    )
+
+    return true
+  } catch (error) {
+    console.error('Error updating ticket:', error)
+    return false
+  }
+}
+
+// Legacy function for backward compatibility with CreateTicketDialog
+export function addTicket(input: Omit<CreateTicketInput, 'customerId'>): Ticket {
   const newTicket: Ticket = {
     id: String(Date.now()),
     title: input.title,
     company: input.customer.company,
-    ticketNumber: `#${nextTicketNumber++}`,
+    ticketNumber: `#${9900 + Math.floor(Math.random() * 100)}`,
     priority: input.priority,
     status: 'open',
     timeAgo: 'Just now',
@@ -192,13 +263,13 @@ export function addTicket(input: CreateTicketInput): Ticket {
   }
 
   ticketsStore.setState((prev) => [newTicket, ...prev])
-
   return newTicket
 }
 
 export const filterOptions = [
   { id: 'all', label: 'All' },
   { id: 'open', label: 'Open' },
-  { id: 'my-tickets', label: 'My Tickets' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'closed', label: 'Closed' },
   { id: 'urgent', label: 'Urgent' },
 ]
