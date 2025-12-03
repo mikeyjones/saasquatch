@@ -569,3 +569,262 @@ export const dealActivity = pgTable(
     createdAtIdx: index('deal_activity_created_idx').on(table.dealId, table.createdAt),
   })
 )
+
+// ============================================================================
+// Product Catalog Tables
+// Plans, pricing, features, add-ons, and coupons for subscription products
+// ============================================================================
+
+/**
+ * Product Family - Optional grouping of products
+ * Scoped to a support staff organization
+ */
+export const productFamily = pgTable(
+  'product_family',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this family belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Family info
+    name: text('name').notNull(),
+    description: text('description'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('product_family_organization_idx').on(table.organizationId),
+  })
+)
+
+/**
+ * Product Plan - Main product plans/tiers
+ * Scoped to a support staff organization
+ */
+export const productPlan = pgTable(
+  'product_plan',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this plan belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Optional product family
+    productFamilyId: text('productFamilyId')
+      .references(() => productFamily.id, { onDelete: 'set null' }),
+    // Plan info
+    name: text('name').notNull(),
+    description: text('description'),
+    // Status: active, draft, archived
+    status: text('status').notNull().default('draft'),
+    // Pricing model: flat, seat, usage, hybrid
+    pricingModel: text('pricingModel').notNull().default('flat'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('product_plan_organization_idx').on(table.organizationId),
+    familyIdx: index('product_plan_family_idx').on(table.productFamilyId),
+    statusIdx: index('product_plan_status_idx').on(table.organizationId, table.status),
+  })
+)
+
+/**
+ * Product Pricing - Flexible pricing structure for plans
+ * Supports base pricing, regional pricing, seat-based, and usage-based
+ */
+export const productPricing = pgTable(
+  'product_pricing',
+  {
+    id: text('id').primaryKey(),
+    // The plan this pricing belongs to
+    productPlanId: text('productPlanId')
+      .notNull()
+      .references(() => productPlan.id, { onDelete: 'cascade' }),
+    // Pricing type: base, regional, seat, usage
+    pricingType: text('pricingType').notNull().default('base'),
+    // Region code (for regional pricing, e.g., "US", "GB", "DE")
+    region: text('region'),
+    // Currency code (e.g., "USD", "EUR", "GBP")
+    currency: text('currency').notNull().default('USD'),
+    // Amount in cents (for base/regional/flat pricing)
+    amount: integer('amount').notNull().default(0),
+    // Billing interval: monthly, yearly (null for usage-based)
+    interval: text('interval'), // monthly, yearly
+    // Per-seat amount (for seat-based pricing, in cents)
+    perSeatAmount: integer('perSeatAmount'),
+    // Usage meter reference (for usage-based pricing)
+    usageMeterId: text('usageMeterId'),
+    // Usage tier pricing (JSON for tiered usage pricing)
+    usageTiers: text('usageTiers'), // JSON: [{ upTo: 1000, unitPrice: 10 }, { upTo: null, unitPrice: 5 }]
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    planIdx: index('product_pricing_plan_idx').on(table.productPlanId),
+    typeIdx: index('product_pricing_type_idx').on(table.productPlanId, table.pricingType),
+    regionIdx: index('product_pricing_region_idx').on(table.productPlanId, table.region),
+  })
+)
+
+/**
+ * Product Feature - Features included in a plan
+ */
+export const productFeature = pgTable(
+  'product_feature',
+  {
+    id: text('id').primaryKey(),
+    // The plan this feature belongs to
+    productPlanId: text('productPlanId')
+      .notNull()
+      .references(() => productPlan.id, { onDelete: 'cascade' }),
+    // Feature info
+    name: text('name').notNull(),
+    description: text('description'),
+    // Display order
+    order: integer('order').notNull().default(0),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    planIdx: index('product_feature_plan_idx').on(table.productPlanId),
+    orderIdx: index('product_feature_order_idx').on(table.productPlanId, table.order),
+  })
+)
+
+/**
+ * Product Add-On - Add-ons available for plans
+ * Scoped to a support staff organization
+ */
+export const productAddOn = pgTable(
+  'product_add_on',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this add-on belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Add-on info
+    name: text('name').notNull(),
+    description: text('description'),
+    // Pricing model: flat, seat, usage
+    pricingModel: text('pricingModel').notNull().default('flat'),
+    // Status: active, draft, archived
+    status: text('status').notNull().default('draft'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('product_add_on_organization_idx').on(table.organizationId),
+    statusIdx: index('product_add_on_status_idx').on(table.organizationId, table.status),
+  })
+)
+
+/**
+ * Product Add-On Pricing - Pricing for add-ons
+ * Similar structure to productPricing
+ */
+export const productAddOnPricing = pgTable(
+  'product_add_on_pricing',
+  {
+    id: text('id').primaryKey(),
+    // The add-on this pricing belongs to
+    productAddOnId: text('productAddOnId')
+      .notNull()
+      .references(() => productAddOn.id, { onDelete: 'cascade' }),
+    // Pricing type: base, regional, seat, usage
+    pricingType: text('pricingType').notNull().default('base'),
+    // Region code (for regional pricing)
+    region: text('region'),
+    // Currency code
+    currency: text('currency').notNull().default('USD'),
+    // Amount in cents
+    amount: integer('amount').notNull().default(0),
+    // Billing interval
+    interval: text('interval'), // monthly, yearly
+    // Per-seat amount (for seat-based pricing)
+    perSeatAmount: integer('perSeatAmount'),
+    // Usage meter reference
+    usageMeterId: text('usageMeterId'),
+    // Usage tier pricing (JSON)
+    usageTiers: text('usageTiers'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    addOnIdx: index('product_add_on_pricing_add_on_idx').on(table.productAddOnId),
+    typeIdx: index('product_add_on_pricing_type_idx').on(table.productAddOnId, table.pricingType),
+  })
+)
+
+/**
+ * Coupon - Discounts and promotional codes
+ * Scoped to a support staff organization
+ */
+export const coupon = pgTable(
+  'coupon',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this coupon belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Coupon code
+    code: text('code').notNull(),
+    // Discount type: percentage, fixed_amount, free_months, trial_extension
+    discountType: text('discountType').notNull(),
+    // Discount value (percentage 0-100, or cents for fixed_amount, or months for free_months/trial_extension)
+    discountValue: integer('discountValue').notNull(),
+    // Applicable plan IDs (JSON array, null means all plans)
+    applicablePlanIds: text('applicablePlanIds'), // JSON array of plan IDs
+    // Maximum redemptions (null for unlimited)
+    maxRedemptions: integer('maxRedemptions'),
+    // Current redemption count
+    redemptionCount: integer('redemptionCount').notNull().default(0),
+    // Status: active, expired, disabled
+    status: text('status').notNull().default('active'),
+    // Expiration date
+    expiresAt: timestamp('expiresAt'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('coupon_organization_idx').on(table.organizationId),
+    codeIdx: index('coupon_code_idx').on(table.organizationId, table.code),
+    statusIdx: index('coupon_status_idx').on(table.organizationId, table.status),
+  })
+)
+
+/**
+ * Product Feature Flag - Feature flags per plan
+ * Used to enable/disable specific features for a plan
+ */
+export const productFeatureFlag = pgTable(
+  'product_feature_flag',
+  {
+    id: text('id').primaryKey(),
+    // The plan this feature flag belongs to
+    productPlanId: text('productPlanId')
+      .notNull()
+      .references(() => productPlan.id, { onDelete: 'cascade' }),
+    // Flag key (e.g., "api_access", "advanced_analytics", "custom_branding")
+    flagKey: text('flagKey').notNull(),
+    // Flag value (JSON for flexibility - boolean, number, or object)
+    flagValue: text('flagValue').notNull().default('true'), // JSON value
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    planIdx: index('product_feature_flag_plan_idx').on(table.productPlanId),
+    keyIdx: index('product_feature_flag_key_idx').on(table.productPlanId, table.flagKey),
+  })
+)

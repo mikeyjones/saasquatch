@@ -43,6 +43,13 @@
       "when": 1764778258227,
       "tag": "0005_messy_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764782419900,
+      "tag": "0006_ambitious_paladin",
+      "breakpoints": true
     }
   ]
 }
