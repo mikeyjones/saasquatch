@@ -25,8 +25,10 @@ import { Route as TenantAppRouteImport } from './routes/$tenant.app'
 import { Route as ApiUserOrganizationsRouteImport } from './routes/api.user.organizations'
 import { Route as ApiAuthSplatRouteImport } from './routes/api.auth.$'
 import { Route as TenantAppSupportRouteImport } from './routes/$tenant.app.support'
+import { Route as TenantAppSalesRouteImport } from './routes/$tenant.app.sales'
 import { Route as TenantAppLoginRouteImport } from './routes/$tenant.app.login'
 import { Route as TenantAppSupportIndexRouteImport } from './routes/$tenant.app.support.index'
+import { Route as TenantAppSalesIndexRouteImport } from './routes/$tenant.app.sales.index'
 import { Route as ApiTenantTenantUsersRouteImport } from './routes/api.tenant.$tenant.users'
 import { Route as ApiTenantTenantTicketsRouteImport } from './routes/api.tenant.$tenant.tickets'
 import { Route as ApiTenantTenantMembershipRouteImport } from './routes/api.tenant.$tenant.membership'
@@ -118,6 +120,11 @@ const TenantAppSupportRoute = TenantAppSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => TenantAppRoute,
 } as any)
+const TenantAppSalesRoute = TenantAppSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => TenantAppRoute,
+} as any)
 const TenantAppLoginRoute = TenantAppLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -127,6 +134,11 @@ const TenantAppSupportIndexRoute = TenantAppSupportIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TenantAppSupportRoute,
+} as any)
+const TenantAppSalesIndexRoute = TenantAppSalesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TenantAppSalesRoute,
 } as any)
 const ApiTenantTenantUsersRoute = ApiTenantTenantUsersRouteImport.update({
   id: '/api/tenant/$tenant/users',
@@ -200,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
   '/$tenant/app/login': typeof TenantAppLoginRoute
+  '/$tenant/app/sales': typeof TenantAppSalesRouteWithChildren
   '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
@@ -209,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/api/tenant/$tenant/membership': typeof ApiTenantTenantMembershipRoute
   '/api/tenant/$tenant/tickets': typeof ApiTenantTenantTicketsRouteWithChildren
   '/api/tenant/$tenant/users': typeof ApiTenantTenantUsersRoute
+  '/$tenant/app/sales/': typeof TenantAppSalesIndexRoute
   '/$tenant/app/support/': typeof TenantAppSupportIndexRoute
   '/api/tenant/$tenant/knowledge/articles': typeof ApiTenantTenantKnowledgeArticlesRoute
   '/api/tenant/$tenant/knowledge/playbooks': typeof ApiTenantTenantKnowledgePlaybooksRoute
@@ -238,6 +252,7 @@ export interface FileRoutesByTo {
   '/api/tenant/$tenant/membership': typeof ApiTenantTenantMembershipRoute
   '/api/tenant/$tenant/tickets': typeof ApiTenantTenantTicketsRouteWithChildren
   '/api/tenant/$tenant/users': typeof ApiTenantTenantUsersRoute
+  '/$tenant/app/sales': typeof TenantAppSalesIndexRoute
   '/$tenant/app/support': typeof TenantAppSupportIndexRoute
   '/api/tenant/$tenant/knowledge/articles': typeof ApiTenantTenantKnowledgeArticlesRoute
   '/api/tenant/$tenant/knowledge/playbooks': typeof ApiTenantTenantKnowledgePlaybooksRoute
@@ -260,6 +275,7 @@ export interface FileRoutesById {
   '/forms/address': typeof FormsAddressRoute
   '/forms/simple': typeof FormsSimpleRoute
   '/$tenant/app/login': typeof TenantAppLoginRoute
+  '/$tenant/app/sales': typeof TenantAppSalesRouteWithChildren
   '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
@@ -269,6 +285,7 @@ export interface FileRoutesById {
   '/api/tenant/$tenant/membership': typeof ApiTenantTenantMembershipRoute
   '/api/tenant/$tenant/tickets': typeof ApiTenantTenantTicketsRouteWithChildren
   '/api/tenant/$tenant/users': typeof ApiTenantTenantUsersRoute
+  '/$tenant/app/sales/': typeof TenantAppSalesIndexRoute
   '/$tenant/app/support/': typeof TenantAppSupportIndexRoute
   '/api/tenant/$tenant/knowledge/articles': typeof ApiTenantTenantKnowledgeArticlesRoute
   '/api/tenant/$tenant/knowledge/playbooks': typeof ApiTenantTenantKnowledgePlaybooksRoute
@@ -292,6 +309,7 @@ export interface FileRouteTypes {
     | '/forms/address'
     | '/forms/simple'
     | '/$tenant/app/login'
+    | '/$tenant/app/sales'
     | '/$tenant/app/support'
     | '/api/auth/$'
     | '/api/user/organizations'
@@ -301,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/membership'
     | '/api/tenant/$tenant/tickets'
     | '/api/tenant/$tenant/users'
+    | '/$tenant/app/sales/'
     | '/$tenant/app/support/'
     | '/api/tenant/$tenant/knowledge/articles'
     | '/api/tenant/$tenant/knowledge/playbooks'
@@ -330,6 +349,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/membership'
     | '/api/tenant/$tenant/tickets'
     | '/api/tenant/$tenant/users'
+    | '/$tenant/app/sales'
     | '/$tenant/app/support'
     | '/api/tenant/$tenant/knowledge/articles'
     | '/api/tenant/$tenant/knowledge/playbooks'
@@ -351,6 +371,7 @@ export interface FileRouteTypes {
     | '/forms/address'
     | '/forms/simple'
     | '/$tenant/app/login'
+    | '/$tenant/app/sales'
     | '/$tenant/app/support'
     | '/api/auth/$'
     | '/api/user/organizations'
@@ -360,6 +381,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/membership'
     | '/api/tenant/$tenant/tickets'
     | '/api/tenant/$tenant/users'
+    | '/$tenant/app/sales/'
     | '/$tenant/app/support/'
     | '/api/tenant/$tenant/knowledge/articles'
     | '/api/tenant/$tenant/knowledge/playbooks'
@@ -502,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TenantAppSupportRouteImport
       parentRoute: typeof TenantAppRoute
     }
+    '/$tenant/app/sales': {
+      id: '/$tenant/app/sales'
+      path: '/sales'
+      fullPath: '/$tenant/app/sales'
+      preLoaderRoute: typeof TenantAppSalesRouteImport
+      parentRoute: typeof TenantAppRoute
+    }
     '/$tenant/app/login': {
       id: '/$tenant/app/login'
       path: '/login'
@@ -515,6 +544,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$tenant/app/support/'
       preLoaderRoute: typeof TenantAppSupportIndexRouteImport
       parentRoute: typeof TenantAppSupportRoute
+    }
+    '/$tenant/app/sales/': {
+      id: '/$tenant/app/sales/'
+      path: '/'
+      fullPath: '/$tenant/app/sales/'
+      preLoaderRoute: typeof TenantAppSalesIndexRouteImport
+      parentRoute: typeof TenantAppSalesRoute
     }
     '/api/tenant/$tenant/users': {
       id: '/api/tenant/$tenant/users'
@@ -589,6 +625,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface TenantAppSalesRouteChildren {
+  TenantAppSalesIndexRoute: typeof TenantAppSalesIndexRoute
+}
+
+const TenantAppSalesRouteChildren: TenantAppSalesRouteChildren = {
+  TenantAppSalesIndexRoute: TenantAppSalesIndexRoute,
+}
+
+const TenantAppSalesRouteWithChildren = TenantAppSalesRoute._addFileChildren(
+  TenantAppSalesRouteChildren,
+)
+
 interface TenantAppSupportRouteChildren {
   TenantAppSupportKnowledgeRoute: typeof TenantAppSupportKnowledgeRoute
   TenantAppSupportMembersRoute: typeof TenantAppSupportMembersRoute
@@ -608,11 +656,13 @@ const TenantAppSupportRouteWithChildren =
 
 interface TenantAppRouteChildren {
   TenantAppLoginRoute: typeof TenantAppLoginRoute
+  TenantAppSalesRoute: typeof TenantAppSalesRouteWithChildren
   TenantAppSupportRoute: typeof TenantAppSupportRouteWithChildren
 }
 
 const TenantAppRouteChildren: TenantAppRouteChildren = {
   TenantAppLoginRoute: TenantAppLoginRoute,
+  TenantAppSalesRoute: TenantAppSalesRouteWithChildren,
   TenantAppSupportRoute: TenantAppSupportRouteWithChildren,
 }
 

@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import {
   LayoutGrid,
-  MessageSquare,
-  Users,
-  BookOpen,
+  GitBranch,
+  Package,
+  FileText,
+  CreditCard,
   Bot,
   ChevronDown,
   ChevronUp,
@@ -26,10 +27,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const getNavItems = (tenant: string) => [
-  { id: 'overview', label: 'Overview', icon: LayoutGrid, path: `/${tenant}/app/support` },
-  { id: 'tickets', label: 'Tickets', icon: MessageSquare, path: `/${tenant}/app/support/tickets` },
-  { id: 'members', label: 'Members & Orgs', icon: Users, path: `/${tenant}/app/support/members` },
-  { id: 'knowledge', label: 'Knowledge & Playbooks', icon: BookOpen, path: `/${tenant}/app/support/knowledge` },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid, path: `/${tenant}/app/sales` },
+  { id: 'pipeline', label: 'Pipeline', icon: GitBranch, path: '#' },
+  { id: 'product-catalog', label: 'Product Catalog', icon: Package, path: '#' },
+  { id: 'quotes', label: 'Quotes', icon: FileText, path: '#' },
+  { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '#' },
   { id: 'agent', label: 'Agent Apollo', icon: Bot, path: '#' },
 ]
 
@@ -39,7 +41,7 @@ const departments = [
   { id: 'support', label: 'Customer Support', icon: Headphones, path: '/app/support', color: 'bg-amber-500' },
 ]
 
-export function SupportSidebar() {
+export function SalesSidebar() {
   const location = useLocation()
   const navigate = useNavigate()
   const currentPath = location.pathname
@@ -69,8 +71,8 @@ export function SupportSidebar() {
   }
 
   const isActive = (path: string) => {
-    if (path === `/${tenantSlug}/app/support`) {
-      return currentPath === `/${tenantSlug}/app/support` || currentPath === `/${tenantSlug}/app/support/`
+    if (path === `/${tenantSlug}/app/sales`) {
+      return currentPath === `/${tenantSlug}/app/sales` || currentPath === `/${tenantSlug}/app/sales/`
     }
     return currentPath.startsWith(path)
   }
@@ -80,7 +82,7 @@ export function SupportSidebar() {
       {/* Logo */}
       <div className="p-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">
               {tenant?.name?.charAt(0).toUpperCase() ?? 'S'}
             </span>
@@ -95,12 +97,12 @@ export function SupportSidebar() {
       <div className="px-3 mb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center justify-between px-3 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white text-sm transition-colors">
+            <button className="w-full flex items-center justify-between px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white text-sm transition-colors">
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-emerald-400 rounded flex items-center justify-center">
-                  <Headphones size={12} />
+                <div className="w-5 h-5 bg-indigo-400 rounded flex items-center justify-center">
+                  <Briefcase size={12} />
                 </div>
-                <span>Support Dept</span>
+                <span>Sales Dept</span>
               </div>
               <ChevronDown size={16} />
             </button>
@@ -151,7 +153,7 @@ export function SupportSidebar() {
               to={item.path}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-1 transition-colors text-left ${
                 active
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-indigo-600 text-white'
                   : 'text-slate-300 hover:bg-slate-700 hover:text-white'
               }`}
             >
@@ -167,7 +169,7 @@ export function SupportSidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="w-full flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-slate-700 transition-colors">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center overflow-hidden">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center overflow-hidden">
                 {session?.user?.image ? (
                   <img
                     src={session.user.image}
@@ -220,3 +222,4 @@ export function SupportSidebar() {
     </aside>
   )
 }
+
