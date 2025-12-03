@@ -35,6 +35,7 @@ import { Route as ApiTenantTenantMembershipRouteImport } from './routes/api.tena
 import { Route as TenantAppSupportTicketsRouteImport } from './routes/$tenant.app.support.tickets'
 import { Route as TenantAppSupportMembersRouteImport } from './routes/$tenant.app.support.members'
 import { Route as TenantAppSupportKnowledgeRouteImport } from './routes/$tenant.app.support.knowledge'
+import { Route as TenantAppSalesPipelineRouteImport } from './routes/$tenant.app.sales.pipeline'
 import { Route as ApiTenantTenantTicketsTicketIdRouteImport } from './routes/api.tenant.$tenant.tickets.$ticketId'
 import { Route as ApiTenantTenantKnowledgeSearchRouteImport } from './routes/api.tenant.$tenant.knowledge.search'
 import { Route as ApiTenantTenantKnowledgePlaybooksRouteImport } from './routes/api.tenant.$tenant.knowledge.playbooks'
@@ -172,6 +173,11 @@ const TenantAppSupportKnowledgeRoute =
     path: '/knowledge',
     getParentRoute: () => TenantAppSupportRoute,
   } as any)
+const TenantAppSalesPipelineRoute = TenantAppSalesPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => TenantAppSalesRoute,
+} as any)
 const ApiTenantTenantTicketsTicketIdRoute =
   ApiTenantTenantTicketsTicketIdRouteImport.update({
     id: '/$ticketId',
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
+  '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/$tenant/app/login': typeof TenantAppLoginRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
+  '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/$tenant/app/support': typeof TenantAppSupportRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/user/organizations': typeof ApiUserOrganizationsRoute
+  '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/$tenant/app/support'
     | '/api/auth/$'
     | '/api/user/organizations'
+    | '/$tenant/app/sales/pipeline'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/$tenant/app/login'
     | '/api/auth/$'
     | '/api/user/organizations'
+    | '/$tenant/app/sales/pipeline'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/$tenant/app/support'
     | '/api/auth/$'
     | '/api/user/organizations'
+    | '/$tenant/app/sales/pipeline'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
@@ -594,6 +606,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TenantAppSupportKnowledgeRouteImport
       parentRoute: typeof TenantAppSupportRoute
     }
+    '/$tenant/app/sales/pipeline': {
+      id: '/$tenant/app/sales/pipeline'
+      path: '/pipeline'
+      fullPath: '/$tenant/app/sales/pipeline'
+      preLoaderRoute: typeof TenantAppSalesPipelineRouteImport
+      parentRoute: typeof TenantAppSalesRoute
+    }
     '/api/tenant/$tenant/tickets/$ticketId': {
       id: '/api/tenant/$tenant/tickets/$ticketId'
       path: '/$ticketId'
@@ -626,10 +645,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface TenantAppSalesRouteChildren {
+  TenantAppSalesPipelineRoute: typeof TenantAppSalesPipelineRoute
   TenantAppSalesIndexRoute: typeof TenantAppSalesIndexRoute
 }
 
 const TenantAppSalesRouteChildren: TenantAppSalesRouteChildren = {
+  TenantAppSalesPipelineRoute: TenantAppSalesPipelineRoute,
   TenantAppSalesIndexRoute: TenantAppSalesIndexRoute,
 }
 

@@ -28,7 +28,7 @@ import {
 
 const getNavItems = (tenant: string) => [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid, path: `/${tenant}/app/sales` },
-  { id: 'pipeline', label: 'Pipeline', icon: GitBranch, path: '#' },
+  { id: 'pipeline', label: 'Pipeline', icon: GitBranch, path: `/${tenant}/app/sales/pipeline` },
   { id: 'product-catalog', label: 'Product Catalog', icon: Package, path: '#' },
   { id: 'quotes', label: 'Quotes', icon: FileText, path: '#' },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '#' },
