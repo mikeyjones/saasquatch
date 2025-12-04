@@ -15,3 +15,4 @@ export function generateSlug(title: string): string {
     .substring(0, 100) // Limit length
 }
 
+

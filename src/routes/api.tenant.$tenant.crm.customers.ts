@@ -8,9 +8,47 @@ import {
   organization,
   user,
   pipelineStage,
+  productPlan,
+  productPricing,
+  subscription,
+  subscriptionActivity,
 } from '@/db/schema'
-import { eq, and, desc, sql, ilike, or } from 'drizzle-orm'
+import { eq, and, desc, sql, or } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
+import { generateSlug } from '@/lib/slug-utils'
+
+function generateId(): string {
+  return crypto.randomUUID().replace(/-/g, '').substring(0, 24)
+}
+
+/**
+ * Generate a unique slug for a tenant organization within an organization
+ */
+async function generateUniqueSlug(orgId: string, name: string): Promise<string> {
+  const baseSlug = generateSlug(name)
+  let slug = baseSlug
+  let counter = 1
+
+  while (true) {
+    const existing = await db
+      .select({ id: tenantOrganization.id })
+      .from(tenantOrganization)
+      .where(
+        and(
+          eq(tenantOrganization.organizationId, orgId),
+          eq(tenantOrganization.slug, slug)
+        )
+      )
+      .limit(1)
+
+    if (existing.length === 0) {
+      return slug
+    }
+
+    slug = `${baseSlug}-${counter}`
+    counter++
+  }
+}
 
 export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
   server: {
@@ -366,6 +404,331 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
           console.error('Error fetching CRM customers:', error)
           return new Response(
             JSON.stringify({ error: 'Internal server error', customers: [] }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      },
+
+      /**
+       * POST /api/tenant/:tenant/crm/customers
+       * Create a new customer (tenant organization)
+       * Body:
+       * - name (required) - Company name
+       * - slug (optional) - Auto-generated from name if not provided
+       * - industry (optional)
+       * - website (optional)
+       * - billingEmail (optional)
+       * - billingAddress (optional)
+       * - assignedToUserId (optional) - Sales rep assignment
+       * - tags (optional) - Array of tags
+       * - notes (optional)
+       * - createSubscription (optional boolean) - Create subscription immediately
+       * - subscriptionData (optional) - Required if createSubscription is true:
+       *   - productPlanId (required)
+       *   - status (optional, default 'active')
+       *   - billingCycle (optional, default 'monthly')
+       *   - seats (optional, default 1)
+       *   - couponId (optional)
+       */
+      POST: async ({ request, params }) => {
+        try {
+          const session = await auth.api.getSession({
+            headers: request.headers,
+          })
+
+          if (!session?.user) {
+            return new Response(
+              JSON.stringify({ error: 'Unauthorized' }),
+              { status: 401, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          // Get the organization by slug
+          const org = await db
+            .select({ id: organization.id })
+            .from(organization)
+            .where(eq(organization.slug, params.tenant))
+            .limit(1)
+
+          if (org.length === 0) {
+            return new Response(
+              JSON.stringify({ error: 'Organization not found' }),
+              { status: 404, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          const orgId = org[0].id
+
+          // Parse request body
+          const body = await request.json()
+          const {
+            name,
+            slug: providedSlug,
+            industry,
+            website,
+            billingEmail,
+            billingAddress,
+            assignedToUserId,
+            tags,
+            notes,
+            createSubscription,
+            subscriptionData,
+          } = body as {
+            name: string
+            slug?: string
+            industry?: string
+            website?: string
+            billingEmail?: string
+            billingAddress?: string
+            assignedToUserId?: string
+            tags?: string[]
+            notes?: string
+            createSubscription?: boolean
+            subscriptionData?: {
+              productPlanId: string
+              status?: string
+              billingCycle?: string
+              seats?: number
+              couponId?: string
+            }
+          }
+
+          // Validate required fields
+          if (!name || typeof name !== 'string' || name.trim().length === 0) {
+            return new Response(
+              JSON.stringify({ error: 'Company name is required' }),
+              { status: 400, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          // Validate subscription data if creating subscription
+          if (createSubscription) {
+            if (!subscriptionData?.productPlanId) {
+              return new Response(
+                JSON.stringify({ error: 'Product plan is required when creating subscription' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+
+            // Verify product plan belongs to this org
+            const plan = await db
+              .select({ 
+                id: productPlan.id, 
+                name: productPlan.name,
+                pricingModel: productPlan.pricingModel,
+              })
+              .from(productPlan)
+              .where(
+                and(
+                  eq(productPlan.id, subscriptionData.productPlanId),
+                  eq(productPlan.organizationId, orgId)
+                )
+              )
+              .limit(1)
+
+            if (plan.length === 0) {
+              return new Response(
+                JSON.stringify({ error: 'Product plan not found' }),
+                { status: 404, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+          }
+
+          // Validate assignedToUserId if provided
+          if (assignedToUserId) {
+            const assignedUser = await db
+              .select({ id: user.id })
+              .from(user)
+              .where(eq(user.id, assignedToUserId))
+              .limit(1)
+
+            if (assignedUser.length === 0) {
+              return new Response(
+                JSON.stringify({ error: 'Assigned user not found' }),
+                { status: 404, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+          }
+
+          // Generate unique slug
+          const slug = providedSlug 
+            ? await generateUniqueSlug(orgId, providedSlug)
+            : await generateUniqueSlug(orgId, name)
+
+          const now = new Date()
+          const customerId = generateId()
+
+          // Create tenant organization
+          await db.insert(tenantOrganization).values({
+            id: customerId,
+            organizationId: orgId,
+            name: name.trim(),
+            slug,
+            industry: industry || null,
+            website: website || null,
+            billingEmail: billingEmail || null,
+            billingAddress: billingAddress || null,
+            assignedToUserId: assignedToUserId || null,
+            tags: tags && tags.length > 0 ? JSON.stringify(tags) : null,
+            notes: notes || null,
+            subscriptionPlan: null,
+            subscriptionStatus: null,
+            createdAt: now,
+            updatedAt: now,
+          })
+
+          let subscriptionResult = null
+
+          // Create subscription if requested
+          if (createSubscription && subscriptionData) {
+            const {
+              productPlanId,
+              status: subStatus = 'active',
+              billingCycle = 'monthly',
+              seats = 1,
+              couponId,
+            } = subscriptionData
+
+            // Get plan info
+            const plan = await db
+              .select({ 
+                id: productPlan.id, 
+                name: productPlan.name,
+              })
+              .from(productPlan)
+              .where(eq(productPlan.id, productPlanId))
+              .limit(1)
+
+            // Get plan pricing to calculate MRR
+            const pricing = await db
+              .select({
+                amount: productPricing.amount,
+                interval: productPricing.interval,
+                perSeatAmount: productPricing.perSeatAmount,
+                pricingType: productPricing.pricingType,
+              })
+              .from(productPricing)
+              .where(
+                and(
+                  eq(productPricing.productPlanId, productPlanId),
+                  eq(productPricing.pricingType, 'base')
+                )
+              )
+              .limit(1)
+
+            // Calculate MRR
+            let mrr = 0
+            if (pricing.length > 0) {
+              const p = pricing[0]
+              if (p.pricingType === 'base') {
+                if (p.interval === 'yearly') {
+                  mrr = Math.round(p.amount / 12)
+                } else {
+                  mrr = p.amount
+                }
+              }
+              if (p.perSeatAmount) {
+                mrr += p.perSeatAmount * seats
+              }
+            }
+
+            // Generate subscription number
+            const existingCount = await db
+              .select({ count: sql<number>`count(*)::int` })
+              .from(subscription)
+              .where(eq(subscription.organizationId, orgId))
+
+            const subNumber = `SUB-${(existingCount[0]?.count || 0) + 1000}`
+
+            // Calculate billing period
+            const periodStart = now
+            const periodEnd = new Date(now)
+            if (billingCycle === 'yearly') {
+              periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+            } else {
+              periodEnd.setMonth(periodEnd.getMonth() + 1)
+            }
+
+            const subscriptionId = generateId()
+
+            // Create subscription
+            await db.insert(subscription).values({
+              id: subscriptionId,
+              organizationId: orgId,
+              tenantOrganizationId: customerId,
+              subscriptionNumber: subNumber,
+              productPlanId,
+              status: subStatus,
+              billingCycle,
+              currentPeriodStart: periodStart,
+              currentPeriodEnd: periodEnd,
+              mrr,
+              seats,
+              couponId: couponId || null,
+              createdAt: now,
+              updatedAt: now,
+            })
+
+            // Create subscription activity
+            await db.insert(subscriptionActivity).values({
+              id: generateId(),
+              subscriptionId,
+              activityType: 'created',
+              description: `Subscription ${subNumber} created for ${name.trim()} on ${plan[0].name} plan`,
+              userId: session.user.id,
+              metadata: JSON.stringify({
+                plan: plan[0].name,
+                mrr,
+                seats,
+                billingCycle,
+              }),
+              createdAt: now,
+            })
+
+            // Update tenant organization with subscription info
+            await db
+              .update(tenantOrganization)
+              .set({
+                subscriptionPlan: plan[0].name,
+                subscriptionStatus: subStatus === 'trial' ? 'trialing' : subStatus,
+                updatedAt: now,
+              })
+              .where(eq(tenantOrganization.id, customerId))
+
+            subscriptionResult = {
+              id: subscriptionId,
+              subscriptionNumber: subNumber,
+              plan: plan[0].name,
+              mrr,
+              status: subStatus,
+              billingCycle,
+              seats,
+            }
+          }
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              customer: {
+                id: customerId,
+                name: name.trim(),
+                slug,
+                industry: industry || null,
+                website: website || null,
+                billingEmail: billingEmail || null,
+                tags: tags || [],
+                assignedToUserId: assignedToUserId || null,
+                subscriptionPlan: subscriptionResult?.plan || null,
+                subscriptionStatus: subscriptionResult?.status || null,
+              },
+              subscription: subscriptionResult,
+            }),
+            { status: 201, headers: { 'Content-Type': 'application/json' } }
+          )
+        } catch (error) {
+          console.error('Error creating customer:', error)
+          return new Response(
+            JSON.stringify({ error: 'Internal server error' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }
           )
         }

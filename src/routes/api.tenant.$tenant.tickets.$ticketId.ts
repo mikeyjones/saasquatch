@@ -307,3 +307,4 @@ function getInitials(name: string): string {
     .substring(0, 2)
 }
 
+

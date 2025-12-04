@@ -52,6 +52,7 @@ interface CRMCustomerTableProps {
   customers: CRMCustomer[]
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
+  onEdit?: (customer: CRMCustomer) => void
 }
 
 const statusStyles = {
@@ -101,6 +102,7 @@ export function CRMCustomerTable({
   customers,
   selectedIds,
   onSelectionChange,
+  onEdit,
 }: CRMCustomerTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
@@ -310,7 +312,9 @@ export function CRMCustomerTable({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
+                Edit
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Add Deal</DropdownMenuItem>
               <DropdownMenuItem>Add Contact</DropdownMenuItem>
@@ -399,4 +403,5 @@ export function CRMCustomerTable({
     </div>
   )
 }
+
 

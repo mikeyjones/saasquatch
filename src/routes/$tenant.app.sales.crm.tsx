@@ -6,6 +6,7 @@ import { CRMSegments } from '@/components/CRMSegments'
 import { CRMFilters, type CRMFiltersState } from '@/components/CRMFilters'
 import { CRMBulkActions } from '@/components/CRMBulkActions'
 import { CRMCustomerTable, type CRMCustomer } from '@/components/CRMCustomerTable'
+import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
 
 export const Route = createFileRoute('/$tenant/app/sales/crm')({
   component: CRMPage,
@@ -39,6 +40,8 @@ function CRMPage() {
   const [industries, setIndustries] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingCustomer, setEditingCustomer] = useState<CRMCustomer | null>(null)
 
   // Fetch customers from API
   const fetchCustomers = useCallback(async () => {
@@ -153,12 +156,42 @@ function CRMPage() {
             <Download size={18} className="mr-1" />
             Export
           </Button>
-          <Button className="bg-indigo-500 hover:bg-indigo-600 text-white">
+          <Button 
+            className="bg-indigo-500 hover:bg-indigo-600 text-white"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
             <Plus size={18} className="mr-1" />
             Add Customer
           </Button>
         </div>
       </div>
+
+      {/* Create Customer Dialog */}
+      <CreateCustomerDialog
+        open={isCreateDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateDialogOpen(open)
+          if (!open) setEditingCustomer(null)
+        }}
+        onCustomerCreated={() => {
+          setIsCreateDialogOpen(false)
+          setEditingCustomer(null)
+          fetchCustomers()
+        }}
+      />
+
+      {/* Edit Customer Dialog */}
+      <CreateCustomerDialog
+        open={!!editingCustomer}
+        onOpenChange={(open) => {
+          if (!open) setEditingCustomer(null)
+        }}
+        onCustomerCreated={() => {
+          setEditingCustomer(null)
+          fetchCustomers()
+        }}
+        customerId={editingCustomer?.id || null}
+      />
 
       {/* Error Banner */}
       {error && (
@@ -230,6 +263,7 @@ function CRMPage() {
           customers={customers}
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
+          onEdit={(customer) => setEditingCustomer(customer)}
         />
       )}
     </main>

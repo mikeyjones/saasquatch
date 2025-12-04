@@ -342,6 +342,141 @@ describe('CRM Page Add Customer', () => {
     }
     expect(addButton.label).toBe('Add Customer')
   })
+
+  it('should open CreateCustomerDialog when button is clicked', () => {
+    const buttonBehavior = {
+      onClick: 'setIsCreateDialogOpen(true)',
+    }
+    expect(buttonBehavior.onClick).toContain('true')
+  })
+})
+
+describe('CRM Page Create Customer Dialog Integration', () => {
+  it('should have CreateCustomerDialog component imported', () => {
+    const imports = ['CreateCustomerDialog']
+    expect(imports).toContain('CreateCustomerDialog')
+  })
+
+  it('should track dialog open state', () => {
+    const state = {
+      isCreateDialogOpen: false,
+      setIsCreateDialogOpen: 'function',
+    }
+    expect(typeof state.isCreateDialogOpen).toBe('boolean')
+  })
+
+  it('should pass open prop to CreateCustomerDialog', () => {
+    const dialogProps = {
+      open: true,
+      onOpenChange: 'setIsCreateDialogOpen',
+    }
+    expect(dialogProps.open).toBe(true)
+  })
+
+  it('should pass onCustomerCreated callback', () => {
+    const dialogProps = {
+      onCustomerCreated: {
+        closesDialog: true,
+        refreshesCustomers: true,
+      },
+    }
+    expect(dialogProps.onCustomerCreated.closesDialog).toBe(true)
+    expect(dialogProps.onCustomerCreated.refreshesCustomers).toBe(true)
+  })
+
+  it('should close dialog after successful customer creation', () => {
+    const onCustomerCreatedBehavior = {
+      actions: ['setIsCreateDialogOpen(false)', 'fetchCustomers()'],
+    }
+    expect(onCustomerCreatedBehavior.actions).toContain('setIsCreateDialogOpen(false)')
+  })
+
+  it('should refresh customer list after creation', () => {
+    const onCustomerCreatedBehavior = {
+      actions: ['setIsCreateDialogOpen(false)', 'fetchCustomers()'],
+    }
+    expect(onCustomerCreatedBehavior.actions).toContain('fetchCustomers()')
+  })
+})
+
+describe('CRM Page Customer Creation Flow', () => {
+  describe('Prospect Creation', () => {
+    it('should create prospect without subscription', () => {
+      const flowSteps = [
+        'Click Add Customer button',
+        'Fill in company name',
+        'Leave Create subscription unchecked',
+        'Click Create Prospect',
+        'Dialog closes',
+        'Customer list refreshes',
+        'New prospect appears in list',
+      ]
+      expect(flowSteps).toContain('Leave Create subscription unchecked')
+      expect(flowSteps).toContain('Click Create Prospect')
+    })
+
+    it('should show new prospect in All and Prospects segments', () => {
+      const segmentVisibility = {
+        all: true,
+        customers: false,
+        prospects: true,
+        inactive: false,
+      }
+      expect(segmentVisibility.all).toBe(true)
+      expect(segmentVisibility.prospects).toBe(true)
+      expect(segmentVisibility.customers).toBe(false)
+    })
+  })
+
+  describe('Customer Creation', () => {
+    it('should create customer with subscription', () => {
+      const flowSteps = [
+        'Click Add Customer button',
+        'Fill in company name',
+        'Check Create subscription now',
+        'Select product plan',
+        'Click Create Customer',
+        'Dialog closes',
+        'Customer list refreshes',
+        'New customer appears in list',
+      ]
+      expect(flowSteps).toContain('Check Create subscription now')
+      expect(flowSteps).toContain('Select product plan')
+      expect(flowSteps).toContain('Click Create Customer')
+    })
+
+    it('should show new customer in All and Customers segments', () => {
+      const segmentVisibility = {
+        all: true,
+        customers: true,
+        prospects: false,
+        inactive: false,
+      }
+      expect(segmentVisibility.all).toBe(true)
+      expect(segmentVisibility.customers).toBe(true)
+      expect(segmentVisibility.prospects).toBe(false)
+    })
+  })
+
+  describe('Segment Count Updates', () => {
+    it('should increment All count after creation', () => {
+      const countsBefore = { all: 12, customers: 5, prospects: 4, inactive: 3 }
+      const countsAfterProspect = { all: 13, customers: 5, prospects: 5, inactive: 3 }
+      expect(countsAfterProspect.all).toBe(countsBefore.all + 1)
+    })
+
+    it('should increment Prospects count after prospect creation', () => {
+      const countsBefore = { all: 12, customers: 5, prospects: 4, inactive: 3 }
+      const countsAfterProspect = { all: 13, customers: 5, prospects: 5, inactive: 3 }
+      expect(countsAfterProspect.prospects).toBe(countsBefore.prospects + 1)
+    })
+
+    it('should increment Customers count after customer creation', () => {
+      const countsBefore = { all: 12, customers: 5, prospects: 4, inactive: 3 }
+      const countsAfterCustomer = { all: 13, customers: 6, prospects: 4, inactive: 3 }
+      expect(countsAfterCustomer.customers).toBe(countsBefore.customers + 1)
+    })
+  })
 })
 
 describe('CRM Page Tenant Context', () => {

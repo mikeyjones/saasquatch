@@ -23,3 +23,4 @@ export function PipelineFunnelChart({ data }: PipelineFunnelChartProps) {
   )
 }
 
+

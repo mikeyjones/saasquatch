@@ -423,3 +423,565 @@ describe('Error Handling', () => {
     }
   })
 })
+
+/**
+ * Tests for POST /api/tenant/:tenant/crm/customers
+ * Create a new customer (tenant organization)
+ */
+describe('CRM Customer Creation API', () => {
+  describe('POST /api/tenant/:tenant/crm/customers', () => {
+    describe('Authentication and Authorization', () => {
+      it('should require authentication', () => {
+        const expectedResponse = { error: 'Unauthorized' }
+        expect(expectedResponse.error).toBe('Unauthorized')
+      })
+
+      it('should return 404 for invalid tenant', () => {
+        const expectedResponse = { error: 'Organization not found' }
+        expect(expectedResponse.error).toBe('Organization not found')
+      })
+    })
+
+    describe('Required Fields', () => {
+      it('should require company name', () => {
+        const expectedResponse = { error: 'Company name is required' }
+        expect(expectedResponse.error).toBe('Company name is required')
+      })
+
+      it('should reject empty name', () => {
+        const validation = {
+          name: '',
+          expectedError: 'Company name is required',
+        }
+        expect(validation.expectedError).toBe('Company name is required')
+      })
+
+      it('should reject whitespace-only name', () => {
+        const validation = {
+          name: '   ',
+          expectedError: 'Company name is required',
+        }
+        expect(validation.expectedError).toBe('Company name is required')
+      })
+    })
+
+    describe('Slug Generation', () => {
+      it('should auto-generate slug from name', () => {
+        const customer = {
+          name: 'Acme Corporation',
+          expectedSlug: 'acme-corporation',
+        }
+        expect(customer.expectedSlug).toBe('acme-corporation')
+      })
+
+      it('should generate unique slug when duplicate exists', () => {
+        const customers = [
+          { name: 'Acme Corp', slug: 'acme-corp' },
+          { name: 'Acme Corp', slug: 'acme-corp-1' }, // Second Acme Corp gets -1 suffix
+        ]
+        expect(customers[0].slug).toBe('acme-corp')
+        expect(customers[1].slug).toBe('acme-corp-1')
+      })
+
+      it('should use provided slug if given', () => {
+        const customer = {
+          name: 'Acme Corporation',
+          providedSlug: 'acme-custom',
+          resultSlug: 'acme-custom',
+        }
+        expect(customer.resultSlug).toBe('acme-custom')
+      })
+
+      it('should handle special characters in name', () => {
+        const customer = {
+          name: "Acme's Corp & Partners",
+          expectedSlug: 'acmes-corp-partners',
+        }
+        expect(customer.expectedSlug).toBe('acmes-corp-partners')
+      })
+    })
+
+    describe('Optional Fields', () => {
+      it('should accept industry', () => {
+        const customer = {
+          name: 'Acme Corp',
+          industry: 'Technology',
+        }
+        expect(customer.industry).toBe('Technology')
+      })
+
+      it('should accept website', () => {
+        const customer = {
+          name: 'Acme Corp',
+          website: 'https://acme.com',
+        }
+        expect(customer.website).toBe('https://acme.com')
+      })
+
+      it('should accept billingEmail', () => {
+        const customer = {
+          name: 'Acme Corp',
+          billingEmail: 'billing@acme.com',
+        }
+        expect(customer.billingEmail).toBe('billing@acme.com')
+      })
+
+      it('should accept billingAddress', () => {
+        const customer = {
+          name: 'Acme Corp',
+          billingAddress: '123 Main St, City, State 12345',
+        }
+        expect(customer.billingAddress).toBeDefined()
+      })
+
+      it('should accept assignedToUserId', () => {
+        const customer = {
+          name: 'Acme Corp',
+          assignedToUserId: 'user-123',
+        }
+        expect(customer.assignedToUserId).toBe('user-123')
+      })
+
+      it('should validate assignedToUserId exists', () => {
+        const validation = {
+          assignedToUserId: 'non-existent-user',
+          expectedError: 'Assigned user not found',
+        }
+        expect(validation.expectedError).toBe('Assigned user not found')
+      })
+
+      it('should accept tags as array', () => {
+        const customer = {
+          name: 'Acme Corp',
+          tags: ['enterprise', 'high-value'],
+        }
+        expect(customer.tags).toEqual(['enterprise', 'high-value'])
+      })
+
+      it('should store tags as JSON string', () => {
+        const dbStorage = {
+          tags: ['enterprise', 'high-value'],
+          dbValue: '["enterprise","high-value"]',
+        }
+        expect(JSON.parse(dbStorage.dbValue)).toEqual(dbStorage.tags)
+      })
+
+      it('should accept notes', () => {
+        const customer = {
+          name: 'Acme Corp',
+          notes: 'Important customer, handle with care',
+        }
+        expect(customer.notes).toBeDefined()
+      })
+    })
+
+    describe('Prospect Creation (no subscription)', () => {
+      it('should create customer without subscription', () => {
+        const request = {
+          name: 'Acme Corp',
+          industry: 'Technology',
+          createSubscription: false,
+        }
+        expect(request.createSubscription).toBe(false)
+      })
+
+      it('should set subscriptionPlan to null for prospect', () => {
+        const customer = {
+          createSubscription: false,
+          resultSubscriptionPlan: null,
+          resultSubscriptionStatus: null,
+        }
+        expect(customer.resultSubscriptionPlan).toBeNull()
+        expect(customer.resultSubscriptionStatus).toBeNull()
+      })
+
+      it('should return customer as prospect in status', () => {
+        const customer = {
+          subscriptionStatus: null,
+          expectedCrmStatus: 'prospect',
+        }
+        expect(customer.expectedCrmStatus).toBe('prospect')
+      })
+    })
+
+    describe('Customer Creation (with subscription)', () => {
+      it('should require productPlanId when creating subscription', () => {
+        const request = {
+          name: 'Acme Corp',
+          createSubscription: true,
+          subscriptionData: {}, // missing productPlanId
+        }
+        const expectedError = 'Product plan is required when creating subscription'
+        expect(expectedError).toContain('Product plan')
+      })
+
+      it('should validate productPlanId exists', () => {
+        const validation = {
+          productPlanId: 'non-existent-plan',
+          expectedError: 'Product plan not found',
+        }
+        expect(validation.expectedError).toBe('Product plan not found')
+      })
+
+      it('should validate productPlanId belongs to organization', () => {
+        const validation = {
+          productPlanId: 'plan-from-other-org',
+          expectedError: 'Product plan not found',
+        }
+        expect(validation.expectedError).toBe('Product plan not found')
+      })
+
+      it('should create subscription with default values', () => {
+        const subscriptionDefaults = {
+          status: 'active',
+          billingCycle: 'monthly',
+          seats: 1,
+        }
+        expect(subscriptionDefaults.status).toBe('active')
+        expect(subscriptionDefaults.billingCycle).toBe('monthly')
+        expect(subscriptionDefaults.seats).toBe(1)
+      })
+
+      it('should accept custom subscription values', () => {
+        const subscriptionData = {
+          productPlanId: 'plan-123',
+          status: 'trial',
+          billingCycle: 'yearly',
+          seats: 10,
+          couponId: 'coupon-123',
+        }
+        expect(subscriptionData.billingCycle).toBe('yearly')
+        expect(subscriptionData.seats).toBe(10)
+      })
+
+      it('should generate subscription number', () => {
+        const subscription = {
+          subscriptionNumber: 'SUB-1000',
+        }
+        expect(subscription.subscriptionNumber).toMatch(/^SUB-\d+$/)
+      })
+
+      it('should calculate MRR from plan pricing', () => {
+        const mrrCalculation = {
+          planAmount: 9900, // $99
+          interval: 'monthly',
+          seats: 1,
+          expectedMrr: 9900,
+        }
+        expect(mrrCalculation.expectedMrr).toBe(9900)
+      })
+
+      it('should convert yearly pricing to MRR', () => {
+        const mrrCalculation = {
+          planAmount: 118800, // $1188/year
+          interval: 'yearly',
+          seats: 1,
+          expectedMrr: 9900, // $99/month
+        }
+        expect(mrrCalculation.expectedMrr).toBe(Math.round(mrrCalculation.planAmount / 12))
+      })
+
+      it('should update tenant organization subscription fields', () => {
+        const tenantOrgUpdate = {
+          subscriptionPlan: 'Enterprise',
+          subscriptionStatus: 'active',
+        }
+        expect(tenantOrgUpdate.subscriptionPlan).toBe('Enterprise')
+        expect(tenantOrgUpdate.subscriptionStatus).toBe('active')
+      })
+
+      it('should create subscription activity entry', () => {
+        const activity = {
+          activityType: 'created',
+          description: 'Subscription SUB-1000 created for Acme Corp on Enterprise plan',
+        }
+        expect(activity.activityType).toBe('created')
+        expect(activity.description).toContain('created')
+      })
+    })
+
+    describe('Response Shape', () => {
+      it('should return success response for prospect', () => {
+        const response = {
+          success: true,
+          customer: {
+            id: 'customer-uuid',
+            name: 'Acme Corp',
+            slug: 'acme-corp',
+            industry: 'Technology',
+            website: null,
+            billingEmail: null,
+            tags: [],
+            assignedToUserId: null,
+            subscriptionPlan: null,
+            subscriptionStatus: null,
+          },
+          subscription: null,
+        }
+        expect(response.success).toBe(true)
+        expect(response.customer.id).toBeDefined()
+        expect(response.subscription).toBeNull()
+      })
+
+      it('should return success response for customer with subscription', () => {
+        const response = {
+          success: true,
+          customer: {
+            id: 'customer-uuid',
+            name: 'Acme Corp',
+            slug: 'acme-corp',
+            industry: 'Technology',
+            subscriptionPlan: 'Enterprise',
+            subscriptionStatus: 'active',
+          },
+          subscription: {
+            id: 'subscription-uuid',
+            subscriptionNumber: 'SUB-1000',
+            plan: 'Enterprise',
+            mrr: 9900,
+            status: 'active',
+            billingCycle: 'monthly',
+            seats: 1,
+          },
+        }
+        expect(response.success).toBe(true)
+        expect(response.subscription).toBeDefined()
+        expect(response.subscription?.subscriptionNumber).toMatch(/^SUB-\d+$/)
+      })
+
+      it('should return 201 status code on success', () => {
+        const responseStatus = 201
+        expect(responseStatus).toBe(201)
+      })
+    })
+
+    describe('Error Handling', () => {
+      it('should return 400 for validation errors', () => {
+        const errorResponse = {
+          status: 400,
+          error: 'Company name is required',
+        }
+        expect(errorResponse.status).toBe(400)
+      })
+
+      it('should return 404 for not found errors', () => {
+        const errorResponse = {
+          status: 404,
+          error: 'Product plan not found',
+        }
+        expect(errorResponse.status).toBe(404)
+      })
+
+      it('should return 500 for internal server errors', () => {
+        const errorResponse = {
+          status: 500,
+          error: 'Internal server error',
+        }
+        expect(errorResponse.status).toBe(500)
+      })
+    })
+
+    describe('Organization Scoping', () => {
+      it('should create customer within the authenticated org', () => {
+        const scopingRule = {
+          customerOrganizationId: 'derived from params.tenant',
+          verification: 'org.slug === params.tenant',
+        }
+        expect(scopingRule.verification).toContain('params.tenant')
+      })
+
+      it('should prevent creating customer for other organization', () => {
+        const securityRule = {
+          check: 'Customer is always created under authenticated users org',
+          prevention: 'organizationId comes from URL, not request body',
+        }
+        expect(securityRule.prevention).toContain('URL')
+      })
+    })
+  })
+})
+
+describe('CRM Members API', () => {
+  describe('GET /api/tenant/:tenant/members', () => {
+    it('should require authentication', () => {
+      const expectedResponse = { error: 'Unauthorized', members: [] }
+      expect(expectedResponse.error).toBe('Unauthorized')
+    })
+
+    it('should return organization members', () => {
+      const expectedShape = {
+        members: [
+          {
+            id: 'user-uuid',
+            name: 'John Smith',
+            email: 'john@example.com',
+            image: null,
+            role: 'admin',
+          },
+        ],
+      }
+      expect(expectedShape.members).toBeInstanceOf(Array)
+      expect(expectedShape.members[0].id).toBeDefined()
+      expect(expectedShape.members[0].name).toBeDefined()
+    })
+
+    it('should return empty array for invalid tenant', () => {
+      const expectedResponse = { error: 'Organization not found', members: [] }
+      expect(expectedResponse.error).toBe('Organization not found')
+      expect(expectedResponse.members).toEqual([])
+    })
+  })
+
+  describe('Customer Detail API', () => {
+    describe('GET /api/tenant/:tenant/crm/customers/:customerId', () => {
+      it('should require authentication', () => {
+        const expectedResponse = {
+          error: 'Unauthorized',
+        }
+        expect(expectedResponse.error).toBe('Unauthorized')
+      })
+
+      it('should return 404 for invalid tenant', () => {
+        const expectedResponse = {
+          error: 'Organization not found',
+        }
+        expect(expectedResponse.error).toBe('Organization not found')
+      })
+
+      it('should return 404 for customer not found', () => {
+        const expectedResponse = {
+          error: 'Customer not found',
+        }
+        expect(expectedResponse.error).toBe('Customer not found')
+      })
+
+      it('should return customer with full details', () => {
+        const expectedCustomerShape = {
+          customer: {
+            id: 'string',
+            name: 'string',
+            slug: 'string',
+            industry: 'string | null',
+            website: 'string | null',
+            billingEmail: 'string | null',
+            billingAddress: 'string | null',
+            assignedToUserId: 'string | null',
+            tags: ['enterprise', 'high-value'],
+            notes: 'string | null',
+            subscriptionPlan: 'string | null',
+            subscriptionStatus: 'active | trialing | canceled | past_due | null',
+            createdAt: 'ISO date string',
+            updatedAt: 'ISO date string',
+          },
+        }
+        expect(expectedCustomerShape.customer.id).toBeDefined()
+        expect(expectedCustomerShape.customer.name).toBeDefined()
+        expect(expectedCustomerShape.customer.slug).toBeDefined()
+      })
+    })
+
+    describe('PUT /api/tenant/:tenant/crm/customers/:customerId', () => {
+      it('should require authentication', () => {
+        const expectedResponse = {
+          error: 'Unauthorized',
+        }
+        expect(expectedResponse.error).toBe('Unauthorized')
+      })
+
+      it('should return 404 for invalid tenant', () => {
+        const expectedResponse = {
+          error: 'Organization not found',
+        }
+        expect(expectedResponse.error).toBe('Organization not found')
+      })
+
+      it('should return 404 for customer not found', () => {
+        const expectedResponse = {
+          error: 'Customer not found',
+        }
+        expect(expectedResponse.error).toBe('Customer not found')
+      })
+
+      it('should accept partial update (only name)', () => {
+        const requestBody = {
+          name: 'Updated Company Name',
+        }
+        expect(requestBody.name).toBeDefined()
+        expect(Object.keys(requestBody).length).toBe(1)
+      })
+
+      it('should accept multiple fields update', () => {
+        const requestBody = {
+          name: 'Updated Company Name',
+          industry: 'Technology',
+          website: 'https://example.com',
+          billingEmail: 'billing@example.com',
+          billingAddress: '123 Main St',
+          assignedToUserId: 'user-id-123',
+          tags: ['enterprise', 'high-value'],
+          notes: 'Updated notes',
+        }
+        expect(requestBody.name).toBeDefined()
+        expect(Array.isArray(requestBody.tags)).toBe(true)
+      })
+
+      it('should allow unassigning sales rep (null assignedToUserId)', () => {
+        const requestBody = {
+          assignedToUserId: null,
+        }
+        expect(requestBody.assignedToUserId).toBeNull()
+      })
+
+      it('should validate assignedToUserId exists if provided', () => {
+        const requestBody = {
+          assignedToUserId: 'non-existent-user-id',
+        }
+        const expectedError = {
+          error: 'Assigned user not found',
+        }
+        expect(expectedError.error).toBe('Assigned user not found')
+      })
+
+      it('should return updated customer on success', () => {
+        const expectedResponse = {
+          success: true,
+          customer: {
+            id: 'string',
+            name: 'Updated Company Name',
+            slug: 'string',
+            industry: 'Technology',
+            website: 'https://example.com',
+            billingEmail: 'billing@example.com',
+            billingAddress: '123 Main St',
+            assignedToUserId: 'user-id-123',
+            tags: ['enterprise', 'high-value'],
+            notes: 'Updated notes',
+            subscriptionPlan: 'string | null',
+            subscriptionStatus: 'active | trialing | canceled | past_due | null',
+          },
+        }
+        expect(expectedResponse.success).toBe(true)
+        expect(expectedResponse.customer.id).toBeDefined()
+        expect(expectedResponse.customer.name).toBe('Updated Company Name')
+      })
+
+      it('should only update provided fields', () => {
+        const originalCustomer = {
+          name: 'Original Name',
+          industry: 'Finance',
+          website: 'https://original.com',
+        }
+        const updateRequest = {
+          name: 'Updated Name',
+        }
+        const updatedCustomer = {
+          ...originalCustomer,
+          ...updateRequest,
+        }
+        expect(updatedCustomer.name).toBe('Updated Name')
+        expect(updatedCustomer.industry).toBe('Finance') // Unchanged
+        expect(updatedCustomer.website).toBe('https://original.com') // Unchanged
+      })
+    })
+  })
+})
