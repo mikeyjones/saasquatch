@@ -1,5 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { RefreshCw, Plus } from 'lucide-react'
+import { createFileRoute, useParams } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { RefreshCw, Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SubscriptionCard, type Subscription } from '@/components/SubscriptionCard'
 
@@ -7,47 +8,32 @@ export const Route = createFileRoute('/$tenant/app/sales/subscriptions')({
   component: SubscriptionsPage,
 })
 
-// Mock data matching the screenshot
-const mockSubscriptions: Subscription[] = [
-  {
-    id: '1',
-    subscriptionId: 'SUB-992',
-    companyName: 'Global Logistics',
-    status: 'active',
-    plan: 'Enterprise Platform',
-    mrr: 7083,
-    renewsAt: '2024-11-15',
-  },
-  {
-    id: '2',
-    subscriptionId: 'SUB-993',
-    companyName: 'StartUp Inc',
-    status: 'trial',
-    plan: 'Growth Tier',
-    mrr: 416,
-    renewsAt: '2023-11-01',
-  },
-  {
-    id: '3',
-    subscriptionId: 'SUB-994',
-    companyName: 'Old Co.',
-    status: 'past_due',
-    plan: 'Legacy Basic',
-    mrr: 100,
-    renewsAt: '2023-10-20',
-  },
-  {
-    id: '4',
-    subscriptionId: 'SUB-995',
-    companyName: 'New Wave',
-    status: 'active',
-    plan: 'Pro Annual',
-    mrr: 2083,
-    renewsAt: '2024-12-01',
-  },
-]
+interface SubscriptionsResponse {
+  subscriptions: Subscription[]
+  error?: string
+}
 
 function SubscriptionsPage() {
+  const { tenant } = useParams({ from: '/$tenant/app/sales/subscriptions' })
+
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<SubscriptionsResponse>({
+    queryKey: ['subscriptions', tenant],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenant/${tenant}/subscriptions`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscriptions')
+      }
+      return response.json()
+    },
+  })
+
+  const subscriptions = data?.subscriptions || []
+
   const handleViewUsage = (subscription: Subscription) => {
     console.log('View usage for:', subscription.companyName)
   }
@@ -57,11 +43,34 @@ function SubscriptionsPage() {
   }
 
   const handleSyncMeters = () => {
-    console.log('Syncing meters...')
+    refetch()
   }
 
   const handleNewSubscription = () => {
     console.log('Creating new subscription...')
+  }
+
+  if (isLoading) {
+    return (
+      <main className="flex-1 overflow-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        </div>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="flex-1 overflow-auto p-6">
+        <div className="flex flex-col items-center justify-center h-64">
+          <p className="text-red-500 mb-4">Failed to load subscriptions</p>
+          <Button variant="outline" onClick={() => refetch()}>
+            Try Again
+          </Button>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -85,17 +94,29 @@ function SubscriptionsPage() {
       </div>
 
       {/* Subscription Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockSubscriptions.map((subscription) => (
-          <SubscriptionCard
-            key={subscription.id}
-            subscription={subscription}
-            onViewUsage={handleViewUsage}
-            onModifyPlan={handleModifyPlan}
-          />
-        ))}
-      </div>
+      {subscriptions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+          <p className="mb-4">No subscriptions found</p>
+          <Button
+            className="bg-indigo-500 hover:bg-indigo-600 text-white"
+            onClick={handleNewSubscription}
+          >
+            <Plus size={18} className="mr-1" />
+            Create First Subscription
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {subscriptions.map((subscription) => (
+            <SubscriptionCard
+              key={subscription.id}
+              subscription={subscription}
+              onViewUsage={handleViewUsage}
+              onModifyPlan={handleModifyPlan}
+            />
+          ))}
+        </div>
+      )}
     </main>
   )
 }
-

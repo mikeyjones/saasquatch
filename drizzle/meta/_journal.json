@@ -50,6 +50,20 @@
       "when": 1764782419900,
       "tag": "0006_ambitious_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1764787911070,
+      "tag": "0007_crm_tenant_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1764789568760,
+      "tag": "0008_subscriptions",
+      "breakpoints": true
     }
   ]
 }

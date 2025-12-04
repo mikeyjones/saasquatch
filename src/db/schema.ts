@@ -152,6 +152,10 @@ export const tenantOrganization = pgTable(
     // Billing info
     billingEmail: text('billingEmail'),
     billingAddress: text('billingAddress'),
+    // CRM fields
+    tags: text('tags'), // JSON array of tags, e.g., ["enterprise", "high-value"]
+    assignedToUserId: text('assignedToUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
     // Metadata
     notes: text('notes'),
     createdAt: timestamp('createdAt').notNull().defaultNow(),
@@ -160,6 +164,7 @@ export const tenantOrganization = pgTable(
   (table) => ({
     orgIdx: index('tenant_org_organization_idx').on(table.organizationId),
     slugIdx: index('tenant_org_slug_idx').on(table.organizationId, table.slug),
+    assignedIdx: index('tenant_org_assigned_idx').on(table.assignedToUserId),
   })
 )
 
@@ -826,5 +831,185 @@ export const productFeatureFlag = pgTable(
   (table) => ({
     planIdx: index('product_feature_flag_plan_idx').on(table.productPlanId),
     keyIdx: index('product_feature_flag_key_idx').on(table.productPlanId, table.flagKey),
+  })
+)
+
+// ============================================================================
+// Subscription Management Tables
+// Customer subscriptions, usage tracking, and subscription activities
+// ============================================================================
+
+/**
+ * Usage Meter - Definition of usage-based billing meters
+ * Scoped to a support staff organization
+ */
+export const usageMeter = pgTable(
+  'usage_meter',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this meter belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // Meter info
+    name: text('name').notNull(), // e.g., "API Calls", "Storage GB"
+    unit: text('unit').notNull(), // e.g., "calls", "GB", "messages"
+    description: text('description'),
+    // Status
+    status: text('status').notNull().default('active'), // active, archived
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('usage_meter_organization_idx').on(table.organizationId),
+    statusIdx: index('usage_meter_status_idx').on(table.organizationId, table.status),
+  })
+)
+
+/**
+ * Subscription - Customer subscriptions to product plans
+ * Scoped to support staff organization but linked to tenant organization (customer)
+ */
+export const subscription = pgTable(
+  'subscription',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization managing this subscription
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // The customer organization this subscription is for
+    tenantOrganizationId: text('tenantOrganizationId')
+      .notNull()
+      .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
+    // Human-readable subscription ID (e.g., "SUB-992")
+    subscriptionNumber: text('subscriptionNumber').notNull(),
+    // The plan this subscription is for
+    productPlanId: text('productPlanId')
+      .notNull()
+      .references(() => productPlan.id, { onDelete: 'restrict' }),
+    // Subscription status
+    status: text('status').notNull().default('active'), // active, trial, past_due, canceled, paused
+    // Billing info
+    billingCycle: text('billingCycle').notNull().default('monthly'), // monthly, yearly
+    currentPeriodStart: timestamp('currentPeriodStart').notNull(),
+    currentPeriodEnd: timestamp('currentPeriodEnd').notNull(), // renewsAt
+    // Revenue
+    mrr: integer('mrr').notNull().default(0), // Monthly recurring revenue in cents
+    // Seat-based pricing
+    seats: integer('seats').notNull().default(1),
+    // Payment method reference (external)
+    paymentMethodId: text('paymentMethodId'),
+    // Linked deal (if created from a deal)
+    linkedDealId: text('linkedDealId')
+      .references(() => deal.id, { onDelete: 'set null' }),
+    // Applied coupon/discount
+    couponId: text('couponId')
+      .references(() => coupon.id, { onDelete: 'set null' }),
+    // Internal notes
+    notes: text('notes'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('subscription_organization_idx').on(table.organizationId),
+    tenantOrgIdx: index('subscription_tenant_org_idx').on(table.tenantOrganizationId),
+    subscriptionNumberIdx: index('subscription_number_idx').on(table.organizationId, table.subscriptionNumber),
+    statusIdx: index('subscription_status_idx').on(table.organizationId, table.status),
+    planIdx: index('subscription_plan_idx').on(table.productPlanId),
+  })
+)
+
+/**
+ * Subscription Add-On - Add-ons attached to a subscription
+ */
+export const subscriptionAddOn = pgTable(
+  'subscription_add_on',
+  {
+    // The subscription
+    subscriptionId: text('subscriptionId')
+      .notNull()
+      .references(() => subscription.id, { onDelete: 'cascade' }),
+    // The add-on
+    productAddOnId: text('productAddOnId')
+      .notNull()
+      .references(() => productAddOn.id, { onDelete: 'cascade' }),
+    // Quantity (for seat-based add-ons)
+    quantity: integer('quantity').notNull().default(1),
+    // Override amount (if custom pricing, in cents)
+    amount: integer('amount'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.subscriptionId, table.productAddOnId] }),
+    subscriptionIdx: index('subscription_add_on_subscription_idx').on(table.subscriptionId),
+    addOnIdx: index('subscription_add_on_add_on_idx').on(table.productAddOnId),
+  })
+)
+
+/**
+ * Usage History - Tracks usage for usage-based billing
+ */
+export const usageHistory = pgTable(
+  'usage_history',
+  {
+    id: text('id').primaryKey(),
+    // The subscription
+    subscriptionId: text('subscriptionId')
+      .notNull()
+      .references(() => subscription.id, { onDelete: 'cascade' }),
+    // The usage meter
+    usageMeterId: text('usageMeterId')
+      .notNull()
+      .references(() => usageMeter.id, { onDelete: 'cascade' }),
+    // Usage period
+    periodStart: timestamp('periodStart').notNull(),
+    periodEnd: timestamp('periodEnd').notNull(),
+    // Usage quantity
+    quantity: integer('quantity').notNull().default(0),
+    // When usage was recorded
+    recordedAt: timestamp('recordedAt').notNull().defaultNow(),
+    // Additional usage data (JSON)
+    metadata: text('metadata'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    subscriptionIdx: index('usage_history_subscription_idx').on(table.subscriptionId),
+    meterIdx: index('usage_history_meter_idx').on(table.usageMeterId),
+    periodIdx: index('usage_history_period_idx').on(table.subscriptionId, table.periodStart),
+  })
+)
+
+/**
+ * Subscription Activity - Activity timeline for subscriptions
+ */
+export const subscriptionActivity = pgTable(
+  'subscription_activity',
+  {
+    id: text('id').primaryKey(),
+    // The subscription
+    subscriptionId: text('subscriptionId')
+      .notNull()
+      .references(() => subscription.id, { onDelete: 'cascade' }),
+    // Activity type
+    activityType: text('activityType').notNull(), // created, plan_changed, paused, resumed, canceled, seat_added, seat_removed, addon_added, addon_removed, coupon_applied
+    // Human-readable description
+    description: text('description').notNull(),
+    // Actor info
+    userId: text('userId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    aiAgentId: text('aiAgentId'), // If done by AI agent
+    // Additional data (JSON - old plan, new plan, etc.)
+    metadata: text('metadata'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    subscriptionIdx: index('subscription_activity_subscription_idx').on(table.subscriptionId),
+    createdAtIdx: index('subscription_activity_created_idx').on(table.subscriptionId, table.createdAt),
   })
 )

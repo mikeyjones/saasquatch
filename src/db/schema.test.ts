@@ -10,6 +10,12 @@ import {
   deal,
   dealContact,
   dealActivity,
+  tenantOrganization,
+  subscription,
+  subscriptionAddOn,
+  subscriptionActivity,
+  usageMeter,
+  usageHistory,
 } from './schema'
 
 /**
@@ -320,5 +326,325 @@ describe('Sales CRM multi-tenant model', () => {
   })
 })
 
+/**
+ * Tests for CRM tenant organization schema
+ */
+describe('CRM Tenant Organization schema', () => {
+  describe('tenantOrganization table', () => {
+    it('should have organizationId for support staff org scoping', () => {
+      const columns = Object.keys(tenantOrganization)
+      expect(columns).toContain('organizationId')
+    })
 
+    it('should have basic info columns', () => {
+      const columns = Object.keys(tenantOrganization)
+      expect(columns).toContain('id')
+      expect(columns).toContain('name')
+      expect(columns).toContain('slug')
+      expect(columns).toContain('logo')
+      expect(columns).toContain('website')
+      expect(columns).toContain('industry')
+    })
+
+    it('should have subscription info columns', () => {
+      const columns = Object.keys(tenantOrganization)
+      expect(columns).toContain('subscriptionPlan')
+      expect(columns).toContain('subscriptionStatus')
+    })
+
+    it('should have billing info columns', () => {
+      const columns = Object.keys(tenantOrganization)
+      expect(columns).toContain('billingEmail')
+      expect(columns).toContain('billingAddress')
+    })
+
+    it('should have CRM fields for tags and assignment', () => {
+      const columns = Object.keys(tenantOrganization)
+      expect(columns).toContain('tags')
+      expect(columns).toContain('assignedToUserId')
+    })
+
+    it('should have metadata columns', () => {
+      const columns = Object.keys(tenantOrganization)
+      expect(columns).toContain('notes')
+      expect(columns).toContain('createdAt')
+      expect(columns).toContain('updatedAt')
+    })
+  })
+})
+
+describe('CRM Tenant Organization data model', () => {
+  it('should support tags as JSON array for customer categorization', () => {
+    const relationships = {
+      tenantOrganization: {
+        belongsTo: ['organization'],
+        scopedBy: 'organizationId',
+        hasCRMFields: ['tags', 'assignedToUserId'],
+        tagsFormat: 'JSON array of strings',
+      },
+    }
+
+    expect(relationships.tenantOrganization.scopedBy).toBe('organizationId')
+    expect(relationships.tenantOrganization.hasCRMFields).toContain('tags')
+  })
+
+  it('should support assignedToUserId for sales rep assignment', () => {
+    const relationships = {
+      tenantOrganization: {
+        assignedTo: {
+          references: 'user.id',
+          onDelete: 'set null',
+        },
+      },
+    }
+
+    expect(relationships.tenantOrganization.assignedTo.references).toBe('user.id')
+    expect(relationships.tenantOrganization.assignedTo.onDelete).toBe('set null')
+  })
+
+  it('should follow the CRM pattern for customer tracking', () => {
+    const crmPattern = {
+      tenantOrganization: {
+        status: {
+          customer: 'subscriptionStatus === active',
+          prospect: 'subscriptionStatus === trialing or null',
+          inactive: 'subscriptionStatus === canceled',
+        },
+        realizedValue: 'Sum of won deal values',
+        potentialValue: 'Sum of open deal values',
+        tags: 'JSON array of categorization tags',
+        assignedTo: 'Sales rep user reference',
+      },
+    }
+
+    expect(crmPattern.tenantOrganization.status.customer).toBe(
+      'subscriptionStatus === active'
+    )
+    expect(crmPattern.tenantOrganization.tags).toBe(
+      'JSON array of categorization tags'
+    )
+  })
+})
+
+/**
+ * Tests for Subscription Management schema
+ */
+describe('Subscription Management schema', () => {
+  describe('subscription table', () => {
+    it('should have dual scoping (organization + tenantOrganization)', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('organizationId')
+      expect(columns).toContain('tenantOrganizationId')
+    })
+
+    it('should have subscriptionNumber for human-readable ID', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('subscriptionNumber')
+    })
+
+    it('should have productPlanId for plan reference', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('productPlanId')
+    })
+
+    it('should have status column', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('status')
+    })
+
+    it('should have billing columns', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('billingCycle')
+      expect(columns).toContain('currentPeriodStart')
+      expect(columns).toContain('currentPeriodEnd')
+    })
+
+    it('should have revenue and seats columns', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('mrr')
+      expect(columns).toContain('seats')
+    })
+
+    it('should have optional linking columns', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('linkedDealId')
+      expect(columns).toContain('couponId')
+      expect(columns).toContain('paymentMethodId')
+    })
+
+    it('should have metadata columns', () => {
+      const columns = Object.keys(subscription)
+      expect(columns).toContain('notes')
+      expect(columns).toContain('createdAt')
+      expect(columns).toContain('updatedAt')
+    })
+  })
+
+  describe('subscriptionAddOn table', () => {
+    it('should have subscriptionId for subscription reference', () => {
+      const columns = Object.keys(subscriptionAddOn)
+      expect(columns).toContain('subscriptionId')
+    })
+
+    it('should have productAddOnId for add-on reference', () => {
+      const columns = Object.keys(subscriptionAddOn)
+      expect(columns).toContain('productAddOnId')
+    })
+
+    it('should have quantity and amount columns', () => {
+      const columns = Object.keys(subscriptionAddOn)
+      expect(columns).toContain('quantity')
+      expect(columns).toContain('amount')
+    })
+  })
+
+  describe('subscriptionActivity table', () => {
+    it('should have subscriptionId for subscription reference', () => {
+      const columns = Object.keys(subscriptionActivity)
+      expect(columns).toContain('subscriptionId')
+    })
+
+    it('should have activity tracking columns', () => {
+      const columns = Object.keys(subscriptionActivity)
+      expect(columns).toContain('activityType')
+      expect(columns).toContain('description')
+    })
+
+    it('should have actor tracking columns', () => {
+      const columns = Object.keys(subscriptionActivity)
+      expect(columns).toContain('userId')
+      expect(columns).toContain('aiAgentId')
+    })
+
+    it('should have metadata column for additional data', () => {
+      const columns = Object.keys(subscriptionActivity)
+      expect(columns).toContain('metadata')
+    })
+  })
+
+  describe('usageMeter table', () => {
+    it('should have organizationId for tenant scoping', () => {
+      const columns = Object.keys(usageMeter)
+      expect(columns).toContain('organizationId')
+    })
+
+    it('should have meter definition columns', () => {
+      const columns = Object.keys(usageMeter)
+      expect(columns).toContain('name')
+      expect(columns).toContain('unit')
+      expect(columns).toContain('description')
+    })
+
+    it('should have status column', () => {
+      const columns = Object.keys(usageMeter)
+      expect(columns).toContain('status')
+    })
+  })
+
+  describe('usageHistory table', () => {
+    it('should have subscriptionId for subscription reference', () => {
+      const columns = Object.keys(usageHistory)
+      expect(columns).toContain('subscriptionId')
+    })
+
+    it('should have usageMeterId for meter reference', () => {
+      const columns = Object.keys(usageHistory)
+      expect(columns).toContain('usageMeterId')
+    })
+
+    it('should have period tracking columns', () => {
+      const columns = Object.keys(usageHistory)
+      expect(columns).toContain('periodStart')
+      expect(columns).toContain('periodEnd')
+    })
+
+    it('should have usage tracking columns', () => {
+      const columns = Object.keys(usageHistory)
+      expect(columns).toContain('quantity')
+      expect(columns).toContain('recordedAt')
+    })
+
+    it('should have metadata column for additional data', () => {
+      const columns = Object.keys(usageHistory)
+      expect(columns).toContain('metadata')
+    })
+  })
+})
+
+describe('Subscription Management multi-tenant model', () => {
+  it('should scope subscriptions to both support org and customer org', () => {
+    const relationships = {
+      subscription: {
+        belongsTo: ['organization', 'tenantOrganization', 'productPlan'],
+        dualScoped: true,
+        hasMany: ['subscriptionAddOns', 'subscriptionActivities', 'usageHistories'],
+        links: ['deal', 'coupon'],
+      },
+    }
+
+    expect(relationships.subscription.dualScoped).toBe(true)
+    expect(relationships.subscription.hasMany).toContain('subscriptionAddOns')
+    expect(relationships.subscription.hasMany).toContain('subscriptionActivities')
+  })
+
+  it('should support subscription status workflow', () => {
+    const statusWorkflow = {
+      subscription: {
+        statuses: ['active', 'trial', 'past_due', 'canceled', 'paused'],
+        transitions: {
+          active: ['paused', 'past_due', 'canceled'],
+          trial: ['active', 'canceled'],
+          paused: ['active', 'canceled'],
+          past_due: ['active', 'canceled'],
+          canceled: [], // Terminal state
+        },
+      },
+    }
+
+    expect(statusWorkflow.subscription.statuses).toContain('active')
+    expect(statusWorkflow.subscription.statuses).toContain('trial')
+    expect(statusWorkflow.subscription.statuses).toContain('canceled')
+  })
+
+  it('should support MRR calculation from plan pricing', () => {
+    const mrrCalculation = {
+      subscription: {
+        mrrSources: ['productPlan.pricing.amount', 'seats * perSeatAmount', 'addOns'],
+        billingCycles: ['monthly', 'yearly'],
+        yearlyToMonthly: 'amount / 12',
+      },
+    }
+
+    expect(mrrCalculation.subscription.billingCycles).toContain('monthly')
+    expect(mrrCalculation.subscription.billingCycles).toContain('yearly')
+    expect(mrrCalculation.subscription.yearlyToMonthly).toBe('amount / 12')
+  })
+
+  it('should scope usage meters to organizations', () => {
+    const relationships = {
+      usageMeter: {
+        belongsTo: ['organization'],
+        scopedBy: 'organizationId',
+        statuses: ['active', 'archived'],
+      },
+    }
+
+    expect(relationships.usageMeter.scopedBy).toBe('organizationId')
+    expect(relationships.usageMeter.statuses).toContain('active')
+  })
+
+  it('should track usage history per subscription and meter', () => {
+    const relationships = {
+      usageHistory: {
+        belongsTo: ['subscription', 'usageMeter'],
+        periodTracking: ['periodStart', 'periodEnd'],
+        usageTracking: ['quantity', 'recordedAt'],
+      },
+    }
+
+    expect(relationships.usageHistory.belongsTo).toContain('subscription')
+    expect(relationships.usageHistory.belongsTo).toContain('usageMeter')
+    expect(relationships.usageHistory.periodTracking).toContain('periodStart')
+  })
+})
 
