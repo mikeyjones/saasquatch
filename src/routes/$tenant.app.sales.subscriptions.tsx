@@ -1,8 +1,10 @@
 import { createFileRoute, useParams } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { RefreshCw, Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SubscriptionCard, type Subscription } from '@/components/SubscriptionCard'
+import { CreateSubscriptionDialog } from '@/components/CreateSubscriptionDialog'
 
 export const Route = createFileRoute('/$tenant/app/sales/subscriptions')({
   component: SubscriptionsPage,
@@ -15,6 +17,7 @@ interface SubscriptionsResponse {
 
 function SubscriptionsPage() {
   const { tenant } = useParams({ from: '/$tenant/app/sales/subscriptions' })
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const {
     data,
@@ -47,7 +50,7 @@ function SubscriptionsPage() {
   }
 
   const handleNewSubscription = () => {
-    console.log('Creating new subscription...')
+    setIsCreateDialogOpen(true)
   }
 
   if (isLoading) {
@@ -75,6 +78,16 @@ function SubscriptionsPage() {
 
   return (
     <main className="flex-1 overflow-auto p-6">
+      {/* Create Subscription Dialog */}
+      <CreateSubscriptionDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubscriptionCreated={() => {
+          setIsCreateDialogOpen(false)
+          refetch()
+        }}
+      />
+
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Subscriptions & Usage</h1>

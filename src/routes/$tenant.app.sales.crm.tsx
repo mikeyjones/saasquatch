@@ -7,6 +7,7 @@ import { CRMFilters, type CRMFiltersState } from '@/components/CRMFilters'
 import { CRMBulkActions } from '@/components/CRMBulkActions'
 import { CRMCustomerTable, type CRMCustomer } from '@/components/CRMCustomerTable'
 import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
+import { CreateSubscriptionDialog } from '@/components/CreateSubscriptionDialog'
 
 export const Route = createFileRoute('/$tenant/app/sales/crm')({
   component: CRMPage,
@@ -42,6 +43,8 @@ function CRMPage() {
   const [error, setError] = useState<string | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<CRMCustomer | null>(null)
+  const [isCreateSubscriptionDialogOpen, setIsCreateSubscriptionDialogOpen] = useState(false)
+  const [selectedCustomerForSubscription, setSelectedCustomerForSubscription] = useState<CRMCustomer | null>(null)
 
   // Fetch customers from API
   const fetchCustomers = useCallback(async () => {
@@ -193,6 +196,22 @@ function CRMPage() {
         customerId={editingCustomer?.id || null}
       />
 
+      {/* Create Subscription Dialog */}
+      <CreateSubscriptionDialog
+        open={isCreateSubscriptionDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateSubscriptionDialogOpen(open)
+          if (!open) setSelectedCustomerForSubscription(null)
+        }}
+        onSubscriptionCreated={() => {
+          setIsCreateSubscriptionDialogOpen(false)
+          setSelectedCustomerForSubscription(null)
+          fetchCustomers()
+        }}
+        preSelectedCompanyId={selectedCustomerForSubscription?.id}
+        preSelectedCompanyName={selectedCustomerForSubscription?.name}
+      />
+
       {/* Error Banner */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -264,6 +283,10 @@ function CRMPage() {
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
           onEdit={(customer) => setEditingCustomer(customer)}
+          onCreateSubscription={(customer) => {
+            setSelectedCustomerForSubscription(customer)
+            setIsCreateSubscriptionDialogOpen(true)
+          }}
         />
       )}
     </main>

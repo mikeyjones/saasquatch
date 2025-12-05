@@ -109,12 +109,32 @@ View and manage all customer subscriptions.
 
 **Functional Requirements**
 
+**Subscription constraints:**
+- [x] Each company can only have one active subscription at a time
+- [x] Each subscription can only have one product plan
+- [x] System prevents duplicate active subscriptions (returns 409 Conflict)
+- [x] Canceled subscriptions can be replaced with new subscriptions
+
+**Subscription creation:**
+- [x] Create subscription from CRM customer view
+- [x] Create subscription from subscriptions page
+- [x] Select company from dropdown (with active subscription indicator)
+- [x] Select product plan from active plans
+- [x] Choose billing cycle (monthly/yearly)
+- [x] Set seat count
+- [x] Add optional notes
+
 **Create/edit subscriptions:**
-- [ ] Choose plan, billing cycle, payment method
+- [x] Choose plan, billing cycle, payment method
 - [ ] Add seats, add-ons
 - [ ] Apply discounts
 - [ ] Switch plans with proration
 - [ ] Pause/cancel/reactivate
+
+**Customer subscription display:**
+- [x] Show subscription details in customer profile (plan name, status, billing cycle, seats, MRR, renewal date)
+- [x] Show "Create Subscription" action for customers without active subscription
+- [x] Hide "Create Subscription" action for customers with active subscription
 
 **Usage-based billing:**
 - [ ] Meter definitions

@@ -53,6 +53,7 @@ interface CRMCustomerTableProps {
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
   onEdit?: (customer: CRMCustomer) => void
+  onCreateSubscription?: (customer: CRMCustomer) => void
 }
 
 const statusStyles = {
@@ -103,6 +104,7 @@ export function CRMCustomerTable({
   selectedIds,
   onSelectionChange,
   onEdit,
+  onCreateSubscription,
 }: CRMCustomerTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
@@ -316,6 +318,17 @@ export function CRMCustomerTable({
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {row.original.subscriptionStatus !== 'active' && (
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onCreateSubscription?.(row.original)
+                  }}
+                >
+                  Create Subscription
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem>Add Deal</DropdownMenuItem>
               <DropdownMenuItem>Add Contact</DropdownMenuItem>
               <DropdownMenuSeparator />

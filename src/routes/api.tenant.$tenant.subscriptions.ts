@@ -227,6 +227,29 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             )
           }
 
+          // Check for existing active subscription
+          const existingSubscription = await db
+            .select({ id: subscription.id, subscriptionNumber: subscription.subscriptionNumber })
+            .from(subscription)
+            .where(
+              and(
+                eq(subscription.tenantOrganizationId, tenantOrganizationId),
+                eq(subscription.organizationId, orgId),
+                eq(subscription.status, 'active')
+              )
+            )
+            .limit(1)
+
+          if (existingSubscription.length > 0) {
+            return new Response(
+              JSON.stringify({ 
+                error: 'Company already has an active subscription',
+                existingSubscriptionNumber: existingSubscription[0].subscriptionNumber,
+              }),
+              { status: 409, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
           // Verify product plan belongs to this org
           const plan = await db
             .select({ 

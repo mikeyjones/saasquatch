@@ -4,6 +4,8 @@ import {
   tenantOrganization,
   organization,
   user,
+  subscription,
+  productPlan,
 } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
@@ -81,6 +83,46 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
           const c = customer[0]
           const parsedTags = c.tags ? JSON.parse(c.tags) : []
 
+          // Fetch active subscription for this customer
+          const activeSubscription = await db
+            .select({
+              id: subscription.id,
+              subscriptionNumber: subscription.subscriptionNumber,
+              productPlanId: subscription.productPlanId,
+              planName: productPlan.name,
+              status: subscription.status,
+              billingCycle: subscription.billingCycle,
+              seats: subscription.seats,
+              mrr: subscription.mrr,
+              currentPeriodStart: subscription.currentPeriodStart,
+              currentPeriodEnd: subscription.currentPeriodEnd,
+              createdAt: subscription.createdAt,
+            })
+            .from(subscription)
+            .innerJoin(productPlan, eq(subscription.productPlanId, productPlan.id))
+            .where(
+              and(
+                eq(subscription.tenantOrganizationId, params.customerId),
+                eq(subscription.organizationId, orgId),
+                eq(subscription.status, 'active')
+              )
+            )
+            .limit(1)
+
+          const subscriptionData = activeSubscription.length > 0 ? {
+            id: activeSubscription[0].id,
+            subscriptionNumber: activeSubscription[0].subscriptionNumber,
+            productPlanId: activeSubscription[0].productPlanId,
+            planName: activeSubscription[0].planName,
+            status: activeSubscription[0].status,
+            billingCycle: activeSubscription[0].billingCycle,
+            seats: activeSubscription[0].seats,
+            mrr: activeSubscription[0].mrr,
+            currentPeriodStart: activeSubscription[0].currentPeriodStart.toISOString(),
+            currentPeriodEnd: activeSubscription[0].currentPeriodEnd.toISOString(),
+            createdAt: activeSubscription[0].createdAt.toISOString(),
+          } : null
+
           return new Response(
             JSON.stringify({
               customer: {
@@ -99,6 +141,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
                 createdAt: c.createdAt.toISOString(),
                 updatedAt: c.updatedAt.toISOString(),
               },
+              subscription: subscriptionData,
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
           )

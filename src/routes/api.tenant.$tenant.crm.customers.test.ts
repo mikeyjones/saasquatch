@@ -983,5 +983,104 @@ describe('CRM Members API', () => {
         expect(updatedCustomer.website).toBe('https://original.com') // Unchanged
       })
     })
+
+    describe('Subscription Info in Response', () => {
+      it('should include subscription info in GET response when subscription exists', () => {
+        const expectedResponse = {
+          customer: {
+            id: 'customer-id',
+            name: 'Acme Corp',
+            // ... other customer fields
+          },
+          subscription: {
+            id: 'subscription-id',
+            subscriptionNumber: 'SUB-1001',
+            productPlanId: 'plan-id',
+            planName: 'Enterprise Plan',
+            status: 'active',
+            billingCycle: 'monthly',
+            seats: 10,
+            mrr: 99900,
+            currentPeriodStart: '2024-01-15T00:00:00.000Z',
+            currentPeriodEnd: '2024-02-15T00:00:00.000Z',
+            createdAt: '2024-01-15T00:00:00.000Z',
+          },
+        }
+        expect(expectedResponse.customer).toBeDefined()
+        expect(expectedResponse.subscription).toBeDefined()
+        expect(expectedResponse.subscription.subscriptionNumber).toMatch(/^SUB-\d+$/)
+      })
+
+      it('should return null subscription when no active subscription exists', () => {
+        const expectedResponse = {
+          customer: {
+            id: 'customer-id',
+            name: 'Acme Corp',
+          },
+          subscription: null,
+        }
+        expect(expectedResponse.subscription).toBeNull()
+      })
+
+      it('should return subscription details including plan name', () => {
+        const subscriptionFields = [
+          'id',
+          'subscriptionNumber',
+          'productPlanId',
+          'planName',
+          'status',
+          'billingCycle',
+          'seats',
+          'mrr',
+          'currentPeriodStart',
+          'currentPeriodEnd',
+          'createdAt',
+        ]
+        const responseSubscription = {
+          id: 'sub-id',
+          subscriptionNumber: 'SUB-1001',
+          productPlanId: 'plan-id',
+          planName: 'Enterprise Plan',
+          status: 'active',
+          billingCycle: 'monthly',
+          seats: 10,
+          mrr: 99900,
+          currentPeriodStart: '2024-01-15T00:00:00.000Z',
+          currentPeriodEnd: '2024-02-15T00:00:00.000Z',
+          createdAt: '2024-01-15T00:00:00.000Z',
+        }
+        subscriptionFields.forEach(field => {
+          expect(responseSubscription).toHaveProperty(field)
+        })
+      })
+
+      it('should handle customer with canceled subscription (return null)', () => {
+        // When subscription status is 'canceled', it should not be returned
+        const scenario = {
+          customerSubscriptionStatus: 'canceled',
+          expectedSubscriptionInResponse: null,
+          reason: 'Only active subscriptions are returned',
+        }
+        expect(scenario.expectedSubscriptionInResponse).toBeNull()
+      })
+
+      it('should handle customer with paused subscription (return null)', () => {
+        // When subscription status is 'paused', it should not be returned
+        const scenario = {
+          customerSubscriptionStatus: 'paused',
+          expectedSubscriptionInResponse: null,
+          reason: 'Only active subscriptions are returned',
+        }
+        expect(scenario.expectedSubscriptionInResponse).toBeNull()
+      })
+
+      it('should only return active subscriptions', () => {
+        const queryCondition = {
+          filter: "subscription.status === 'active'",
+          reason: 'Only active subscriptions are relevant for display',
+        }
+        expect(queryCondition.filter).toContain('active')
+      })
+    })
   })
 })

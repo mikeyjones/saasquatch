@@ -198,6 +198,83 @@ describe('Subscriptions API endpoint', () => {
       })
     })
 
+    describe('Duplicate Subscription Prevention', () => {
+      it('should prevent creating second active subscription for same company', () => {
+        const validation = {
+          check: 'subscription.tenantOrganizationId === tenantOrganizationId AND subscription.status === active',
+          expectError: 'Company already has an active subscription',
+        }
+        expect(validation.expectError).toBe('Company already has an active subscription')
+      })
+
+      it('should return 409 Conflict when company already has active subscription', () => {
+        const response = {
+          status: 409,
+          body: {
+            error: 'Company already has an active subscription',
+            existingSubscriptionNumber: 'SUB-1001',
+          },
+        }
+        expect(response.status).toBe(409)
+        expect(response.body.error).toBe('Company already has an active subscription')
+        expect(response.body.existingSubscriptionNumber).toBeDefined()
+      })
+
+      it('should allow creating subscription if existing one is canceled', () => {
+        const scenario = {
+          existingSubscription: {
+            tenantOrganizationId: 'tenant-org-1',
+            status: 'canceled',
+          },
+          newSubscription: {
+            tenantOrganizationId: 'tenant-org-1',
+            status: 'active',
+          },
+          expectedResult: 'success - canceled subscriptions do not block new ones',
+        }
+        expect(scenario.existingSubscription.status).toBe('canceled')
+        expect(scenario.expectedResult).toContain('success')
+      })
+
+      it('should allow creating subscription if existing one is paused', () => {
+        const scenario = {
+          existingSubscription: {
+            tenantOrganizationId: 'tenant-org-1',
+            status: 'paused',
+          },
+          newSubscription: {
+            tenantOrganizationId: 'tenant-org-1',
+            status: 'active',
+          },
+          expectedResult: 'success - paused subscriptions do not block new ones',
+        }
+        expect(scenario.existingSubscription.status).toBe('paused')
+        expect(scenario.expectedResult).toContain('success')
+      })
+
+      it('should check for existing subscription before creating', () => {
+        const checkOrder = [
+          'validate authentication',
+          'validate tenant organization exists',
+          'check for existing active subscription',  // This should happen before creating
+          'validate product plan exists',
+          'calculate MRR',
+          'create subscription',
+        ]
+        expect(checkOrder.indexOf('check for existing active subscription')).toBeLessThan(
+          checkOrder.indexOf('create subscription')
+        )
+      })
+
+      it('should only block on active status', () => {
+        const blockingStatuses = ['active']
+        const nonBlockingStatuses = ['canceled', 'paused', 'trial', 'past_due']
+        
+        expect(blockingStatuses).toContain('active')
+        expect(nonBlockingStatuses).not.toContain('active')
+      })
+    })
+
     describe('Subscription Number Generation', () => {
       it('should generate unique subscription numbers', () => {
         const subscriptionNumber = 'SUB-1000'

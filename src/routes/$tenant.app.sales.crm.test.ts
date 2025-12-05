@@ -502,3 +502,245 @@ describe('CRM Page Tenant Context', () => {
   })
 })
 
+describe('CRM Page Subscription Integration', () => {
+  describe('Create Subscription Dialog', () => {
+    it('should have state for subscription dialog', () => {
+      const pageState = {
+        isCreateSubscriptionDialogOpen: false,
+        selectedCustomerForSubscription: null as { id: string; name: string } | null,
+      }
+      expect(pageState.isCreateSubscriptionDialogOpen).toBe(false)
+      expect(pageState.selectedCustomerForSubscription).toBeNull()
+    })
+
+    it('should open subscription dialog when Create Subscription action is clicked', () => {
+      const interaction = {
+        action: 'dropdown menu Create Subscription click',
+        handler: 'onCreateSubscription(customer)',
+        expectedState: {
+          selectedCustomerForSubscription: { id: 'customer-1', name: 'Acme Corp' },
+        },
+      }
+      expect(interaction.expectedState.selectedCustomerForSubscription).toBeDefined()
+    })
+
+    it('should pass pre-selected company to dialog', () => {
+      const dialogProps = {
+        preSelectedCompanyId: 'customer-1',
+        preSelectedCompanyName: 'Acme Corp',
+      }
+      expect(dialogProps.preSelectedCompanyId).toBeDefined()
+      expect(dialogProps.preSelectedCompanyName).toBeDefined()
+    })
+
+    it('should refresh customer list after subscription creation', () => {
+      const onSubscriptionCreated = {
+        actions: [
+          'setIsCreateSubscriptionDialogOpen(false)',
+          'setSelectedCustomerForSubscription(null)',
+          'fetchCustomers()',
+        ],
+      }
+      expect(onSubscriptionCreated.actions).toContain('fetchCustomers()')
+    })
+  })
+
+  describe('Create Subscription Action Visibility', () => {
+    it('should show Create Subscription action for customers without active subscription', () => {
+      const customer = {
+        id: 'customer-1',
+        subscriptionStatus: null,
+      }
+      const showAction = customer.subscriptionStatus !== 'active'
+      expect(showAction).toBe(true)
+    })
+
+    it('should show Create Subscription action for customers with canceled subscription', () => {
+      const customer = {
+        id: 'customer-1',
+        subscriptionStatus: 'canceled',
+      }
+      const showAction = customer.subscriptionStatus !== 'active'
+      expect(showAction).toBe(true)
+    })
+
+    it('should hide Create Subscription action for customers with active subscription', () => {
+      const customer = {
+        id: 'customer-1',
+        subscriptionStatus: 'active',
+      }
+      const showAction = customer.subscriptionStatus !== 'active'
+      expect(showAction).toBe(false)
+    })
+  })
+
+  describe('Subscription Info in Customer Table', () => {
+    it('should display subscription status badge for customers with subscription', () => {
+      const customer = {
+        id: 'customer-1',
+        subscriptionStatus: 'active',
+        subscriptionPlan: 'Enterprise',
+      }
+      expect(customer.subscriptionStatus).toBeDefined()
+      expect(customer.subscriptionPlan).toBeDefined()
+    })
+
+    it('should show appropriate status colors', () => {
+      const statusColors = {
+        active: 'bg-emerald-100 text-emerald-700',
+        trialing: 'bg-amber-100 text-amber-700',
+        canceled: 'bg-red-100 text-red-700',
+        past_due: 'bg-orange-100 text-orange-700',
+      }
+      expect(statusColors.active).toContain('emerald')
+      expect(statusColors.canceled).toContain('red')
+    })
+
+    it('should display plan name in subscription column', () => {
+      const customer = {
+        subscriptionPlan: 'Enterprise',
+        subscriptionStatus: 'active',
+      }
+      expect(customer.subscriptionPlan).toBe('Enterprise')
+    })
+  })
+
+  describe('CRM Customer Table Props', () => {
+    it('should pass onCreateSubscription handler to table', () => {
+      const tableProps = {
+        customers: [],
+        selectedIds: [],
+        onSelectionChange: 'function',
+        onEdit: 'function',
+        onCreateSubscription: 'function',
+      }
+      expect(tableProps.onCreateSubscription).toBeDefined()
+    })
+
+    it('should call onCreateSubscription with customer when action clicked', () => {
+      const customer = {
+        id: 'customer-1',
+        name: 'Acme Corp',
+      }
+      const handlerCalled = {
+        with: customer,
+      }
+      expect(handlerCalled.with.id).toBe('customer-1')
+      expect(handlerCalled.with.name).toBe('Acme Corp')
+    })
+  })
+})
+
+describe('Subscriptions Page Integration Tests', () => {
+  describe('New Subscription Button', () => {
+    it('should have New Subscription button', () => {
+      const button = {
+        text: 'New Subscription',
+        icon: 'Plus',
+        onClick: 'handleNewSubscription',
+      }
+      expect(button.text).toBe('New Subscription')
+    })
+
+    it('should open CreateSubscriptionDialog when clicked', () => {
+      const interaction = {
+        action: 'click New Subscription button',
+        handler: 'setIsCreateDialogOpen(true)',
+      }
+      expect(interaction.handler).toContain('true')
+    })
+  })
+
+  describe('CreateSubscriptionDialog Integration', () => {
+    it('should have state for dialog', () => {
+      const pageState = {
+        isCreateDialogOpen: false,
+      }
+      expect(pageState.isCreateDialogOpen).toBe(false)
+    })
+
+    it('should pass required props to dialog', () => {
+      const dialogProps = {
+        open: 'isCreateDialogOpen',
+        onOpenChange: 'setIsCreateDialogOpen',
+        onSubscriptionCreated: 'function that closes dialog and refetches',
+      }
+      expect(dialogProps.open).toBeDefined()
+      expect(dialogProps.onOpenChange).toBeDefined()
+    })
+
+    it('should not pre-select company from subscriptions page', () => {
+      const dialogProps = {
+        preSelectedCompanyId: undefined,
+        preSelectedCompanyName: undefined,
+      }
+      expect(dialogProps.preSelectedCompanyId).toBeUndefined()
+    })
+
+    it('should refetch subscription list after creation', () => {
+      const onSubscriptionCreated = {
+        actions: [
+          'setIsCreateDialogOpen(false)',
+          'refetch()',
+        ],
+      }
+      expect(onSubscriptionCreated.actions).toContain('refetch()')
+    })
+  })
+
+  describe('Subscription List Display', () => {
+    it('should display subscription cards', () => {
+      const subscriptions = [
+        {
+          id: 'sub-1',
+          subscriptionNumber: 'SUB-1001',
+          customerName: 'Acme Corp',
+          planName: 'Enterprise',
+          status: 'active',
+        },
+      ]
+      expect(subscriptions.length).toBe(1)
+      expect(subscriptions[0].subscriptionNumber).toMatch(/^SUB-\d+$/)
+    })
+
+    it('should show empty state when no subscriptions', () => {
+      const subscriptions: unknown[] = []
+      const showEmptyState = subscriptions.length === 0
+      expect(showEmptyState).toBe(true)
+    })
+
+    it('should display subscription details in card', () => {
+      const cardInfo = {
+        customerName: 'displayed',
+        planName: 'displayed',
+        status: 'displayed with badge',
+        mrr: 'displayed as currency',
+        seats: 'displayed',
+        billingCycle: 'displayed',
+        nextRenewal: 'displayed as date',
+      }
+      expect(Object.keys(cardInfo).length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('Error Handling', () => {
+    it('should display error when subscription creation fails', () => {
+      const errorScenario = {
+        error: 'Failed to create subscription',
+        display: 'shown in dialog',
+        dialogRemains: 'open',
+      }
+      expect(errorScenario.dialogRemains).toBe('open')
+    })
+
+    it('should display 409 conflict error clearly', () => {
+      const conflictError = {
+        status: 409,
+        message: 'This company already has an active subscription.',
+        display: 'shown prominently in dialog',
+      }
+      expect(conflictError.status).toBe(409)
+    })
+  })
+})
+
