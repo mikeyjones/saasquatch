@@ -6,6 +6,7 @@ import {
   productFeature,
   productAddOn,
   productAddOnPricing,
+  productPlanAddOn,
   coupon,
   productFeatureFlag,
   organization,
@@ -156,6 +157,35 @@ describe('Product Catalog Schema', () => {
     })
   })
 
+  describe('productPlanAddOn table (Bolt-Ons)', () => {
+    it('should be a junction table linking plans to add-ons', () => {
+      const columns = Object.keys(productPlanAddOn)
+      expect(columns).toContain('productPlanId')
+      expect(columns).toContain('productAddOnId')
+    })
+
+    it('should have billingType column for billing configuration', () => {
+      const columns = Object.keys(productPlanAddOn)
+      expect(columns).toContain('billingType')
+    })
+
+    it('should have displayOrder column for UI ordering', () => {
+      const columns = Object.keys(productPlanAddOn)
+      expect(columns).toContain('displayOrder')
+    })
+
+    it('should have all required columns', () => {
+      const columns = Object.keys(productPlanAddOn)
+      expect(columns).toContain('id')
+      expect(columns).toContain('productPlanId')
+      expect(columns).toContain('productAddOnId')
+      expect(columns).toContain('billingType')
+      expect(columns).toContain('displayOrder')
+      expect(columns).toContain('createdAt')
+      expect(columns).toContain('updatedAt')
+    })
+  })
+
   describe('coupon table', () => {
     it('should have organizationId for tenant scoping', () => {
       const columns = Object.keys(coupon)
@@ -221,7 +251,7 @@ describe('Product Catalog Data Model', () => {
       },
       productPlan: {
         belongsTo: ['organization', 'productFamily'],
-        hasMany: ['productPricings', 'productFeatures', 'productFeatureFlags'],
+        hasMany: ['productPricings', 'productFeatures', 'productFeatureFlags', 'productPlanAddOns'],
         scopedBy: 'organizationId',
       },
     }
@@ -229,7 +259,30 @@ describe('Product Catalog Data Model', () => {
     expect(relationships.productPlan.scopedBy).toBe('organizationId')
     expect(relationships.productPlan.hasMany).toContain('productPricings')
     expect(relationships.productPlan.hasMany).toContain('productFeatures')
+    expect(relationships.productPlan.hasMany).toContain('productPlanAddOns')
     expect(relationships.productFamily.optional).toBe(true)
+  })
+
+  it('should support bolt-ons as a many-to-many relationship', () => {
+    const boltOnRelationship = {
+      productPlan: {
+        hasMany: ['productPlanAddOns'],
+        throughTable: 'productPlanAddOn',
+      },
+      productAddOn: {
+        hasMany: ['productPlanAddOns'],
+        throughTable: 'productPlanAddOn',
+      },
+      productPlanAddOn: {
+        belongsTo: ['productPlan', 'productAddOn'],
+        additionalFields: ['billingType', 'displayOrder'],
+        billingTypes: ['billed_with_main', 'consumable'],
+      },
+    }
+
+    expect(boltOnRelationship.productPlanAddOn.billingTypes).toContain('billed_with_main')
+    expect(boltOnRelationship.productPlanAddOn.billingTypes).toContain('consumable')
+    expect(boltOnRelationship.productPlanAddOn.additionalFields).toContain('billingType')
   })
 
   it('should support multiple pricing records per plan', () => {
