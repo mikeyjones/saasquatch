@@ -45,18 +45,6 @@ function generateId(): string {
 }
 
 /**
- * Generate initials from a name
- */
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2)
-}
-
-/**
  * Log a success message
  */
 function logSuccess(message: string): void {
@@ -178,6 +166,31 @@ interface DealSeedData {
   assignedToEmail?: string
   badges?: string[]
   notes?: string
+}
+
+interface ProductPlanSeedData {
+  name: string
+  description: string
+  status: 'active' | 'draft' | 'archived'
+  pricingModel: 'flat' | 'seat' | 'usage' | 'hybrid'
+  monthlyPrice: number // in cents
+  yearlyPrice: number // in cents (usually with discount)
+  perSeatAmount?: number // for seat-based pricing
+  features: string[]
+}
+
+interface SubscriptionSeedData {
+  tenantOrgSlug: string
+  planName: string
+  status: 'draft' | 'active' | 'trial' | 'past_due' | 'canceled' | 'paused'
+  billingCycle: 'monthly' | 'yearly'
+  seats: number
+  hasInvoice: boolean
+  invoicePaid: boolean
+  // Payment collection method
+  // 'automatic' = self-service customers, auto-charge via payment processor
+  // 'send_invoice' = sales-led, manual invoice sent to customer
+  collectionMethod: 'automatic' | 'send_invoice'
 }
 
 // ============================================================================
@@ -1136,6 +1149,152 @@ const dealsPerTenantOrg: Record<string, DealSeedData[]> = {
   ],
 }
 
+/**
+ * Product Plans per support staff organization
+ * Key: support staff org slug
+ */
+const productPlansPerStaff: Record<string, ProductPlanSeedData[]> = {
+  acme: [
+    {
+      name: 'Starter',
+      description: 'Perfect for small teams getting started',
+      status: 'active',
+      pricingModel: 'flat',
+      monthlyPrice: 2900, // $29/month
+      yearlyPrice: 29000, // $290/year (2 months free)
+      features: ['Up to 5 users', 'Basic support', '1GB storage', 'Email integration'],
+    },
+    {
+      name: 'Professional',
+      description: 'For growing teams that need more power',
+      status: 'active',
+      pricingModel: 'seat',
+      monthlyPrice: 4900, // $49/month base
+      yearlyPrice: 49000, // $490/year base
+      perSeatAmount: 1500, // $15/seat/month
+      features: ['Unlimited users', 'Priority support', '10GB storage', 'API access', 'SSO integration'],
+    },
+    {
+      name: 'Enterprise',
+      description: 'For large organizations with custom needs',
+      status: 'active',
+      pricingModel: 'flat',
+      monthlyPrice: 29900, // $299/month
+      yearlyPrice: 299000, // $2,990/year
+      features: ['Unlimited everything', 'Dedicated support', 'Custom integrations', 'SLA guarantee', 'Advanced analytics'],
+    },
+  ],
+  globex: [
+    {
+      name: 'Basic',
+      description: 'Essential features for small businesses',
+      status: 'active',
+      pricingModel: 'flat',
+      monthlyPrice: 1900, // $19/month
+      yearlyPrice: 19000, // $190/year
+      features: ['Up to 3 users', 'Email support', '500MB storage'],
+    },
+    {
+      name: 'Business',
+      description: 'Full-featured plan for growing businesses',
+      status: 'active',
+      pricingModel: 'seat',
+      monthlyPrice: 3900, // $39/month base
+      yearlyPrice: 39000, // $390/year base
+      perSeatAmount: 1000, // $10/seat/month
+      features: ['Unlimited users', 'Phone support', '5GB storage', 'Integrations'],
+    },
+  ],
+}
+
+/**
+ * Subscription seed data per support staff organization
+ * Key: support staff org slug
+ */
+const subscriptionsPerStaff: Record<string, SubscriptionSeedData[]> = {
+  acme: [
+    // Enterprise customer - sales-led, manual invoicing
+    {
+      tenantOrgSlug: 'acme-corp',
+      planName: 'Enterprise',
+      status: 'active',
+      billingCycle: 'yearly',
+      seats: 50,
+      hasInvoice: true,
+      invoicePaid: true,
+      collectionMethod: 'send_invoice', // Sales team handles billing
+    },
+    // Professional customer - self-service, auto-charge
+    {
+      tenantOrgSlug: 'techflow',
+      planName: 'Professional',
+      status: 'active',
+      billingCycle: 'monthly',
+      seats: 15,
+      hasInvoice: true,
+      invoicePaid: true,
+      collectionMethod: 'automatic', // Auto-charge via Stripe
+    },
+    // Starter customer - self-service, awaiting first payment
+    {
+      tenantOrgSlug: 'startup-inc',
+      planName: 'Starter',
+      status: 'draft',
+      billingCycle: 'monthly',
+      seats: 1,
+      hasInvoice: true,
+      invoicePaid: false,
+      collectionMethod: 'automatic', // Will auto-charge once payment method added
+    },
+    // Enterprise customer - sales-led
+    {
+      tenantOrgSlug: 'dataminds',
+      planName: 'Enterprise',
+      status: 'active',
+      billingCycle: 'monthly',
+      seats: 25,
+      hasInvoice: true,
+      invoicePaid: true,
+      collectionMethod: 'send_invoice', // Sales team handles billing
+    },
+    // Professional customer - sales-led, awaiting payment
+    {
+      tenantOrgSlug: 'global-logistics',
+      planName: 'Professional',
+      status: 'draft',
+      billingCycle: 'yearly',
+      seats: 10,
+      hasInvoice: true,
+      invoicePaid: false,
+      collectionMethod: 'send_invoice', // Invoice sent, awaiting payment
+    },
+  ],
+  globex: [
+    // Large enterprise - sales-led
+    {
+      tenantOrgSlug: 'megacorp',
+      planName: 'Business',
+      status: 'active',
+      billingCycle: 'yearly',
+      seats: 100,
+      hasInvoice: true,
+      invoicePaid: true,
+      collectionMethod: 'send_invoice', // Sales team handles billing
+    },
+    // Small business - self-service
+    {
+      tenantOrgSlug: 'smallbiz',
+      planName: 'Basic',
+      status: 'draft',
+      billingCycle: 'monthly',
+      seats: 1,
+      hasInvoice: true,
+      invoicePaid: false,
+      collectionMethod: 'automatic', // Self-service signup
+    },
+  ],
+}
+
 const tenantOrgsPerStaff: Record<string, TenantOrgData[]> = {
   // Tenant customers for Acme Corporation support staff
   acme: [
@@ -1764,6 +1923,293 @@ async function ensurePipeline(
 }
 
 /**
+ * Create a product plan with pricing and features
+ */
+async function ensureProductPlan(
+  db: ReturnType<typeof drizzle>,
+  staffOrgId: string,
+  planData: ProductPlanSeedData
+): Promise<string> {
+  // Check if plan already exists
+  const existing = await db.query.productPlan.findFirst({
+    where: (p, { and, eq: eqFn }) =>
+      and(
+        eqFn(p.organizationId, staffOrgId),
+        eqFn(p.name, planData.name)
+      ),
+  })
+
+  if (existing) {
+    logInfo(`Product plan already exists: ${planData.name}`)
+    return existing.id
+  }
+
+  const planId = generateId()
+  const now = new Date()
+
+  // Create the plan
+  await db.insert(schema.productPlan).values({
+    id: planId,
+    organizationId: staffOrgId,
+    name: planData.name,
+    description: planData.description,
+    status: planData.status,
+    pricingModel: planData.pricingModel,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  // Create monthly pricing
+  await db.insert(schema.productPricing).values({
+    id: generateId(),
+    productPlanId: planId,
+    pricingType: 'base',
+    currency: 'USD',
+    amount: planData.monthlyPrice,
+    interval: 'monthly',
+    perSeatAmount: planData.perSeatAmount || null,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  // Create yearly pricing
+  await db.insert(schema.productPricing).values({
+    id: generateId(),
+    productPlanId: planId,
+    pricingType: 'base',
+    currency: 'USD',
+    amount: planData.yearlyPrice,
+    interval: 'yearly',
+    perSeatAmount: planData.perSeatAmount ? planData.perSeatAmount * 10 : null, // 10 months worth for yearly
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  // Create features
+  for (let i = 0; i < planData.features.length; i++) {
+    await db.insert(schema.productFeature).values({
+      id: generateId(),
+      productPlanId: planId,
+      name: planData.features[i],
+      order: i + 1,
+      createdAt: now,
+      updatedAt: now,
+    })
+  }
+
+  logSuccess(`Product plan created: ${planData.name} ($${planData.monthlyPrice / 100}/mo)`)
+  return planId
+}
+
+/**
+ * Create a subscription with invoice
+ */
+async function ensureSubscription(
+  db: ReturnType<typeof drizzle>,
+  staffOrgId: string,
+  staffOrgSlug: string,
+  subData: SubscriptionSeedData,
+  tenantOrgIds: Record<string, { id: string; staffOrgId: string }>,
+  planMap: Map<string, { id: string; name: string; monthlyPrice: number; yearlyPrice: number; perSeatAmount?: number }>
+): Promise<void> {
+  const tenantOrgInfo = tenantOrgIds[subData.tenantOrgSlug]
+  if (!tenantOrgInfo) {
+    console.error(`   ⚠ Tenant org not found: ${subData.tenantOrgSlug}`)
+    return
+  }
+
+  const planInfo = planMap.get(subData.planName)
+  if (!planInfo) {
+    console.error(`   ⚠ Product plan not found: ${subData.planName}`)
+    return
+  }
+
+  // Check if subscription already exists
+  const existing = await db.query.subscription.findFirst({
+    where: (s, { and, eq: eqFn }) =>
+      and(
+        eqFn(s.organizationId, staffOrgId),
+        eqFn(s.tenantOrganizationId, tenantOrgInfo.id)
+      ),
+  })
+
+  if (existing) {
+    logInfo(`Subscription already exists for: ${subData.tenantOrgSlug}`)
+    return
+  }
+
+  const subscriptionId = generateId()
+  const now = new Date()
+
+  // Calculate MRR
+  let mrr = subData.billingCycle === 'yearly'
+    ? Math.round(planInfo.yearlyPrice / 12)
+    : planInfo.monthlyPrice
+  
+  // Add seat pricing if applicable
+  if (planInfo.perSeatAmount && subData.seats > 1) {
+    mrr += planInfo.perSeatAmount * (subData.seats - 1)
+  }
+
+  // Generate subscription number
+  const existingCount = await db
+    .select({ count: schema.subscription.id })
+    .from(schema.subscription)
+    .where(eq(schema.subscription.organizationId, staffOrgId))
+  
+  const subNumber = `SUB-${(existingCount.length || 0) + 1000}`
+
+  // Calculate billing period
+  const periodStart = new Date(now)
+  const periodEnd = new Date(now)
+  if (subData.billingCycle === 'yearly') {
+    periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+  } else {
+    periodEnd.setMonth(periodEnd.getMonth() + 1)
+  }
+
+  // Create subscription
+  await db.insert(schema.subscription).values({
+    id: subscriptionId,
+    organizationId: staffOrgId,
+    tenantOrganizationId: tenantOrgInfo.id,
+    subscriptionNumber: subNumber,
+    productPlanId: planInfo.id,
+    status: subData.status,
+    collectionMethod: subData.collectionMethod,
+    billingCycle: subData.billingCycle,
+    currentPeriodStart: periodStart,
+    currentPeriodEnd: periodEnd,
+    mrr,
+    seats: subData.seats,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  // Create subscription activity
+  await db.insert(schema.subscriptionActivity).values({
+    id: generateId(),
+    subscriptionId,
+    activityType: 'created',
+    description: `Subscription ${subNumber} created for ${subData.tenantOrgSlug}`,
+    metadata: JSON.stringify({ 
+      plan: planInfo.name, 
+      mrr, 
+      seats: subData.seats,
+      collectionMethod: subData.collectionMethod,
+    }),
+    createdAt: now,
+  })
+
+  // Update tenant organization
+  await db
+    .update(schema.tenantOrganization)
+    .set({
+      subscriptionPlan: planInfo.name,
+      subscriptionStatus: subData.status,
+      updatedAt: now,
+    })
+    .where(eq(schema.tenantOrganization.id, tenantOrgInfo.id))
+
+  // Create invoice if needed
+  if (subData.hasInvoice) {
+    const invoiceId = generateId()
+    
+    // Generate invoice number
+    const invoiceCount = await db
+      .select({ count: schema.invoice.id })
+      .from(schema.invoice)
+      .where(eq(schema.invoice.organizationId, staffOrgId))
+    
+    const invoiceNumber = `INV-${staffOrgSlug.toUpperCase()}-${(invoiceCount.length || 0) + 1001}`
+
+    // Calculate invoice amounts
+    const invoiceTotal = subData.billingCycle === 'yearly' ? planInfo.yearlyPrice : planInfo.monthlyPrice
+    const seatTotal = planInfo.perSeatAmount 
+      ? planInfo.perSeatAmount * (subData.seats - 1) * (subData.billingCycle === 'yearly' ? 10 : 1)
+      : 0
+    const subtotal = invoiceTotal + seatTotal
+    const tax = 0
+    const total = subtotal + tax
+
+    // Create line items
+    const lineItems = [
+      {
+        description: `${planInfo.name} - ${subData.billingCycle === 'yearly' ? 'Annual' : 'Monthly'} subscription`,
+        quantity: 1,
+        unitPrice: invoiceTotal,
+        total: invoiceTotal,
+      },
+    ]
+    
+    if (seatTotal > 0) {
+      lineItems.push({
+        description: `Additional seats (${subData.seats - 1} seats)`,
+        quantity: subData.seats - 1,
+        unitPrice: planInfo.perSeatAmount! * (subData.billingCycle === 'yearly' ? 10 : 1),
+        total: seatTotal,
+      })
+    }
+
+    // Calculate dates
+    const issueDate = new Date(now)
+    const dueDate = new Date(now)
+    dueDate.setDate(dueDate.getDate() + 30)
+    const paidAt = subData.invoicePaid ? new Date(now) : null
+
+    // Create invoice
+    await db.insert(schema.invoice).values({
+      id: invoiceId,
+      organizationId: staffOrgId,
+      subscriptionId,
+      tenantOrganizationId: tenantOrgInfo.id,
+      invoiceNumber,
+      status: subData.invoicePaid ? 'paid' : 'draft',
+      subtotal,
+      tax,
+      total,
+      currency: 'USD',
+      issueDate,
+      dueDate,
+      paidAt,
+      lineItems: JSON.stringify(lineItems),
+      pdfPath: null, // PDF will be generated on demand
+      billingName: subData.tenantOrgSlug,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Create invoice activity
+    await db.insert(schema.subscriptionActivity).values({
+      id: generateId(),
+      subscriptionId,
+      activityType: subData.invoicePaid ? 'invoice_paid' : 'invoice_created',
+      description: subData.invoicePaid
+        ? `Invoice ${invoiceNumber} paid - $${(total / 100).toFixed(2)}`
+        : `Invoice ${invoiceNumber} created for $${(total / 100).toFixed(2)}`,
+      metadata: JSON.stringify({ invoiceId, invoiceNumber, total }),
+      createdAt: now,
+    })
+
+    if (subData.invoicePaid) {
+      // Create activation activity
+      await db.insert(schema.subscriptionActivity).values({
+        id: generateId(),
+        subscriptionId,
+        activityType: 'activated',
+        description: `Subscription ${subNumber} activated`,
+        metadata: JSON.stringify({ plan: planInfo.name }),
+        createdAt: now,
+      })
+    }
+  }
+
+  const statusIcon = subData.status === 'active' ? '✓' : '○'
+  const collectionLabel = subData.collectionMethod === 'automatic' ? '⚡auto' : '📧invoice'
+  logSuccess(`${statusIcon} Subscription: ${subData.tenantOrgSlug} → ${planInfo.name} (${subData.status}, ${collectionLabel})`)
+}
+
+/**
  * Create a deal
  */
 async function ensureDeal(
@@ -1994,6 +2440,66 @@ async function seed(): Promise<void> {
     }
 
     // ========================================================================
+    // Seed Product Plans
+    // ========================================================================
+    console.log('\n\n📋 PRODUCT PLANS')
+    console.log('─'.repeat(60))
+
+    // Store plan info for subscriptions
+    const planMaps: Record<string, Map<string, { id: string; name: string; monthlyPrice: number; yearlyPrice: number; perSeatAmount?: number }>> = {}
+
+    for (const staffOrgSlug of Object.keys(productPlansPerStaff)) {
+      const staffOrgId = staffOrgIds[staffOrgSlug]
+      if (!staffOrgId) {
+        console.error(`   ⚠ Staff org not found for plans: ${staffOrgSlug}`)
+        continue
+      }
+
+      console.log(`\n   For support staff: ${staffOrgSlug}`)
+      console.log('   ' + '─'.repeat(40))
+
+      planMaps[staffOrgSlug] = new Map()
+
+      for (const planData of productPlansPerStaff[staffOrgSlug]) {
+        const planId = await ensureProductPlan(db, staffOrgId, planData)
+        planMaps[staffOrgSlug].set(planData.name, {
+          id: planId,
+          name: planData.name,
+          monthlyPrice: planData.monthlyPrice,
+          yearlyPrice: planData.yearlyPrice,
+          perSeatAmount: planData.perSeatAmount,
+        })
+      }
+    }
+
+    // ========================================================================
+    // Seed Subscriptions and Invoices
+    // ========================================================================
+    console.log('\n\n📋 SUBSCRIPTIONS & INVOICES')
+    console.log('─'.repeat(60))
+
+    for (const staffOrgSlug of Object.keys(subscriptionsPerStaff)) {
+      const staffOrgId = staffOrgIds[staffOrgSlug]
+      if (!staffOrgId) {
+        console.error(`   ⚠ Staff org not found for subscriptions: ${staffOrgSlug}`)
+        continue
+      }
+
+      const planMap = planMaps[staffOrgSlug]
+      if (!planMap) {
+        console.error(`   ⚠ Plan map not found for: ${staffOrgSlug}`)
+        continue
+      }
+
+      console.log(`\n   For support staff: ${staffOrgSlug}`)
+      console.log('   ' + '─'.repeat(40))
+
+      for (const subData of subscriptionsPerStaff[staffOrgSlug]) {
+        await ensureSubscription(db, staffOrgId, staffOrgSlug, subData, tenantOrgIds, planMap)
+      }
+    }
+
+    // ========================================================================
     // Seed Sales Pipelines and Deals
     // ========================================================================
     console.log('\n\n📋 SALES PIPELINES & DEALS')
@@ -2081,6 +2587,28 @@ async function seed(): Promise<void> {
       for (const playbookItem of playbooksPerStaff[staffOrgSlug]) {
         const typeIcon = playbookItem.type === 'manual' ? '📋' : '⚡'
         console.log(`   ${typeIcon} ${playbookItem.name} (${playbookItem.type}, ${playbookItem.status})`)
+      }
+    }
+
+    console.log('\n\n📋 PRODUCT PLANS')
+    console.log('─'.repeat(60))
+    for (const staffOrgSlug of Object.keys(productPlansPerStaff)) {
+      console.log(`\n   Support Staff: ${staffOrgSlug}`)
+      for (const plan of productPlansPerStaff[staffOrgSlug]) {
+        console.log(`   📦 ${plan.name} - $${plan.monthlyPrice / 100}/mo (${plan.pricingModel})`)
+      }
+    }
+
+    console.log('\n\n📋 SUBSCRIPTIONS & INVOICES')
+    console.log('─'.repeat(60))
+    for (const staffOrgSlug of Object.keys(subscriptionsPerStaff)) {
+      console.log(`\n   Support Staff: ${staffOrgSlug}`)
+      for (const sub of subscriptionsPerStaff[staffOrgSlug]) {
+        const statusIcon = sub.status === 'active' ? '✓' : '○'
+        const invoiceStatus = sub.invoicePaid ? 'paid' : 'draft'
+        const collectionIcon = sub.collectionMethod === 'automatic' ? '⚡' : '📧'
+        const collectionLabel = sub.collectionMethod === 'automatic' ? 'auto-charge' : 'invoice'
+        console.log(`   ${statusIcon} ${sub.tenantOrgSlug} → ${sub.planName} (${sub.status}, ${collectionIcon} ${collectionLabel}, invoice: ${invoiceStatus})`)
       }
     }
 

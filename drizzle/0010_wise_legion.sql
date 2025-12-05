@@ -1,0 +1,1 @@
+ALTER TABLE "subscription" ADD COLUMN "collectionMethod" text DEFAULT 'send_invoice' NOT NULL;

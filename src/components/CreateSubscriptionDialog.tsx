@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { z } from 'zod'
-import { CreditCard, RefreshCw, Building, Package } from 'lucide-react'
+import { CreditCard, RefreshCw, Building, Package, FileText } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
 import { Button } from '@/components/ui/button'
@@ -232,6 +232,17 @@ export function CreateSubscriptionDialog({
             Create a new subscription for a company. Each company can only have one active subscription.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Draft status notice */}
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-start gap-3">
+          <FileText size={18} className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">Subscription will be created in draft status</p>
+            <p className="text-amber-700 mt-1">
+              A draft invoice will be generated automatically. The subscription will become active when the invoice is marked as paid.
+            </p>
+          </div>
+        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">

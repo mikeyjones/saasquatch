@@ -9,9 +9,11 @@ import {
   organization,
   user,
   coupon,
+  invoice,
 } from '@/db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
+import { generateInvoicePDF, type InvoiceLineItem } from '@/lib/invoice-pdf'
 
 function generateId(): string {
   return crypto.randomUUID().replace(/-/g, '').substring(0, 24)
@@ -154,7 +156,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
 
       /**
        * POST /api/tenant/:tenant/subscriptions
-       * Create a new subscription
+       * Create a new subscription in draft status with a draft invoice
        */
       POST: async ({ request, params }) => {
         try {
@@ -169,9 +171,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             )
           }
 
-          // Get the organization by slug
+          // Get the organization by slug (including name for invoice)
           const org = await db
-            .select({ id: organization.id })
+            .select({ id: organization.id, name: organization.name, slug: organization.slug })
             .from(organization)
             .where(eq(organization.slug, params.tenant))
             .limit(1)
@@ -184,13 +186,15 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
           }
 
           const orgId = org[0].id
+          const orgName = org[0].name
+          const orgSlug = org[0].slug
 
           // Parse request body
           const body = await request.json()
           const {
             tenantOrganizationId,
             productPlanId,
-            status = 'active',
+            // Subscriptions always start as draft - activate when invoice is paid
             billingCycle = 'monthly',
             seats = 1,
             couponId,
@@ -208,9 +212,14 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             )
           }
 
-          // Verify tenant org belongs to this org
+          // Verify tenant org belongs to this org (get billing info for invoice)
           const tenantOrg = await db
-            .select({ id: tenantOrganization.id, name: tenantOrganization.name })
+            .select({ 
+              id: tenantOrganization.id, 
+              name: tenantOrganization.name,
+              billingEmail: tenantOrganization.billingEmail,
+              billingAddress: tenantOrganization.billingAddress,
+            })
             .from(tenantOrganization)
             .where(
               and(
@@ -327,6 +336,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
           }
 
           const subscriptionId = generateId()
+          
+          // Subscription always starts as draft - activate when invoice is paid
+          const subscriptionStatus = 'draft'
 
           // Create subscription
           await db.insert(subscription).values({
@@ -335,7 +347,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             tenantOrganizationId,
             subscriptionNumber: subNumber,
             productPlanId,
-            status,
+            status: subscriptionStatus,
             billingCycle,
             currentPeriodStart: periodStart,
             currentPeriodEnd: periodEnd,
@@ -353,13 +365,14 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             id: generateId(),
             subscriptionId,
             activityType: 'created',
-            description: `Subscription ${subNumber} created for ${tenantOrg[0].name} on ${plan[0].name} plan`,
+            description: `Subscription ${subNumber} created for ${tenantOrg[0].name} on ${plan[0].name} plan (pending invoice payment)`,
             userId: session.user.id,
             metadata: JSON.stringify({
               plan: plan[0].name,
               mrr,
               seats,
               billingCycle,
+              status: subscriptionStatus,
             }),
             createdAt: now,
           })
@@ -369,10 +382,116 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             .update(tenantOrganization)
             .set({
               subscriptionPlan: plan[0].name,
-              subscriptionStatus: status === 'trial' ? 'trialing' : status,
+              subscriptionStatus: subscriptionStatus,
               updatedAt: now,
             })
             .where(eq(tenantOrganization.id, tenantOrganizationId))
+
+          // Generate invoice number
+          const invoiceCount = await db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(invoice)
+            .where(eq(invoice.organizationId, orgId))
+          
+          const invoiceNumber = `INV-${orgSlug.toUpperCase()}-${(invoiceCount[0]?.count || 0) + 1001}`
+
+          // Calculate invoice amounts
+          const invoiceSubtotal = billingCycle === 'yearly' ? mrr * 12 : mrr
+          const invoiceTax = 0 // Tax calculation could be added later
+          const invoiceTotal = invoiceSubtotal + invoiceTax
+
+          // Create line items
+          const lineItems: InvoiceLineItem[] = [
+            {
+              description: `${plan[0].name} - ${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} subscription`,
+              quantity: 1,
+              unitPrice: invoiceSubtotal,
+              total: invoiceSubtotal,
+            },
+          ]
+
+          // Add seat line item if applicable
+          if (seats > 1 && pricing.length > 0 && pricing[0].perSeatAmount) {
+            const seatTotal = pricing[0].perSeatAmount * (seats - 1) * (billingCycle === 'yearly' ? 12 : 1)
+            lineItems.push({
+              description: `Additional seats (${seats - 1} seats)`,
+              quantity: seats - 1,
+              unitPrice: pricing[0].perSeatAmount * (billingCycle === 'yearly' ? 12 : 1),
+              total: seatTotal,
+            })
+          }
+
+          // Calculate due date (30 days from now)
+          const dueDate = new Date(now)
+          dueDate.setDate(dueDate.getDate() + 30)
+
+          const invoiceId = generateId()
+
+          // Generate PDF invoice
+          let pdfPath: string | null = null
+          try {
+            pdfPath = await generateInvoicePDF(
+              {
+                invoiceNumber,
+                issueDate: now,
+                dueDate,
+                organizationName: orgName,
+                organizationSlug: orgSlug,
+                customerName: tenantOrg[0].name,
+                customerEmail: tenantOrg[0].billingEmail || undefined,
+                customerAddress: tenantOrg[0].billingAddress || undefined,
+                lineItems,
+                subtotal: invoiceSubtotal,
+                tax: invoiceTax,
+                total: invoiceTotal,
+                currency: 'USD',
+                notes: notes || undefined,
+              },
+              orgId
+            )
+          } catch (pdfError) {
+            console.error('Error generating invoice PDF:', pdfError)
+            // Continue without PDF - it can be regenerated later
+          }
+
+          // Create invoice
+          await db.insert(invoice).values({
+            id: invoiceId,
+            organizationId: orgId,
+            subscriptionId,
+            tenantOrganizationId,
+            invoiceNumber,
+            status: 'draft',
+            subtotal: invoiceSubtotal,
+            tax: invoiceTax,
+            total: invoiceTotal,
+            currency: 'USD',
+            issueDate: now,
+            dueDate,
+            lineItems: JSON.stringify(lineItems),
+            pdfPath,
+            billingName: tenantOrg[0].name,
+            billingEmail: tenantOrg[0].billingEmail,
+            billingAddress: tenantOrg[0].billingAddress,
+            notes: notes || null,
+            createdAt: now,
+            updatedAt: now,
+          })
+
+          // Create invoice activity on subscription
+          await db.insert(subscriptionActivity).values({
+            id: generateId(),
+            subscriptionId,
+            activityType: 'invoice_created',
+            description: `Invoice ${invoiceNumber} created for ${invoiceTotal / 100} USD`,
+            userId: session.user.id,
+            metadata: JSON.stringify({
+              invoiceId,
+              invoiceNumber,
+              total: invoiceTotal,
+            }),
+            createdAt: now,
+          })
 
           return new Response(
             JSON.stringify({
@@ -383,7 +502,15 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
                 companyName: tenantOrg[0].name,
                 plan: plan[0].name,
                 mrr,
-                status,
+                status: subscriptionStatus,
+              },
+              invoice: {
+                id: invoiceId,
+                invoiceNumber,
+                total: invoiceTotal,
+                status: 'draft',
+                dueDate: dueDate.toISOString(),
+                pdfPath,
               },
             }),
             { status: 201, headers: { 'Content-Type': 'application/json' } }

@@ -890,7 +890,11 @@ export const subscription = pgTable(
       .notNull()
       .references(() => productPlan.id, { onDelete: 'restrict' }),
     // Subscription status
-    status: text('status').notNull().default('active'), // active, trial, past_due, canceled, paused
+    status: text('status').notNull().default('draft'), // draft, active, trial, past_due, canceled, paused
+    // Payment collection method
+    // 'automatic' = self-service, auto-charge via Stripe/payment processor
+    // 'send_invoice' = sales-led, manual invoice sent to customer
+    collectionMethod: text('collectionMethod').notNull().default('send_invoice'), // automatic, send_invoice
     // Billing info
     billingCycle: text('billingCycle').notNull().default('monthly'), // monthly, yearly
     currentPeriodStart: timestamp('currentPeriodStart').notNull(),
@@ -1011,5 +1015,67 @@ export const subscriptionActivity = pgTable(
   (table) => ({
     subscriptionIdx: index('subscription_activity_subscription_idx').on(table.subscriptionId),
     createdAtIdx: index('subscription_activity_created_idx').on(table.subscriptionId, table.createdAt),
+  })
+)
+
+// ============================================================================
+// Invoice Tables
+// Invoices for subscription billing
+// ============================================================================
+
+/**
+ * Invoice - Invoices for subscription payments
+ * Subscriptions start as draft and become active when invoice is paid
+ */
+export const invoice = pgTable(
+  'invoice',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this invoice belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // The subscription this invoice is for
+    subscriptionId: text('subscriptionId')
+      .notNull()
+      .references(() => subscription.id, { onDelete: 'cascade' }),
+    // The customer organization
+    tenantOrganizationId: text('tenantOrganizationId')
+      .notNull()
+      .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
+    // Human-readable invoice number (e.g., "INV-ACME-1001")
+    invoiceNumber: text('invoiceNumber').notNull(),
+    // Invoice status: draft, paid, overdue, canceled
+    status: text('status').notNull().default('draft'),
+    // Billing amounts (in cents)
+    subtotal: integer('subtotal').notNull().default(0),
+    tax: integer('tax').notNull().default(0),
+    total: integer('total').notNull().default(0),
+    // Currency
+    currency: text('currency').notNull().default('USD'),
+    // Invoice dates
+    issueDate: timestamp('issueDate').notNull(),
+    dueDate: timestamp('dueDate').notNull(),
+    paidAt: timestamp('paidAt'),
+    // Line items (JSON array)
+    lineItems: text('lineItems').notNull(), // JSON: [{ description, quantity, unitPrice, total }]
+    // PDF storage path
+    pdfPath: text('pdfPath'),
+    // Billing details (snapshot at time of invoice)
+    billingName: text('billingName'),
+    billingEmail: text('billingEmail'),
+    billingAddress: text('billingAddress'),
+    // Internal notes
+    notes: text('notes'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('invoice_organization_idx').on(table.organizationId),
+    subscriptionIdx: index('invoice_subscription_idx').on(table.subscriptionId),
+    tenantOrgIdx: index('invoice_tenant_org_idx').on(table.tenantOrganizationId),
+    invoiceNumberIdx: index('invoice_number_idx').on(table.organizationId, table.invoiceNumber),
+    statusIdx: index('invoice_status_idx').on(table.organizationId, table.status),
   })
 )

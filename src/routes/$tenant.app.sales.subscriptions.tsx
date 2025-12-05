@@ -1,7 +1,7 @@
-import { createFileRoute, useParams } from '@tanstack/react-router'
+import { createFileRoute, useParams, Link, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { RefreshCw, Plus, Loader2 } from 'lucide-react'
+import { RefreshCw, Plus, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SubscriptionCard, type Subscription } from '@/components/SubscriptionCard'
 import { CreateSubscriptionDialog } from '@/components/CreateSubscriptionDialog'
@@ -17,6 +17,7 @@ interface SubscriptionsResponse {
 
 function SubscriptionsPage() {
   const { tenant } = useParams({ from: '/$tenant/app/sales/subscriptions' })
+  const navigate = useNavigate()
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const {
@@ -37,12 +38,23 @@ function SubscriptionsPage() {
 
   const subscriptions = data?.subscriptions || []
 
+  // Count draft subscriptions
+  const draftCount = subscriptions.filter(s => s.status === 'draft').length
+
   const handleViewUsage = (subscription: Subscription) => {
     console.log('View usage for:', subscription.companyName)
   }
 
   const handleModifyPlan = (subscription: Subscription) => {
     console.log('Modify plan for:', subscription.companyName)
+  }
+
+  const handleViewInvoice = (subscription: Subscription) => {
+    // Navigate to invoices page
+    navigate({ 
+      to: '/$tenant/app/sales/invoices',
+      params: { tenant },
+    })
   }
 
   const handleSyncMeters = () => {
@@ -90,8 +102,21 @@ function SubscriptionsPage() {
 
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Subscriptions & Usage</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Subscriptions & Usage</h1>
+          {draftCount > 0 && (
+            <p className="text-sm text-amber-600 mt-1">
+              {draftCount} subscription{draftCount > 1 ? 's' : ''} pending invoice payment
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-3">
+          <Link to="/$tenant/app/sales/invoices" params={{ tenant }}>
+            <Button variant="outline">
+              <FileText size={18} className="mr-1" />
+              View Invoices
+            </Button>
+          </Link>
           <Button variant="outline" onClick={handleSyncMeters}>
             <RefreshCw size={18} className="mr-1" />
             Sync Meters
@@ -126,6 +151,7 @@ function SubscriptionsPage() {
               subscription={subscription}
               onViewUsage={handleViewUsage}
               onModifyPlan={handleModifyPlan}
+              onViewInvoice={handleViewInvoice}
             />
           ))}
         </div>

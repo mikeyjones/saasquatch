@@ -64,6 +64,20 @@
       "when": 1764789568760,
       "tag": "0008_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1764948632415,
+      "tag": "0009_large_screwball",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1764964875558,
+      "tag": "0010_wise_legion",
+      "breakpoints": true
     }
   ]
 }

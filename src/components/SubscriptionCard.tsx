@@ -1,4 +1,4 @@
-import { CreditCard, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
+import { CreditCard, CheckCircle, Clock, AlertTriangle, FileText, XCircle, PauseCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
@@ -6,7 +6,7 @@ export interface Subscription {
   id: string
   subscriptionId: string
   companyName: string
-  status: 'active' | 'trial' | 'past_due'
+  status: 'draft' | 'active' | 'trial' | 'past_due' | 'canceled' | 'paused'
   plan: string
   mrr: number
   renewsAt: string
@@ -16,9 +16,15 @@ interface SubscriptionCardProps {
   subscription: Subscription
   onViewUsage?: (subscription: Subscription) => void
   onModifyPlan?: (subscription: Subscription) => void
+  onViewInvoice?: (subscription: Subscription) => void
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; icon: React.ElementType; className: string }> = {
+  draft: {
+    label: 'DRAFT',
+    icon: FileText,
+    className: 'bg-amber-50 text-amber-600 border border-amber-200',
+  },
   active: {
     label: 'ACTIVE',
     icon: CheckCircle,
@@ -33,6 +39,16 @@ const statusConfig = {
     label: 'PAST DUE',
     icon: AlertTriangle,
     className: 'bg-red-50 text-red-600',
+  },
+  canceled: {
+    label: 'CANCELED',
+    icon: XCircle,
+    className: 'bg-gray-50 text-gray-600',
+  },
+  paused: {
+    label: 'PAUSED',
+    icon: PauseCircle,
+    className: 'bg-gray-50 text-gray-600',
   },
 }
 
@@ -58,13 +74,23 @@ export function SubscriptionCard({
   subscription,
   onViewUsage,
   onModifyPlan,
+  onViewInvoice,
 }: SubscriptionCardProps) {
-  const status = statusConfig[subscription.status]
+  const status = statusConfig[subscription.status] || statusConfig.active
   const StatusIcon = status.icon
+  const isDraft = subscription.status === 'draft'
 
   return (
-    <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <Card className={`bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 ${isDraft ? 'border-amber-200' : ''}`}>
       <CardContent className="p-5">
+        {/* Draft status banner */}
+        {isDraft && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 px-3 py-2 rounded-lg text-xs mb-4 flex items-center gap-2">
+            <FileText size={14} />
+            <span>Pending invoice payment to activate</span>
+          </div>
+        )}
+
         {/* Header with company name and status */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -97,7 +123,7 @@ export function SubscriptionCard({
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Renews</span>
+            <span className="text-sm text-gray-500">{isDraft ? 'Created' : 'Renews'}</span>
             <span className="text-sm font-medium text-gray-900">
               {formatDate(subscription.renewsAt)}
             </span>
@@ -106,22 +132,38 @@ export function SubscriptionCard({
 
         {/* Action buttons */}
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 text-gray-600 border-gray-200 hover:bg-gray-50"
-            onClick={() => onViewUsage?.(subscription)}
-          >
-            View Usage
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-            onClick={() => onModifyPlan?.(subscription)}
-          >
-            Modify Plan
-          </Button>
+          {isDraft ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                onClick={() => onViewInvoice?.(subscription)}
+              >
+                <FileText size={14} className="mr-1" />
+                View Invoice
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-gray-600 border-gray-200 hover:bg-gray-50"
+                onClick={() => onViewUsage?.(subscription)}
+              >
+                View Usage
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                onClick={() => onModifyPlan?.(subscription)}
+              >
+                Modify Plan
+              </Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
