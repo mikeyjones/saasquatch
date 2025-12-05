@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import { tenantUser, tenantOrganization, organization } from '@/db/schema'
-import { eq, and, or, ilike } from 'drizzle-orm'
+import { eq, and, or, ilike, isNotNull, ne } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
 export const Route = createFileRoute('/api/tenant/$tenant/users')({
@@ -47,8 +47,43 @@ export const Route = createFileRoute('/api/tenant/$tenant/users')({
           const url = new URL(request.url)
           const search = url.searchParams.get('search')?.toLowerCase() || ''
 
-          // Fetch tenant users with their organization info
-          let query = db
+          // Get includeProspects filter from URL (default: false - exclude prospects)
+          const includeProspects = url.searchParams.get('includeProspects') === 'true'
+
+          // Fetch tenant users from non-prospect organizations only (from Sales CRM)
+          // Prospects are: null subscriptionStatus or 'trialing'
+          // Customers are: 'active' or 'past_due'  
+          // Inactive are: 'canceled' or 'inactive'
+          // Customer Support sees customers + inactive (anyone who was ever a customer)
+          
+          // Build where conditions - always include org filter
+          const conditions = [eq(tenantOrganization.organizationId, orgId)]
+          
+          // Exclude prospects unless explicitly requested
+          // Prospects have null or 'trialing' subscriptionStatus
+          if (!includeProspects) {
+            conditions.push(
+              and(
+                // Must have a subscription status (not null)
+                isNotNull(tenantOrganization.subscriptionStatus),
+                // And not be trialing (trialing = prospect)
+                ne(tenantOrganization.subscriptionStatus, 'trialing')
+              )!
+            )
+          }
+
+          // Apply search filter if provided
+          if (search) {
+            conditions.push(
+              or(
+                ilike(tenantUser.name, `%${search}%`),
+                ilike(tenantUser.email, `%${search}%`),
+                ilike(tenantOrganization.name, `%${search}%`)
+              )!
+            )
+          }
+
+          const users = await db
             .select({
               id: tenantUser.id,
               name: tenantUser.name,
@@ -60,29 +95,14 @@ export const Route = createFileRoute('/api/tenant/$tenant/users')({
               lastActivityAt: tenantUser.lastActivityAt,
               organizationName: tenantOrganization.name,
               organizationSlug: tenantOrganization.slug,
+              organizationStatus: tenantOrganization.subscriptionStatus,
             })
             .from(tenantUser)
             .innerJoin(
               tenantOrganization,
               eq(tenantUser.tenantOrganizationId, tenantOrganization.id)
             )
-            .where(eq(tenantOrganization.organizationId, orgId))
-
-          // Apply search filter if provided
-          if (search) {
-            query = query.where(
-              and(
-                eq(tenantOrganization.organizationId, orgId),
-                or(
-                  ilike(tenantUser.name, `%${search}%`),
-                  ilike(tenantUser.email, `%${search}%`),
-                  ilike(tenantOrganization.name, `%${search}%`)
-                )
-              )
-            ) as typeof query
-          }
-
-          const users = await query
+            .where(and(...conditions))
 
           // Transform to Member format expected by frontend
           const members = users.map((user) => ({
@@ -97,6 +117,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/users')({
               .substring(0, 2),
             organization: user.organizationName,
             organizationSlug: user.organizationSlug,
+            organizationStatus: user.organizationStatus,
             role: user.role === 'owner' || user.role === 'admin' ? 'Admin' : user.role === 'viewer' ? 'Viewer' : 'User',
             isOwner: user.isOwner,
             status: user.status === 'active' ? 'Active' : 'Suspended',

@@ -12,6 +12,8 @@ export interface Member {
   initials: string
   organization: string
   organizationSlug?: string
+  /** Organization's subscription status from Sales CRM */
+  organizationStatus?: 'active' | 'trialing' | 'canceled' | 'past_due' | null
   role: 'Admin' | 'User' | 'Viewer'
   isOwner?: boolean
   status: 'Active' | 'Suspended'
