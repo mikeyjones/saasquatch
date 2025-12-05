@@ -4,6 +4,9 @@ import {
   productPlan,
   productPricing,
   productFeature,
+  productPlanAddOn,
+  productAddOn,
+  productAddOnPricing,
   organization,
 } from '@/db/schema'
 import { eq, and, desc, asc } from 'drizzle-orm'
@@ -127,9 +130,79 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             allFeatures = featureResults.flat()
           }
 
-          // Group pricing and features by plan
+          // Fetch bolt-ons for all plans
+          type BoltOnJoinResult = {
+            id: string
+            productPlanId: string
+            productAddOnId: string
+            billingType: string
+            displayOrder: number
+            addOnName: string
+            addOnDescription: string | null
+            addOnPricingModel: string
+            addOnStatus: string
+          }
+
+          let allBoltOns: BoltOnJoinResult[] = []
+          if (planIds.length > 0) {
+            const boltOnPromises = planIds.map((planId) =>
+              db
+                .select({
+                  id: productPlanAddOn.id,
+                  productPlanId: productPlanAddOn.productPlanId,
+                  productAddOnId: productPlanAddOn.productAddOnId,
+                  billingType: productPlanAddOn.billingType,
+                  displayOrder: productPlanAddOn.displayOrder,
+                  addOnName: productAddOn.name,
+                  addOnDescription: productAddOn.description,
+                  addOnPricingModel: productAddOn.pricingModel,
+                  addOnStatus: productAddOn.status,
+                })
+                .from(productPlanAddOn)
+                .innerJoin(productAddOn, eq(productPlanAddOn.productAddOnId, productAddOn.id))
+                .where(eq(productPlanAddOn.productPlanId, planId))
+                .orderBy(asc(productPlanAddOn.displayOrder))
+            )
+            const boltOnResults = await Promise.all(boltOnPromises)
+            allBoltOns = boltOnResults.flat()
+          }
+
+          // Fetch add-on pricing for all bolt-ons
+          const addOnIds = [...new Set(allBoltOns.map((b) => b.productAddOnId))]
+          type AddOnPricingResult = {
+            productAddOnId: string
+            amount: number
+            currency: string
+            interval: string | null
+          }
+          let allAddOnPricing: AddOnPricingResult[] = []
+          if (addOnIds.length > 0) {
+            const addOnPricingPromises = addOnIds.map((addOnId) =>
+              db
+                .select({
+                  productAddOnId: productAddOnPricing.productAddOnId,
+                  amount: productAddOnPricing.amount,
+                  currency: productAddOnPricing.currency,
+                  interval: productAddOnPricing.interval,
+                })
+                .from(productAddOnPricing)
+                .where(
+                  and(
+                    eq(productAddOnPricing.productAddOnId, addOnId),
+                    eq(productAddOnPricing.pricingType, 'base')
+                  )
+                )
+                .limit(1)
+            )
+            const addOnPricingResults = await Promise.all(addOnPricingPromises)
+            allAddOnPricing = addOnPricingResults.flat()
+          }
+
+          // Group pricing, features, and bolt-ons by plan
           const pricingByPlan = new Map<string, typeof allPricing>()
           const featuresByPlan = new Map<string, typeof allFeatures>()
+          const boltOnsByPlan = new Map<string, typeof allBoltOns>()
+          const addOnPricingByAddOn = new Map<string, AddOnPricingResult>()
 
           for (const p of allPricing) {
             const existing = pricingByPlan.get(p.productPlanId) || []
@@ -143,10 +216,21 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             featuresByPlan.set(f.productPlanId, existing)
           }
 
+          for (const b of allBoltOns) {
+            const existing = boltOnsByPlan.get(b.productPlanId) || []
+            existing.push(b)
+            boltOnsByPlan.set(b.productPlanId, existing)
+          }
+
+          for (const p of allAddOnPricing) {
+            addOnPricingByAddOn.set(p.productAddOnId, p)
+          }
+
           // Format response to match ProductTier interface
           const response = plans.map((plan) => {
             const planPricing = pricingByPlan.get(plan.id) || []
             const planFeatures = featuresByPlan.get(plan.id) || []
+            const planBoltOns = boltOnsByPlan.get(plan.id) || []
 
             // Find base pricing (default to first base pricing or monthly)
             const basePricing = planPricing.find(
@@ -163,6 +247,27 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
                 currency: p.currency,
                 amount: p.amount / 100, // Convert cents to dollars for display
               }))
+
+            // Format bolt-ons
+            const boltOns = planBoltOns.map((b) => {
+              const addOnPrice = addOnPricingByAddOn.get(b.productAddOnId)
+              return {
+                id: b.id,
+                productAddOnId: b.productAddOnId,
+                name: b.addOnName,
+                description: b.addOnDescription,
+                pricingModel: b.addOnPricingModel as 'flat' | 'seat' | 'usage',
+                billingType: b.billingType as 'billed_with_main' | 'consumable',
+                displayOrder: b.displayOrder,
+                basePrice: addOnPrice
+                  ? {
+                      amount: addOnPrice.amount / 100,
+                      currency: addOnPrice.currency,
+                      interval: addOnPrice.interval,
+                    }
+                  : undefined,
+              }
+            })
 
             return {
               id: plan.id,
@@ -183,6 +288,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
                   },
               regionalPricing,
               features: planFeatures.map((f) => f.name),
+              boltOns,
               createdAt: plan.createdAt,
               updatedAt: plan.updatedAt,
             }
@@ -244,6 +350,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             basePrice,
             regionalPricing,
             features,
+            boltOns,
           } = body as {
             name: string
             description?: string
@@ -260,6 +367,11 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
               amount: number
             }>
             features?: string[]
+            boltOns?: Array<{
+              productAddOnId: string
+              billingType: 'billed_with_main' | 'consumable'
+              displayOrder?: number
+            }>
           }
 
           if (!name) {
@@ -334,6 +446,23 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             }
           }
 
+          // Create bolt-ons if provided
+          if (boltOns && boltOns.length > 0) {
+            for (let i = 0; i < boltOns.length; i++) {
+              const boltOn = boltOns[i]
+              const boltOnId = crypto.randomUUID().replace(/-/g, '').substring(0, 24)
+              await db.insert(productPlanAddOn).values({
+                id: boltOnId,
+                productPlanId: planId,
+                productAddOnId: boltOn.productAddOnId,
+                billingType: boltOn.billingType,
+                displayOrder: boltOn.displayOrder ?? i,
+                createdAt: now,
+                updatedAt: now,
+              })
+            }
+          }
+
           return new Response(
             JSON.stringify({
               success: true,
@@ -346,6 +475,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
                 basePrice: basePrice || { amount: 0, currency: 'USD', interval: 'monthly' },
                 regionalPricing: regionalPricing || [],
                 features: features || [],
+                boltOns: boltOns || [],
                 createdAt: now,
                 updatedAt: now,
               },
@@ -405,6 +535,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             basePrice,
             regionalPricing,
             features,
+            boltOns,
           } = body as {
             id: string
             name?: string
@@ -422,6 +553,11 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
               amount: number
             }>
             features?: string[]
+            boltOns?: Array<{
+              productAddOnId: string
+              billingType: 'billed_with_main' | 'consumable'
+              displayOrder?: number
+            }>
           }
 
           if (!id) {
@@ -534,6 +670,29 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
                 productPlanId: id,
                 name: features[i],
                 order: i,
+                createdAt: now,
+                updatedAt: now,
+              })
+            }
+          }
+
+          // Update bolt-ons if provided
+          if (boltOns !== undefined) {
+            // Delete existing bolt-ons for this plan
+            await db
+              .delete(productPlanAddOn)
+              .where(eq(productPlanAddOn.productPlanId, id))
+
+            // Insert new bolt-ons
+            for (let i = 0; i < boltOns.length; i++) {
+              const boltOn = boltOns[i]
+              const boltOnId = crypto.randomUUID().replace(/-/g, '').substring(0, 24)
+              await db.insert(productPlanAddOn).values({
+                id: boltOnId,
+                productPlanId: id,
+                productAddOnId: boltOn.productAddOnId,
+                billingType: boltOn.billingType,
+                displayOrder: boltOn.displayOrder ?? i,
                 createdAt: now,
                 updatedAt: now,
               })

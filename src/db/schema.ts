@@ -7,6 +7,7 @@ import {
   index,
   primaryKey,
   integer,
+  unique,
 } from 'drizzle-orm/pg-core'
 
 export const todos = pgTable(
@@ -831,6 +832,38 @@ export const productFeatureFlag = pgTable(
   (table) => ({
     planIdx: index('product_feature_flag_plan_idx').on(table.productPlanId),
     keyIdx: index('product_feature_flag_key_idx').on(table.productPlanId, table.flagKey),
+  })
+)
+
+/**
+ * Product Plan Add-On - Junction table linking product plans to available add-ons
+ * Allows configuring which add-ons are available for each plan
+ */
+export const productPlanAddOn = pgTable(
+  'product_plan_add_on',
+  {
+    id: text('id').primaryKey(),
+    // The plan this add-on is available for
+    productPlanId: text('productPlanId')
+      .notNull()
+      .references(() => productPlan.id, { onDelete: 'cascade' }),
+    // The add-on available for this plan
+    productAddOnId: text('productAddOnId')
+      .notNull()
+      .references(() => productAddOn.id, { onDelete: 'cascade' }),
+    // Billing type: 'billed_with_main' (recurring with subscription) or 'consumable' (usage-based)
+    billingType: text('billingType').notNull().default('billed_with_main'),
+    // Display order for UI
+    displayOrder: integer('displayOrder').notNull().default(0),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    planIdx: index('product_plan_add_on_plan_idx').on(table.productPlanId),
+    addOnIdx: index('product_plan_add_on_add_on_idx').on(table.productAddOnId),
+    // Unique constraint: one add-on can only be added once per plan
+    uniquePlanAddOn: unique().on(table.productPlanId, table.productAddOnId),
   })
 )
 

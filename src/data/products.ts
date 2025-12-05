@@ -9,6 +9,50 @@
 // Types
 // ============================================================================
 
+/**
+ * Bolt-On represents an add-on available for a product plan
+ */
+export interface BoltOn {
+  id: string
+  productAddOnId: string
+  name: string
+  description?: string | null
+  pricingModel: 'flat' | 'seat' | 'usage'
+  billingType: 'billed_with_main' | 'consumable'
+  displayOrder: number
+  // Pricing info (optional, may be included from productAddOnPricing)
+  basePrice?: {
+    amount: number
+    currency: string
+    interval?: string | null
+  }
+}
+
+/**
+ * Input for adding/updating bolt-ons on a plan
+ */
+export interface BoltOnInput {
+  productAddOnId: string
+  billingType: 'billed_with_main' | 'consumable'
+  displayOrder?: number
+}
+
+/**
+ * Available add-on from the organization (for selection in UI)
+ */
+export interface AvailableAddOn {
+  id: string
+  name: string
+  description?: string | null
+  pricingModel: 'flat' | 'seat' | 'usage'
+  status: 'active' | 'draft' | 'archived'
+  basePrice?: {
+    amount: number
+    currency: string
+    interval?: string | null
+  }
+}
+
 export interface ProductTier {
   id: string
   name: string
@@ -26,6 +70,7 @@ export interface ProductTier {
     amount: number
   }>
   features: string[]
+  boltOns?: BoltOn[]
   createdAt?: Date
   updatedAt?: Date
 }
@@ -72,6 +117,7 @@ export interface CreatePlanInput {
     amount: number
   }>
   features?: string[]
+  boltOns?: BoltOnInput[]
 }
 
 export interface UpdatePlanInput extends Partial<CreatePlanInput> {
@@ -234,6 +280,39 @@ export async function deletePlan(
   } catch (error) {
     console.error('Error deleting plan:', error)
     return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Fetch all available add-ons for the organization
+ * Used when configuring bolt-ons for a plan
+ */
+export async function fetchAddOns(
+  tenantSlug: string,
+  filters?: { status?: string }
+): Promise<AvailableAddOn[]> {
+  try {
+    const url = new URL(
+      `/api/tenant/${tenantSlug}/product-catalog/add-ons`,
+      window.location.origin
+    )
+
+    if (filters?.status) url.searchParams.set('status', filters.status)
+
+    const response = await fetch(url.toString(), {
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      console.error('Failed to fetch add-ons:', response.statusText)
+      return []
+    }
+
+    const data = await response.json()
+    return data.addOns || []
+  } catch (error) {
+    console.error('Error fetching add-ons:', error)
+    return []
   }
 }
 

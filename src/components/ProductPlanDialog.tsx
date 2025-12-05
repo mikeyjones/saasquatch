@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { z } from 'zod'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Package, Zap, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
 import {
   createPlan,
   updatePlan,
+  fetchAddOns,
   type ProductTier,
   type CreatePlanInput,
   type UpdatePlanInput,
+  type AvailableAddOn,
+  type BoltOnInput,
 } from '@/data/products'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -102,6 +105,13 @@ export function ProductPlanDialog({
   const [features, setFeatures] = useState<string[]>([])
   const [newFeature, setNewFeature] = useState('')
 
+  // Bolt-ons state
+  const [availableAddOns, setAvailableAddOns] = useState<AvailableAddOn[]>([])
+  const [selectedBoltOns, setSelectedBoltOns] = useState<
+    Array<{ productAddOnId: string; billingType: 'billed_with_main' | 'consumable'; displayOrder: number }>
+  >([])
+  const [isLoadingAddOns, setIsLoadingAddOns] = useState(false)
+
   const isEditMode = !!plan
 
   const form = useAppForm({
@@ -137,6 +147,13 @@ export function ProductPlanDialog({
             amount: Number.parseFloat(rp.amount) || 0,
           }))
 
+        // Format bolt-ons for submission
+        const formattedBoltOns: BoltOnInput[] = selectedBoltOns.map((bo, index) => ({
+          productAddOnId: bo.productAddOnId,
+          billingType: bo.billingType,
+          displayOrder: bo.displayOrder ?? index,
+        }))
+
         if (isEditMode && plan) {
           const input: UpdatePlanInput = {
             id: plan.id,
@@ -147,6 +164,7 @@ export function ProductPlanDialog({
             basePrice,
             regionalPricing: formattedRegionalPricing,
             features: features.filter(Boolean),
+            boltOns: formattedBoltOns,
           }
           const result = await updatePlan(tenant, input)
 
@@ -163,6 +181,7 @@ export function ProductPlanDialog({
             basePrice,
             regionalPricing: formattedRegionalPricing,
             features: features.filter(Boolean),
+            boltOns: formattedBoltOns,
           }
           const result = await createPlan(tenant, input)
 
@@ -186,8 +205,23 @@ export function ProductPlanDialog({
     setRegionalPricing([])
     setFeatures([])
     setNewFeature('')
+    setSelectedBoltOns([])
     setError(null)
   }
+
+  // Load available add-ons when dialog opens
+  useEffect(() => {
+    if (open && tenant) {
+      setIsLoadingAddOns(true)
+      fetchAddOns(tenant, { status: 'active' })
+        .then((addOns) => {
+          setAvailableAddOns(addOns)
+        })
+        .finally(() => {
+          setIsLoadingAddOns(false)
+        })
+    }
+  }, [open, tenant])
 
   // Reset form when dialog opens with different plan
   useEffect(() => {
@@ -219,6 +253,19 @@ export function ProductPlanDialog({
         setFeatures(plan.features)
       } else {
         setFeatures([])
+      }
+
+      // Set bolt-ons
+      if (plan?.boltOns && plan.boltOns.length > 0) {
+        setSelectedBoltOns(
+          plan.boltOns.map((bo) => ({
+            productAddOnId: bo.productAddOnId,
+            billingType: bo.billingType,
+            displayOrder: bo.displayOrder,
+          }))
+        )
+      } else {
+        setSelectedBoltOns([])
       }
 
       setNewFeature('')
@@ -261,6 +308,39 @@ export function ProductPlanDialog({
   const removeFeature = (index: number) => {
     setFeatures(features.filter((_, i) => i !== index))
   }
+
+  // Bolt-on management functions
+  const addBoltOn = (addOnId: string) => {
+    if (selectedBoltOns.some((bo) => bo.productAddOnId === addOnId)) return
+    setSelectedBoltOns([
+      ...selectedBoltOns,
+      {
+        productAddOnId: addOnId,
+        billingType: 'billed_with_main',
+        displayOrder: selectedBoltOns.length,
+      },
+    ])
+  }
+
+  const removeBoltOn = (addOnId: string) => {
+    setSelectedBoltOns(selectedBoltOns.filter((bo) => bo.productAddOnId !== addOnId))
+  }
+
+  const updateBoltOnBillingType = (addOnId: string, billingType: 'billed_with_main' | 'consumable') => {
+    setSelectedBoltOns(
+      selectedBoltOns.map((bo) =>
+        bo.productAddOnId === addOnId ? { ...bo, billingType } : bo
+      )
+    )
+  }
+
+  // Get add-on details by ID
+  const getAddOnById = (addOnId: string) => availableAddOns.find((a) => a.id === addOnId)
+
+  // Get unselected add-ons for the dropdown
+  const unselectedAddOns = availableAddOns.filter(
+    (a) => !selectedBoltOns.some((bo) => bo.productAddOnId === a.id)
+  )
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -470,6 +550,127 @@ export function ProductPlanDialog({
             {features.length === 0 && (
               <p className="text-xs text-gray-500">
                 Add features that are included in this plan.
+              </p>
+            )}
+          </div>
+
+          {/* Bolt-Ons Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Package size={14} />
+                Bolt-Ons (Optional)
+              </Label>
+              {isLoadingAddOns && (
+                <RefreshCw size={14} className="animate-spin text-gray-400" />
+              )}
+            </div>
+            
+            {/* Add Bolt-On Selector */}
+            {unselectedAddOns.length > 0 && (
+              <div className="flex items-center gap-2">
+                <select
+                  className="flex h-9 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      addBoltOn(e.target.value)
+                      e.target.value = ''
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="">Select add-on to include...</option>
+                  {unselectedAddOns.map((addOn) => (
+                    <option key={addOn.id} value={addOn.id}>
+                      {addOn.name}
+                      {addOn.basePrice
+                        ? ` - $${addOn.basePrice.amount}/${addOn.basePrice.interval || 'mo'}`
+                        : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Selected Bolt-Ons */}
+            {selectedBoltOns.length > 0 && (
+              <div className="space-y-2">
+                {selectedBoltOns.map((boltOn) => {
+                  const addOnDetails = getAddOnById(boltOn.productAddOnId)
+                  if (!addOnDetails) return null
+                  return (
+                    <div
+                      key={boltOn.productAddOnId}
+                      className="flex items-center justify-between px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-md"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Package size={14} className="text-indigo-500" />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">
+                            {addOnDetails.name}
+                          </span>
+                          {addOnDetails.basePrice && (
+                            <span className="text-xs text-gray-500 ml-2">
+                              ${addOnDetails.basePrice.amount}/{addOnDetails.basePrice.interval || 'mo'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Billing Type Toggle */}
+                        <div className="flex items-center gap-1 bg-white rounded border border-gray-200 p-0.5">
+                          <button
+                            type="button"
+                            onClick={() => updateBoltOnBillingType(boltOn.productAddOnId, 'billed_with_main')}
+                            className={`px-2 py-1 text-xs rounded transition-colors ${
+                              boltOn.billingType === 'billed_with_main'
+                                ? 'bg-indigo-500 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                            title="Billed with the main subscription"
+                          >
+                            Recurring
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateBoltOnBillingType(boltOn.productAddOnId, 'consumable')}
+                            className={`px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 ${
+                              boltOn.billingType === 'consumable'
+                                ? 'bg-amber-500 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                            title="Usage-based billing"
+                          >
+                            <Zap size={10} />
+                            Consumable
+                          </button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-gray-400 hover:text-red-500"
+                          onClick={() => removeBoltOn(boltOn.productAddOnId)}
+                        >
+                          <X size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Empty state */}
+            {selectedBoltOns.length === 0 && availableAddOns.length === 0 && !isLoadingAddOns && (
+              <p className="text-xs text-gray-500">
+                No add-ons available. Create add-ons first to include them as bolt-ons.
+              </p>
+            )}
+            {selectedBoltOns.length === 0 && availableAddOns.length > 0 && (
+              <p className="text-xs text-gray-500">
+                Add bolt-ons that customers can optionally purchase with this plan.
+                Choose between recurring (billed with subscription) or consumable (usage-based).
               </p>
             )}
           </div>
