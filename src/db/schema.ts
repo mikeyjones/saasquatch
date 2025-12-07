@@ -159,6 +159,7 @@ export const tenantOrganization = pgTable(
       .references(() => user.id, { onDelete: 'set null' }),
     // Metadata
     notes: text('notes'),
+    metadata: text('metadata'), // JSON object for custom properties/fields
     createdAt: timestamp('createdAt').notNull().defaultNow(),
     updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   },

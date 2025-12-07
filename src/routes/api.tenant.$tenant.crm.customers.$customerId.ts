@@ -6,8 +6,13 @@ import {
   user,
   subscription,
   productPlan,
+  tenantUser,
+  invoice,
+  deal,
+  dealActivity,
+  pipelineStage,
 } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc, sql } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
 export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$customerId')({
@@ -52,6 +57,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
               id: tenantOrganization.id,
               name: tenantOrganization.name,
               slug: tenantOrganization.slug,
+              logo: tenantOrganization.logo,
               industry: tenantOrganization.industry,
               website: tenantOrganization.website,
               billingEmail: tenantOrganization.billingEmail,
@@ -59,6 +65,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
               assignedToUserId: tenantOrganization.assignedToUserId,
               tags: tenantOrganization.tags,
               notes: tenantOrganization.notes,
+              metadata: tenantOrganization.metadata,
               subscriptionPlan: tenantOrganization.subscriptionPlan,
               subscriptionStatus: tenantOrganization.subscriptionStatus,
               createdAt: tenantOrganization.createdAt,
@@ -82,9 +89,10 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
 
           const c = customer[0]
           const parsedTags = c.tags ? JSON.parse(c.tags) : []
+          const parsedMetadata = c.metadata ? JSON.parse(c.metadata) : {}
 
-          // Fetch active subscription for this customer
-          const activeSubscription = await db
+          // Fetch ALL subscriptions for this customer (not just active)
+          const subscriptions = await db
             .select({
               id: subscription.id,
               subscriptionNumber: subscription.subscriptionNumber,
@@ -103,25 +111,167 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             .where(
               and(
                 eq(subscription.tenantOrganizationId, params.customerId),
-                eq(subscription.organizationId, orgId),
-                eq(subscription.status, 'active')
+                eq(subscription.organizationId, orgId)
               )
             )
-            .limit(1)
+            .orderBy(desc(subscription.createdAt))
 
-          const subscriptionData = activeSubscription.length > 0 ? {
-            id: activeSubscription[0].id,
-            subscriptionNumber: activeSubscription[0].subscriptionNumber,
-            productPlanId: activeSubscription[0].productPlanId,
-            planName: activeSubscription[0].planName,
-            status: activeSubscription[0].status,
-            billingCycle: activeSubscription[0].billingCycle,
-            seats: activeSubscription[0].seats,
-            mrr: activeSubscription[0].mrr,
-            currentPeriodStart: activeSubscription[0].currentPeriodStart.toISOString(),
-            currentPeriodEnd: activeSubscription[0].currentPeriodEnd.toISOString(),
-            createdAt: activeSubscription[0].createdAt.toISOString(),
-          } : null
+          const subscriptionsData = subscriptions.map(s => ({
+            id: s.id,
+            subscriptionNumber: s.subscriptionNumber,
+            productPlanId: s.productPlanId,
+            planName: s.planName,
+            status: s.status,
+            billingCycle: s.billingCycle,
+            seats: s.seats,
+            mrr: s.mrr,
+            currentPeriodStart: s.currentPeriodStart.toISOString(),
+            currentPeriodEnd: s.currentPeriodEnd.toISOString(),
+            createdAt: s.createdAt.toISOString(),
+          }))
+
+          // Fetch all contacts for this customer
+          const contacts = await db
+            .select({
+              id: tenantUser.id,
+              name: tenantUser.name,
+              email: tenantUser.email,
+              phone: tenantUser.phone,
+              avatarUrl: tenantUser.avatarUrl,
+              title: tenantUser.title,
+              role: tenantUser.role,
+              isOwner: tenantUser.isOwner,
+              status: tenantUser.status,
+              lastActivityAt: tenantUser.lastActivityAt,
+              notes: tenantUser.notes,
+              createdAt: tenantUser.createdAt,
+            })
+            .from(tenantUser)
+            .where(eq(tenantUser.tenantOrganizationId, params.customerId))
+            .orderBy(desc(tenantUser.createdAt))
+
+          const contactsData = contacts.map(contact => ({
+            id: contact.id,
+            name: contact.name,
+            email: contact.email,
+            phone: contact.phone,
+            avatarUrl: contact.avatarUrl,
+            title: contact.title,
+            role: contact.role,
+            isOwner: contact.isOwner,
+            status: contact.status,
+            lastActivityAt: contact.lastActivityAt?.toISOString() || null,
+            notes: contact.notes,
+            createdAt: contact.createdAt.toISOString(),
+          }))
+
+          // Fetch all invoices for this customer
+          const invoices = await db
+            .select({
+              id: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              status: invoice.status,
+              subtotal: invoice.subtotal,
+              tax: invoice.tax,
+              total: invoice.total,
+              currency: invoice.currency,
+              issueDate: invoice.issueDate,
+              dueDate: invoice.dueDate,
+              paidAt: invoice.paidAt,
+              subscriptionId: invoice.subscriptionId,
+              createdAt: invoice.createdAt,
+            })
+            .from(invoice)
+            .where(eq(invoice.tenantOrganizationId, params.customerId))
+            .orderBy(desc(invoice.createdAt))
+
+          const invoicesData = invoices.map(inv => ({
+            id: inv.id,
+            invoiceNumber: inv.invoiceNumber,
+            status: inv.status,
+            subtotal: inv.subtotal,
+            tax: inv.tax,
+            total: inv.total,
+            currency: inv.currency,
+            issueDate: inv.issueDate.toISOString(),
+            dueDate: inv.dueDate.toISOString(),
+            paidAt: inv.paidAt?.toISOString() || null,
+            subscriptionId: inv.subscriptionId,
+            createdAt: inv.createdAt.toISOString(),
+          }))
+
+          // Fetch all deals for this customer
+          const deals = await db
+            .select({
+              id: deal.id,
+              name: deal.name,
+              value: deal.value,
+              stageId: deal.stageId,
+              stageName: pipelineStage.name,
+              stageColor: pipelineStage.color,
+              assignedToUserId: deal.assignedToUserId,
+              badges: deal.badges,
+              nextTask: deal.nextTask,
+              notes: deal.notes,
+              createdAt: deal.createdAt,
+              updatedAt: deal.updatedAt,
+            })
+            .from(deal)
+            .innerJoin(pipelineStage, eq(deal.stageId, pipelineStage.id))
+            .where(eq(deal.tenantOrganizationId, params.customerId))
+            .orderBy(desc(deal.createdAt))
+
+          const dealsData = deals.map(d => {
+            const parsedBadges = d.badges ? JSON.parse(d.badges) : []
+            return {
+              id: d.id,
+              name: d.name,
+              value: d.value,
+              stageId: d.stageId,
+              stageName: d.stageName,
+              stageColor: d.stageColor,
+              assignedToUserId: d.assignedToUserId,
+              badges: parsedBadges,
+              nextTask: d.nextTask,
+              notes: d.notes,
+              createdAt: d.createdAt.toISOString(),
+              updatedAt: d.updatedAt.toISOString(),
+            }
+          })
+
+          // Fetch recent activity from deals
+          const activities = await db
+            .select({
+              id: dealActivity.id,
+              dealId: dealActivity.dealId,
+              activityType: dealActivity.activityType,
+              description: dealActivity.description,
+              userId: dealActivity.userId,
+              metadata: dealActivity.metadata,
+              createdAt: dealActivity.createdAt,
+            })
+            .from(dealActivity)
+            .innerJoin(deal, eq(dealActivity.dealId, deal.id))
+            .where(eq(deal.tenantOrganizationId, params.customerId))
+            .orderBy(desc(dealActivity.createdAt))
+            .limit(50)
+
+          const activitiesData = activities.map(a => ({
+            id: a.id,
+            dealId: a.dealId,
+            activityType: a.activityType,
+            description: a.description,
+            userId: a.userId,
+            metadata: a.metadata ? JSON.parse(a.metadata) : null,
+            createdAt: a.createdAt.toISOString(),
+          }))
+
+          // Calculate metrics
+          const totalMRR = subscriptionsData
+            .filter(s => s.status === 'active')
+            .reduce((sum, s) => sum + s.mrr, 0)
+
+          const totalDealValue = dealsData.reduce((sum, d) => sum + d.value, 0)
 
           return new Response(
             JSON.stringify({
@@ -129,6 +279,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
                 id: c.id,
                 name: c.name,
                 slug: c.slug,
+                logo: c.logo,
                 industry: c.industry,
                 website: c.website,
                 billingEmail: c.billingEmail,
@@ -136,12 +287,24 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
                 assignedToUserId: c.assignedToUserId,
                 tags: parsedTags,
                 notes: c.notes,
+                metadata: parsedMetadata,
                 subscriptionPlan: c.subscriptionPlan,
                 subscriptionStatus: c.subscriptionStatus,
                 createdAt: c.createdAt.toISOString(),
                 updatedAt: c.updatedAt.toISOString(),
               },
-              subscription: subscriptionData,
+              subscriptions: subscriptionsData,
+              contacts: contactsData,
+              invoices: invoicesData,
+              deals: dealsData,
+              activities: activitiesData,
+              metrics: {
+                totalMRR,
+                totalDealValue,
+                contactCount: contactsData.length,
+                dealCount: dealsData.length,
+                invoiceCount: invoicesData.length,
+              },
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
           )
@@ -229,6 +392,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             assignedToUserId,
             tags,
             notes,
+            metadata,
           } = body as {
             name?: string
             industry?: string
@@ -238,6 +402,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             assignedToUserId?: string | null
             tags?: string[]
             notes?: string
+            metadata?: Record<string, unknown>
           }
 
           // Build update object with only provided fields
@@ -250,6 +415,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             assignedToUserId?: string | null
             tags?: string | null
             notes?: string | null
+            metadata?: string | null
             updatedAt: Date
           } = {
             updatedAt: new Date(),
@@ -304,6 +470,10 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             updateData.notes = notes || null
           }
 
+          if (metadata !== undefined) {
+            updateData.metadata = metadata && Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null
+          }
+
           // Update tenant organization
           await db
             .update(tenantOrganization)
@@ -323,6 +493,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
               assignedToUserId: tenantOrganization.assignedToUserId,
               tags: tenantOrganization.tags,
               notes: tenantOrganization.notes,
+              metadata: tenantOrganization.metadata,
               subscriptionPlan: tenantOrganization.subscriptionPlan,
               subscriptionStatus: tenantOrganization.subscriptionStatus,
             })
@@ -332,6 +503,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
 
           const customer = updatedCustomer[0]
           const parsedTags = customer.tags ? JSON.parse(customer.tags) : []
+          const parsedMetadata = customer.metadata ? JSON.parse(customer.metadata) : {}
 
           return new Response(
             JSON.stringify({
@@ -347,6 +519,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
                 assignedToUserId: customer.assignedToUserId,
                 tags: parsedTags,
                 notes: customer.notes,
+                metadata: parsedMetadata,
                 subscriptionPlan: customer.subscriptionPlan,
                 subscriptionStatus: customer.subscriptionStatus,
               },

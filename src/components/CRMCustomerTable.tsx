@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Link, useParams } from '@tanstack/react-router'
 import {
   useReactTable,
   getCoreRowModel,
@@ -108,6 +109,8 @@ export function CRMCustomerTable({
   onCreateSubscription,
   onAddContact,
 }: CRMCustomerTableProps) {
+  const params = useParams({ strict: false }) as { tenant?: string }
+  const tenant = params.tenant || ''
   const [sorting, setSorting] = useState<SortingState>([])
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
@@ -195,13 +198,18 @@ export function CRMCustomerTable({
               )}
             </div>
             <div>
-              <div className="font-medium text-gray-900">{row.original.name}</div>
+              <Link to={`/${tenant}/app/sales/crm/${row.original.id}`}>
+                <div className="font-medium text-gray-900 hover:text-indigo-600 cursor-pointer">
+                  {row.original.name}
+                </div>
+              </Link>
               {row.original.website && (
                 <a
                   href={row.original.website}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-gray-500 hover:text-indigo-600 flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {row.original.website.replace(/^https?:\/\//, '')}
                   <ExternalLink size={10} />
@@ -315,7 +323,11 @@ export function CRMCustomerTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={`/${tenant}/app/sales/crm/${row.original.id}`}>
+                  View Details
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
                 Edit
               </DropdownMenuItem>

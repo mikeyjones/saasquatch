@@ -1,0 +1,1 @@
+ALTER TABLE "tenant_organization" ADD COLUMN "metadata" text;
