@@ -10,6 +10,7 @@ export interface Ticket {
 	timeAgo: string;
 	preview: string;
 	hasAI?: boolean;
+	assignedToUserId?: string | null;
 	customer: {
 		name: string;
 		company: string;
@@ -103,7 +104,7 @@ export const ticketsStore = new Store<Ticket[]>([]);
  */
 export async function fetchTickets(
 	tenantSlug: string,
-	filters?: { status?: string; priority?: string; search?: string },
+	filters?: { status?: string; priority?: string; search?: string; assignedToUserId?: string },
 ): Promise<Ticket[]> {
 	try {
 		const url = new URL(
@@ -114,6 +115,7 @@ export async function fetchTickets(
 		if (filters?.status) url.searchParams.set("status", filters.status);
 		if (filters?.priority) url.searchParams.set("priority", filters.priority);
 		if (filters?.search) url.searchParams.set("search", filters.search);
+		if (filters?.assignedToUserId) url.searchParams.set("assignedToUserId", filters.assignedToUserId);
 
 		const response = await fetch(url.toString(), {
 			credentials: "include",
@@ -359,6 +361,7 @@ export function addTicket(
 
 export const filterOptions = [
 	{ id: "all", label: "All" },
+	{ id: "my-open", label: "Mine" },
 	{ id: "open", label: "Open" },
 	{ id: "pending", label: "Pending" },
 	{ id: "closed", label: "Closed" },

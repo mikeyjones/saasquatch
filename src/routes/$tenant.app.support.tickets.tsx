@@ -18,7 +18,6 @@ import {
 	Check,
 	UserPlus,
 } from "lucide-react";
-import { useSession } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +40,7 @@ import {
 	type TicketDetail as TicketDetailType,
 	type SupportMember,
 } from "@/data/tickets";
+import { useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/$tenant/app/support/tickets")({
 	component: TicketsPage,
@@ -49,6 +49,7 @@ export const Route = createFileRoute("/$tenant/app/support/tickets")({
 function TicketsPage() {
 	const params = useParams({ strict: false }) as { tenant?: string };
 	const tenant = params.tenant || "";
+	const { data: session } = useSession();
 
 	const tickets = useStore(ticketsStore);
 	const [selectedTicketId, setSelectedTicketId] = useState<string>(
@@ -66,18 +67,38 @@ function TicketsPage() {
 		[tickets, selectedTicketId],
 	);
 
-	// Fetch tickets on component mount
+	// Fetch tickets on component mount or when filter changes
 	useEffect(() => {
 		const loadTickets = async () => {
 			setIsLoading(true);
-			await fetchTickets(tenant);
+			
+			// Build filters based on activeFilter
+			const filters: { status?: string; assignedToUserId?: string } = {};
+			
+			if (activeFilter === "my-open") {
+				// Filter for open tickets assigned to current user
+				filters.status = "open";
+				if (session?.user?.id) {
+					filters.assignedToUserId = session.user.id;
+				}
+			} else if (activeFilter === "open") {
+				filters.status = "open";
+			} else if (activeFilter === "pending") {
+				filters.status = "pending";
+			} else if (activeFilter === "closed") {
+				filters.status = "closed";
+			} else if (activeFilter === "urgent") {
+				// Note: priority filter is handled client-side for now
+			}
+			
+			await fetchTickets(tenant, filters);
 			setIsLoading(false);
 		};
 
 		if (tenant) {
 			loadTickets();
 		}
-	}, [tenant]);
+	}, [tenant, activeFilter, session?.user?.id]);
 
 	// Fetch ticket details when selection changes
 	useEffect(() => {
@@ -97,9 +118,15 @@ function TicketsPage() {
 		() =>
 			tickets.filter((ticket) => {
 				// Apply status/priority filter
+				// Note: "my-open" is already filtered by the API, so we just pass through
 				let matchesFilter = true;
 				if (activeFilter === "all") matchesFilter = true;
-				else if (activeFilter === "open")
+				else if (activeFilter === "my-open") {
+					// Already filtered by API (open + assigned to current user)
+					// Just verify it's still open and assigned (in case of race conditions)
+					matchesFilter = ticket.status === "open" && 
+						(session?.user?.id ? ticket.assignedToUserId === session.user.id : false);
+				} else if (activeFilter === "open")
 					matchesFilter = ticket.status === "open";
 				else if (activeFilter === "pending")
 					matchesFilter = ticket.status === "pending";
@@ -121,7 +148,7 @@ function TicketsPage() {
 
 				return matchesFilter && matchesSearch;
 			}),
-		[tickets, activeFilter, searchQuery],
+		[tickets, activeFilter, searchQuery, session?.user?.id],
 	);
 
 	return (
@@ -162,22 +189,35 @@ function TicketsPage() {
 					</div>
 				</div>
 
-				{/* Filter Pills */}
-				<div className="px-4 py-2 flex gap-2 border-b border-gray-100">
-					{filterOptions.map((filter) => (
-						<button
-							type="button"
-							key={filter.id}
-							onClick={() => setActiveFilter(filter.id)}
-							className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-								activeFilter === filter.id
-									? "bg-emerald-100 text-emerald-700"
-									: "bg-gray-100 text-gray-600 hover:bg-gray-200"
-							}`}
-						>
-							{filter.label}
-						</button>
-					))}
+				{/* Filter Dropdown */}
+				<div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" size="sm" className="gap-2">
+								<Filter size={14} />
+								<span>
+									{filterOptions.find((f) => f.id === activeFilter)?.label || "All"}
+								</span>
+								<ChevronDown size={14} />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start" className="w-48">
+							<DropdownMenuLabel>Filter tickets</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							{filterOptions.map((filter) => (
+								<DropdownMenuItem
+									key={filter.id}
+									onClick={() => setActiveFilter(filter.id)}
+									className="cursor-pointer"
+								>
+									{filter.label}
+									{activeFilter === filter.id && (
+										<Check size={14} className="ml-auto text-emerald-500" />
+									)}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 
 				{/* Ticket List */}

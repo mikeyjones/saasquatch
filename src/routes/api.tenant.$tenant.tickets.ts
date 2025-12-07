@@ -53,6 +53,7 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 					const priority = url.searchParams.get("priority");
 					const search = url.searchParams.get("search");
 					const customerId = url.searchParams.get("customerId");
+					const assignedToUserId = url.searchParams.get("assignedToUserId");
 
 					// Build base conditions
 					let whereCondition = eq(ticket.organizationId, orgId);
@@ -87,6 +88,17 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 						)
 						if (customerCondition) {
 							whereCondition = customerCondition
+						}
+					}
+
+					// Add assigned to user filter
+					if (assignedToUserId) {
+						const assignedCondition = and(
+							whereCondition,
+							eq(ticket.assignedToUserId, assignedToUserId),
+						)
+						if (assignedCondition) {
+							whereCondition = assignedCondition
 						}
 					}
 
@@ -180,6 +192,7 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 							priority: t.priority,
 							channel: t.channel,
 							hasAI: t.assignedToAI,
+							assignedToUserId: t.assignedToUserId,
 							timeAgo: formatTimeAgo(t.createdAt),
 							preview: firstMessage
 								? firstMessage.content.slice(0, 60) +
