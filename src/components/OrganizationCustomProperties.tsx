@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import { Plus, X, Edit2, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -8,6 +8,8 @@ interface OrganizationCustomPropertiesProps {
 }
 
 export function OrganizationCustomProperties({ metadata, onUpdate }: OrganizationCustomPropertiesProps) {
+  const propertyNameId = useId()
+  const propertyValueId = useId()
   const [isEditing, setIsEditing] = useState(false)
   const [editedMetadata, setEditedMetadata] = useState<Record<string, unknown>>(metadata)
   const [newKey, setNewKey] = useState('')
@@ -146,8 +148,9 @@ export function OrganizationCustomProperties({ metadata, onUpdate }: Organizatio
           <div className="text-sm font-medium mb-3">Add New Property</div>
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground mb-1 block">Property Name</label>
+              <label htmlFor={propertyNameId} className="text-xs text-muted-foreground mb-1 block">Property Name</label>
               <input
+                id={propertyNameId}
                 type="text"
                 value={newKey}
                 onChange={(e) => setNewKey(e.target.value)}
@@ -162,8 +165,9 @@ export function OrganizationCustomProperties({ metadata, onUpdate }: Organizatio
               />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground mb-1 block">Value</label>
+              <label htmlFor={propertyValueId} className="text-xs text-muted-foreground mb-1 block">Value</label>
               <input
+                id={propertyValueId}
                 type="text"
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}

@@ -133,17 +133,15 @@ export function SubscriptionCard({
         {/* Action buttons */}
         <div className="flex gap-3">
           {isDraft ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-amber-600 border-amber-200 hover:bg-amber-50"
-                onClick={() => onViewInvoice?.(subscription)}
-              >
-                <FileText size={14} className="mr-1" />
-                View Invoice
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+              onClick={() => onViewInvoice?.(subscription)}
+            >
+              <FileText size={14} className="mr-1" />
+              View Invoice
+            </Button>
           ) : (
             <>
               <Button

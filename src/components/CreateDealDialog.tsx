@@ -323,7 +323,7 @@ export function CreateDealDialog({
     const input = e.target.value.replace(/[^0-9.]/g, '')
     setValueInput(input)
     const numValue = Math.round(parseFloat(input || '0') * 100) // Convert to cents
-    form.setFieldValue('value', isNaN(numValue) ? 0 : numValue)
+    form.setFieldValue('value', Number.isNaN(numValue) ? 0 : numValue)
   }
 
   const handleDialogClose = (isOpen: boolean) => {

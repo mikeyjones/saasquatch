@@ -100,7 +100,7 @@ export function MarketingSidebar() {
       <div className="px-3 mb-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center justify-between px-3 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-white text-sm transition-colors">
+            <button type="button" className="w-full flex items-center justify-between px-3 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-white text-sm transition-colors">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 bg-rose-400 rounded flex items-center justify-center">
                   <Megaphone size={12} />
@@ -142,6 +142,7 @@ export function MarketingSidebar() {
             return (
               <button
                 key={item.id}
+                type="button"
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-1 transition-colors text-left text-slate-300 hover:bg-slate-700 hover:text-white"
               >
                 <Icon size={18} className="flex-shrink-0" />
@@ -171,7 +172,7 @@ export function MarketingSidebar() {
       <div className="p-4 border-t border-slate-700">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-slate-700 transition-colors">
+            <button type="button" className="w-full flex items-center gap-3 p-2 -m-2 rounded-lg hover:bg-slate-700 transition-colors">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center overflow-hidden">
                 {session?.user?.image ? (
                   <img

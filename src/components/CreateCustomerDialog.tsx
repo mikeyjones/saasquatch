@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useId } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { z } from 'zod'
 import { Building, RefreshCw, User, CreditCard } from 'lucide-react'
@@ -104,6 +104,7 @@ export function CreateCustomerDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createSubscription, setCreateSubscription] = useState(false)
+  const createSubscriptionId = useId()
   const [plans, setPlans] = useState<ProductPlan[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [isLoadingData, setIsLoadingData] = useState(false)
@@ -298,8 +299,7 @@ export function CreateCustomerDialog({
       form.setFieldValue('tags', customerData.tags?.join(', ') || '')
       form.setFieldValue('notes', customerData.notes || '')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customerData, isEditMode])
+  }, [customerData, isEditMode, form])
 
   const handleDialogClose = (isOpen: boolean) => {
     if (!isOpen) {
@@ -452,12 +452,12 @@ export function CreateCustomerDialog({
               <div className="border-t pt-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id="createSubscription"
+                    id={createSubscriptionId}
                     checked={createSubscription}
                     onCheckedChange={(checked) => setCreateSubscription(checked === true)}
                   />
                   <label
-                    htmlFor="createSubscription"
+                    htmlFor={createSubscriptionId}
                     className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"
                   >
                     <CreditCard size={16} />
@@ -542,7 +542,7 @@ export function CreateCustomerDialog({
                           type="number"
                           min={1}
                           value={seats}
-                          onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                          onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value, 10) || 1))}
                           className="w-32"
                         />
                       </div>

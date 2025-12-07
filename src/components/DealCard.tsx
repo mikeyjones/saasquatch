@@ -89,7 +89,7 @@ export function DealCard({ deal }: DealCardProps) {
             ))}
           </div>
         </div>
-        <button className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors">
+        <button type="button" className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors">
           <MoreHorizontal size={16} />
         </button>
       </div>

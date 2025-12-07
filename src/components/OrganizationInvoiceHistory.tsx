@@ -78,6 +78,7 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
       <div className="border-b px-6">
         <nav className="flex space-x-8">
           <button
+            type="button"
             onClick={() => setFilterStatus('all')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               filterStatus === 'all'
@@ -88,6 +89,7 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
             All ({statusCounts.all})
           </button>
           <button
+            type="button"
             onClick={() => setFilterStatus('paid')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               filterStatus === 'paid'
@@ -98,6 +100,7 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
             Paid ({statusCounts.paid})
           </button>
           <button
+            type="button"
             onClick={() => setFilterStatus('draft')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               filterStatus === 'draft'
@@ -108,6 +111,7 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
             Draft ({statusCounts.draft})
           </button>
           <button
+            type="button"
             onClick={() => setFilterStatus('overdue')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               filterStatus === 'overdue'

@@ -1,4 +1,4 @@
-import { Building2, Globe, Mail, Edit, UserPlus, FileText, Plus } from 'lucide-react'
+import { Building2, Globe, Mail, Edit, UserPlus, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface Customer {

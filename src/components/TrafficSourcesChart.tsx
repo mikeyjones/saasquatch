@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import {
   AreaChart,
   Area,
@@ -13,15 +14,17 @@ interface TrafficSourcesChartProps {
 }
 
 export function TrafficSourcesChart({ data }: TrafficSourcesChartProps) {
+  const organicGradientId = useId()
+  const paidGradientId = useId()
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data}>
         <defs>
-          <linearGradient id="organicGradient" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={organicGradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
             <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
           </linearGradient>
-          <linearGradient id="paidGradient" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={paidGradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
             <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05} />
           </linearGradient>
@@ -57,14 +60,14 @@ export function TrafficSourcesChart({ data }: TrafficSourcesChartProps) {
           dataKey="organic"
           stroke="#3b82f6"
           strokeWidth={2}
-          fill="url(#organicGradient)"
+          fill={`url(#${organicGradientId})`}
         />
         <Area
           type="monotone"
           dataKey="paid"
           stroke="#ef4444"
           strokeWidth={2}
-          fill="url(#paidGradient)"
+          fill={`url(#${paidGradientId})`}
         />
       </AreaChart>
     </ResponsiveContainer>

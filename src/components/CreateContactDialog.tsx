@@ -223,8 +223,7 @@ export function CreateContactDialog({
       form.setFieldValue('notes', contactData.notes || '')
       setSelectedRole(contactData.role || 'user')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contactData, isEditMode])
+  }, [contactData, isEditMode, form])
 
   const handleDialogClose = (isOpen: boolean) => {
     if (!isOpen) {

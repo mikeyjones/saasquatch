@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { FileText, Download, CheckCircle, Clock, AlertTriangle, XCircle, Eye, DollarSign } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'

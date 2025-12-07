@@ -56,11 +56,10 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
   let dir = 0
 
   // Only sort by rank if the column has ranking information
-  if (rowA.columnFiltersMeta[columnId]) {
-    dir = compareItems(
-      rowA.columnFiltersMeta[columnId]?.itemRank!,
-      rowB.columnFiltersMeta[columnId]?.itemRank!,
-    )
+  const rankA = rowA.columnFiltersMeta[columnId]?.itemRank
+  const rankB = rowB.columnFiltersMeta[columnId]?.itemRank
+  if (rankA !== undefined && rankB !== undefined) {
+    dir = compareItems(rankA, rankB)
   }
 
   // Provide an alphanumeric fallback for when the item ranks are equal
@@ -133,12 +132,14 @@ function TableDemo() {
 
   //apply the fuzzy sort if the fullName column is being filtered
   React.useEffect(() => {
-    if (table.getState().columnFilters[0]?.id === 'fullName') {
-      if (table.getState().sorting[0]?.id !== 'fullName') {
+    const columnFilters = table.getState().columnFilters
+    const sorting = table.getState().sorting
+    if (columnFilters[0]?.id === 'fullName') {
+      if (sorting[0]?.id !== 'fullName') {
         table.setSorting([{ id: 'fullName', desc: false }])
       }
     }
-  }, [table.getState().columnFilters[0]?.id])
+  }, [table])
 
   return (
     <div className="min-h-screen bg-gray-900 p-6">
@@ -300,6 +301,7 @@ function TableDemo() {
         </div>
         <div className="mt-4 flex gap-2">
           <button
+            type="button"
             onClick={() => rerender()}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >

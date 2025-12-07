@@ -18,6 +18,7 @@ export function CRMSegments({ segments, activeSegment, onSegmentChange }: CRMSeg
         return (
           <button
             key={segment.id}
+            type="button"
             onClick={() => onSegmentChange(segment.id)}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
               isActive

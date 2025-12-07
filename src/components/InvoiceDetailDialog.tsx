@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { Invoice, InvoiceLineItem } from './InvoiceList'
+import type { Invoice } from './InvoiceList'
 
 interface InvoiceDetailDialogProps {
   open: boolean
@@ -164,7 +164,7 @@ export function InvoiceDetailDialog({
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {invoice.lineItems.map((item, idx) => (
-                    <tr key={idx}>
+                    <tr key={`${item.description}-${idx}-${item.quantity}-${item.unitPrice}`}>
                       <td className="px-4 py-3 text-sm text-gray-900">{item.description}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 text-right">{item.quantity}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 text-right">

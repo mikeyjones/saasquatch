@@ -124,7 +124,7 @@ export function PipelineKanban({
   const params = useParams({ strict: false }) as { tenant?: string }
   const tenant = params.tenant || ''
 
-  const [pipelines, setPipelines] = useState<Pipeline[]>([])
+  const [_pipelines, setPipelines] = useState<Pipeline[]>([])
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null)
   const [deals, setDeals] = useState<Deal[]>([])
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)

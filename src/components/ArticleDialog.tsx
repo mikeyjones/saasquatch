@@ -127,7 +127,7 @@ export function ArticleDialog({
       form.setFieldValue('status', (article?.status || 'draft') as 'draft' | 'published' | 'archived')
       setError(null)
     }
-  }, [open, article])
+  }, [open, article, form])
 
   const handleDialogClose = (isOpen: boolean) => {
     if (!isOpen) {

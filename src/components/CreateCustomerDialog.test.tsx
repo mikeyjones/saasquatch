@@ -682,7 +682,7 @@ describe('CreateCustomerDialog Integration', () => {
     })
 
     it('should send only changed fields in update request', () => {
-      const originalData = {
+      const _originalData = {
         name: 'Acme Corp',
         industry: 'Technology',
       }

@@ -428,7 +428,7 @@ export function CreateSubscriptionDialog({
               type="number"
               min={1}
               value={seats}
-              onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => setSeats(Math.max(1, parseInt(e.target.value, 10) || 1))}
               className="w-32"
             />
           </div>

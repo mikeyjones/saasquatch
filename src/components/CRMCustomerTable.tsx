@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Link, useParams } from '@tanstack/react-router'
 import {
   useReactTable,
@@ -114,7 +114,7 @@ export function CRMCustomerTable({
   const [sorting, setSorting] = useState<SortingState>([])
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
-  const toggleRowExpanded = (id: string) => {
+  const toggleRowExpanded = useCallback((id: string) => {
     setExpandedRows((prev) => {
       const next = new Set(prev)
       if (next.has(id)) {
@@ -124,23 +124,23 @@ export function CRMCustomerTable({
       }
       return next
     })
-  }
+  }, [])
 
-  const toggleRowSelection = (id: string) => {
+  const toggleRowSelection = useCallback((id: string) => {
     if (selectedIds.includes(id)) {
       onSelectionChange(selectedIds.filter((i) => i !== id))
     } else {
       onSelectionChange([...selectedIds, id])
     }
-  }
+  }, [selectedIds, onSelectionChange])
 
-  const toggleAllSelection = () => {
+  const toggleAllSelection = useCallback(() => {
     if (selectedIds.length === customers.length) {
       onSelectionChange([])
     } else {
       onSelectionChange(customers.map((c) => c.id))
     }
-  }
+  }, [selectedIds, customers, onSelectionChange])
 
   const columns = useMemo<ColumnDef<CRMCustomer>[]>(
     () => [
@@ -169,6 +169,7 @@ export function CRMCustomerTable({
         header: () => null,
         cell: ({ row }) => (
           <button
+            type="button"
             onClick={() => toggleRowExpanded(row.original.id)}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
@@ -256,6 +257,7 @@ export function CRMCustomerTable({
         accessorKey: 'realizedValue',
         header: ({ column }) => (
           <button
+            type="button"
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-1 font-medium"
           >
@@ -277,6 +279,7 @@ export function CRMCustomerTable({
         accessorKey: 'potentialValue',
         header: ({ column }) => (
           <button
+            type="button"
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-1 font-medium"
           >
@@ -361,7 +364,7 @@ export function CRMCustomerTable({
         size: 50,
       },
     ],
-    [selectedIds, customers.length, expandedRows]
+    [selectedIds, customers.length, expandedRows, toggleRowExpanded, toggleRowSelection, toggleAllSelection, tenant, onEdit, onCreateSubscription, onAddContact]
   )
 
   const table = useReactTable({

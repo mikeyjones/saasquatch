@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -110,21 +110,21 @@ export function CRMContactsList({
 }: CRMContactsListProps) {
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const toggleRowSelection = (id: string) => {
+  const toggleRowSelection = useCallback((id: string) => {
     if (selectedIds.includes(id)) {
       onSelectionChange(selectedIds.filter((i) => i !== id))
     } else {
       onSelectionChange([...selectedIds, id])
     }
-  }
+  }, [selectedIds, onSelectionChange])
 
-  const toggleAllSelection = () => {
+  const toggleAllSelection = useCallback(() => {
     if (selectedIds.length === contacts.length) {
       onSelectionChange([])
     } else {
       onSelectionChange(contacts.map((c) => c.id))
     }
-  }
+  }, [selectedIds, contacts, onSelectionChange])
 
   const columns = useMemo<ColumnDef<Contact>[]>(
     () => [
@@ -152,6 +152,7 @@ export function CRMContactsList({
         accessorKey: 'name',
         header: ({ column }) => (
           <button
+            type="button"
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-1 font-medium"
           >
@@ -251,7 +252,8 @@ export function CRMContactsList({
               cell: ({ row }: { row: { original: Contact } }) =>
                 row.original.customer ? (
                   <button
-                    onClick={() => onViewCustomer?.(row.original.customer!.id)}
+                    type="button"
+                    onClick={() => onViewCustomer?.(row.original.customer?.id)}
                     className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600"
                   >
                     <Building2 size={14} />
@@ -290,7 +292,7 @@ export function CRMContactsList({
               </DropdownMenuItem>
               {row.original.customer && (
                 <DropdownMenuItem
-                  onClick={() => onViewCustomer?.(row.original.customer!.id)}
+                  onClick={() => onViewCustomer?.(row.original.customer?.id)}
                 >
                   View Company
                 </DropdownMenuItem>
@@ -308,7 +310,7 @@ export function CRMContactsList({
         size: 50,
       },
     ],
-    [selectedIds, contacts.length, showCustomer]
+    [selectedIds, contacts.length, showCustomer, toggleRowSelection, toggleAllSelection, onEdit, onViewCustomer, onDelete]
   )
 
   const table = useReactTable({

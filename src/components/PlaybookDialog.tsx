@@ -141,7 +141,7 @@ export function PlaybookDialog({
       setSteps(playbook?.steps || [])
       setError(null)
     }
-  }, [open, playbook])
+  }, [open, playbook, form])
 
   const handleDialogClose = (isOpen: boolean) => {
     if (!isOpen) {
@@ -295,7 +295,7 @@ export function PlaybookDialog({
                     <div className="space-y-4">
                       {steps.map((step, index) => (
                         <div
-                          key={index}
+                          key={`step-${step.order}-${step.title}-${index}`}
                           className="p-4 border rounded-lg bg-gray-50 space-y-3"
                         >
                           <div className="flex items-center justify-between">

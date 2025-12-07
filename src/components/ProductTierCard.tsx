@@ -83,7 +83,7 @@ export function ProductTierCard({ tier, onEdit, onDelete }: ProductTierCardProps
         {/* Features */}
         <div className="space-y-3 mb-6">
           {tier.features.map((feature, index) => (
-            <div key={index} className="flex items-center gap-2">
+            <div key={`${feature}-${index}`} className="flex items-center gap-2">
               <Check size={18} className="text-teal-500 flex-shrink-0" />
               <span className="text-sm text-gray-600">{feature}</span>
             </div>

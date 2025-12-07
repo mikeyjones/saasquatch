@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { Package, DollarSign, Loader2 } from 'lucide-react'
 
@@ -67,6 +67,8 @@ export function AddOnDialog({
   const tenant = params.tenant || ''
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const nameId = useId()
+  const descriptionId = useId()
 
   // Form state
   const [name, setName] = useState('')
@@ -198,11 +200,11 @@ export function AddOnDialog({
 
           {/* Name Field */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium">
+            <Label htmlFor={nameId} className="text-sm font-medium">
               Add-On Name *
             </Label>
             <Input
-              id="name"
+              id={nameId}
               placeholder="e.g., Extra Storage, Priority Support"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -211,11 +213,11 @@ export function AddOnDialog({
 
           {/* Description Field */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium">
+            <Label htmlFor={descriptionId} className="text-sm font-medium">
               Description
             </Label>
             <textarea
-              id="description"
+              id={descriptionId}
               placeholder="Describe what this add-on includes..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
