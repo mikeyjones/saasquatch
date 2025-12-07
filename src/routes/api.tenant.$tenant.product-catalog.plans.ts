@@ -243,7 +243,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             const regionalPricing = planPricing
               .filter((p) => p.pricingType === 'regional' && p.region)
               .map((p) => ({
-                region: p.region!,
+                region: p.region ?? '',
                 currency: p.currency,
                 amount: p.amount / 100, // Convert cents to dollars for display
               }))

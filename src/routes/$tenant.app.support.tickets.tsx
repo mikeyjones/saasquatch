@@ -38,7 +38,7 @@ function TicketsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isLoading, setIsLoading] = useState(true);
 	const [selectedTicketDetail, setSelectedTicketDetail] =
-		useState<TicketDetail | null>(null);
+		useState<TicketDetailType | null>(null);
 	const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
 	const selectedTicket = useMemo(
@@ -136,7 +136,7 @@ function TicketsPage() {
 								className="pl-9 h-9 text-sm bg-gray-50 border-gray-200"
 							/>
 						</div>
-						<button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+						<button type="button" className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
 							<Filter size={18} className="text-gray-500" />
 						</button>
 					</div>
@@ -146,6 +146,7 @@ function TicketsPage() {
 				<div className="px-4 py-2 flex gap-2 border-b border-gray-100">
 					{filterOptions.map((filter) => (
 						<button
+							type="button"
 							key={filter.id}
 							onClick={() => setActiveFilter(filter.id)}
 							className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
@@ -219,6 +220,7 @@ function TicketCard({
 
 	return (
 		<button
+			type="button"
 			onClick={onClick}
 			className={`w-full text-left p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
 				isSelected ? "bg-gray-50 border-l-2 border-l-emerald-500" : ""
@@ -268,7 +270,7 @@ function TicketDetail({
 	isLoadingDetail,
 }: {
 	ticket: Ticket;
-	detail: TicketDetail | null;
+	detail: TicketDetailType | null;
 	isLoadingDetail: boolean;
 }) {
 	const [replyText, setReplyText] = useState("");
@@ -355,7 +357,7 @@ function TicketDetail({
 					<>
 						{/* Messages */}
 						{detail.messages?.map((message, index) => (
-							<div key={(message as any).id || index} className="flex gap-3">
+							<div key={message.id || `message-${index}-${message.timestamp}-${message.type}`} className="flex gap-3">
 								<div
 									className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
 										message.type === "customer"

@@ -21,12 +21,8 @@ export function useTenantSlug(): string {
  * The tenant object is loaded and validated in the /$tenant route beforeLoad.
  */
 export function useTenant(): Tenant | null {
-  try {
-    const context = useRouteContext({ from: '/$tenant' })
-    return (context as { tenant?: Tenant }).tenant ?? null
-  } catch {
-    return null
-  }
+  const context = useRouteContext({ from: '/$tenant', strict: false })
+  return (context as { tenant?: Tenant }).tenant ?? null
 }
 
 /**

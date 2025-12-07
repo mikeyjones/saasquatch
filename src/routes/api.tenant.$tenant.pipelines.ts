@@ -54,10 +54,13 @@ export const Route = createFileRoute('/api/tenant/$tenant/pipelines')({
 
           // Optionally filter by tenant org slug
           if (tenantOrgSlug) {
-            tenantOrgConditions = and(
+            const condition = and(
               eq(tenantOrganization.organizationId, orgId),
               eq(tenantOrganization.slug, tenantOrgSlug)
-            )!
+            )
+            if (condition) {
+              tenantOrgConditions = condition
+            }
           }
 
           // Get tenant orgs

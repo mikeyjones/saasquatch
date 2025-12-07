@@ -59,26 +59,35 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 
 					// Add status filter
 					if (status && status !== "all") {
-						whereCondition = and(
+						const statusCondition = and(
 							whereCondition,
 							eq(ticket.status, status),
-						) as any;
+						)
+						if (statusCondition) {
+							whereCondition = statusCondition
+						}
 					}
 
 					// Add priority filter
 					if (priority && priority !== "all") {
-						whereCondition = and(
+						const priorityCondition = and(
 							whereCondition,
 							eq(ticket.priority, priority),
-						) as any;
+						)
+						if (priorityCondition) {
+							whereCondition = priorityCondition
+						}
 					}
 
 					// Add customer filter
 					if (customerId) {
-						whereCondition = and(
+						const customerCondition = and(
 							whereCondition,
 							eq(ticket.tenantUserId, customerId),
-						) as any;
+						)
+						if (customerCondition) {
+							whereCondition = customerCondition
+						}
 					}
 
 					// Fetch tickets with tenant user info

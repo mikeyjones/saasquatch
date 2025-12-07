@@ -453,7 +453,7 @@ export function ProductPlanDialog({
             {regionalPricing.length > 0 && (
               <div className="space-y-2">
                 {regionalPricing.map((rp, index) => (
-                  <div key={index} className="flex items-center gap-2">
+                  <div key={`${rp.region}-${index}-${rp.amount || ''}`} className="flex items-center gap-2">
                     <select
                       className="flex h-9 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       value={rp.region}
@@ -528,23 +528,27 @@ export function ProductPlanDialog({
             </div>
             {features.length > 0 && (
               <div className="space-y-1">
-                {features.map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md"
-                  >
-                    <span className="text-sm text-gray-700">{feature}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-gray-400 hover:text-red-500"
-                      onClick={() => removeFeature(index)}
+                {features.map((feature, index) => {
+                  // Use feature as primary key, index as fallback for duplicates
+                  const featureKey = feature || `feature-${index}`
+                  return (
+                    <div
+                      key={featureKey}
+                      className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md"
                     >
-                      <X size={14} />
-                    </Button>
-                  </div>
-                ))}
+                      <span className="text-sm text-gray-700">{feature}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-gray-400 hover:text-red-500"
+                        onClick={() => removeFeature(index)}
+                      >
+                        <X size={14} />
+                      </Button>
+                    </div>
+                  )
+                })}
               </div>
             )}
             {features.length === 0 && (

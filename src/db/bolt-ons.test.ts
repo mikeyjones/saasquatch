@@ -441,7 +441,7 @@ describe('Bolt-On Pricing Calculations', () => {
       for (const tier of boltOn.usageTiers) {
         const tierUsage = tier.upTo
           ? Math.min(remaining, tier.upTo - (boltOn.usageTiers.indexOf(tier) > 0
-              ? boltOn.usageTiers[boltOn.usageTiers.indexOf(tier) - 1].upTo!
+              ? (boltOn.usageTiers[boltOn.usageTiers.indexOf(tier) - 1]?.upTo ?? 0)
               : 0))
           : remaining
 

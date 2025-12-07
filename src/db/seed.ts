@@ -2142,11 +2142,11 @@ async function ensureSubscription(
       },
     ]
     
-    if (seatTotal > 0) {
+    if (seatTotal > 0 && planInfo.perSeatAmount) {
       lineItems.push({
         description: `Additional seats (${subData.seats - 1} seats)`,
         quantity: subData.seats - 1,
-        unitPrice: planInfo.perSeatAmount! * (subData.billingCycle === 'yearly' ? 10 : 1),
+        unitPrice: planInfo.perSeatAmount * (subData.billingCycle === 'yearly' ? 10 : 1),
         total: seatTotal,
       })
     }
@@ -2291,8 +2291,12 @@ async function ensureDeal(
 async function seed(): Promise<void> {
   validateEnv()
 
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is required')
+  }
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL!,
+    connectionString: databaseUrl,
   })
   const db = drizzle(pool, { schema })
 

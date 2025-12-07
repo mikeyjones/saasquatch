@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,9 @@ export const Route = createFileRoute('/auth/sign-up')({
 })
 
 function SignUpPage() {
+  const nameId = useId()
+  const emailId = useId()
+  const passwordId = useId()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -55,11 +58,11 @@ function SignUpPage() {
               </div>
             )}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={nameId} className="block text-sm font-medium text-gray-700 mb-1">
                 Name
               </label>
               <Input
-                id="name"
+                id={nameId}
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -68,11 +71,11 @@ function SignUpPage() {
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={emailId} className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <Input
-                id="email"
+                id={emailId}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -81,11 +84,11 @@ function SignUpPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={passwordId} className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
               <Input
-                id="password"
+                id={passwordId}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

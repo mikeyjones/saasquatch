@@ -1,5 +1,5 @@
 import { createFileRoute, useParams, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { ArrowLeft, Edit2, Save, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MemberHeader } from '@/components/MemberHeader'
@@ -45,6 +45,9 @@ function MemberDetailPage() {
   const { tenant, memberId } = useParams({
     from: '/$tenant/app/support/members/$memberId'
   })
+  const nameId = useId()
+  const emailId = useId()
+  const phoneId = useId()
 
   const [data, setData] = useState<MemberData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -322,15 +325,16 @@ function MemberDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Name</label>
+                      <label htmlFor={nameId} className="text-sm font-medium text-muted-foreground">Name</label>
                       {isEditing ? (
                         <Input
+                          id={nameId}
                           value={editedMember.name || ''}
                           onChange={(e) => setEditedMember({ ...editedMember, name: e.target.value })}
                           className="mt-1"
                         />
                       ) : (
-                        <div className="mt-1 font-medium">{member.name}</div>
+                        <div id={nameId} className="mt-1 font-medium">{member.name}</div>
                       )}
                     </div>
                     <div>
@@ -347,9 +351,10 @@ function MemberDetailPage() {
                       )}
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                      <label htmlFor={phoneId} className="text-sm font-medium text-muted-foreground">Phone</label>
                       {isEditing ? (
                         <Input
+                          id={phoneId}
                           type="tel"
                           value={editedMember.phone || ''}
                           onChange={(e) => setEditedMember({ ...editedMember, phone: e.target.value })}
@@ -357,7 +362,7 @@ function MemberDetailPage() {
                           placeholder="Optional"
                         />
                       ) : (
-                        <div className="mt-1 font-medium">{member.phone || <span className="text-muted-foreground italic">Not provided</span>}</div>
+                        <div id={phoneId} className="mt-1 font-medium">{member.phone || <span className="text-muted-foreground italic">Not provided</span>}</div>
                       )}
                     </div>
                     <div>

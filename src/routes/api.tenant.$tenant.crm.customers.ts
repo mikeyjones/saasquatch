@@ -177,7 +177,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
                 potentialValue: 0,
               })
             }
-            const entry = dealsByTenantOrg.get(d.tenantOrganizationId)!
+            const entry = dealsByTenantOrg.get(d.tenantOrganizationId)
+            if (!entry) continue
             entry.deals.push(d)
 
             // Determine if deal is won or still in progress
@@ -231,7 +232,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
             if (!activitiesByTenantOrg.has(activity.tenantOrganizationId)) {
               activitiesByTenantOrg.set(activity.tenantOrganizationId, [])
             }
-            const activities = activitiesByTenantOrg.get(activity.tenantOrganizationId)!
+            const activities = activitiesByTenantOrg.get(activity.tenantOrganizationId)
+            if (!activities) continue
             if (activities.length < 5) {
               activities.push(activity)
             }

@@ -114,7 +114,7 @@ export const Route = createFileRoute(
             .filter((p) => p.pricingType === 'regional' && p.region)
             .map((p) => ({
               id: p.id,
-              region: p.region!,
+              region: p.region ?? '',
               currency: p.currency,
               amount: p.amount / 100, // Convert cents to dollars
               interval: p.interval,

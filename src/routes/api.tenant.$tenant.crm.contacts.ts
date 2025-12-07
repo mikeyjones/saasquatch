@@ -64,13 +64,14 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/contacts')({
           }
 
           if (search) {
-            conditions.push(
-              or(
-                ilike(tenantUser.name, `%${search}%`),
-                ilike(tenantUser.email, `%${search}%`),
-                ilike(tenantUser.title, `%${search}%`)
-              )!
+            const searchCondition = or(
+              ilike(tenantUser.name, `%${search}%`),
+              ilike(tenantUser.email, `%${search}%`),
+              ilike(tenantUser.title, `%${search}%`)
             )
+            if (searchCondition) {
+              conditions.push(searchCondition)
+            }
           }
 
           if (role) {

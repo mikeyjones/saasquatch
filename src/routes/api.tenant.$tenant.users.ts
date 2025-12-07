@@ -68,19 +68,23 @@ export const Route = createFileRoute('/api/tenant/$tenant/users')({
                 isNotNull(tenantOrganization.subscriptionStatus),
                 // And not be trialing (trialing = prospect)
                 ne(tenantOrganization.subscriptionStatus, 'trialing')
-              )!
+              ) ?? undefined
             )
+            if (condition) {
+              conditions.push(condition)
+            }
           }
 
           // Apply search filter if provided
           if (search) {
-            conditions.push(
-              or(
-                ilike(tenantUser.name, `%${search}%`),
-                ilike(tenantUser.email, `%${search}%`),
-                ilike(tenantOrganization.name, `%${search}%`)
-              )!
+            const searchCondition = or(
+              ilike(tenantUser.name, `%${search}%`),
+              ilike(tenantUser.email, `%${search}%`),
+              ilike(tenantOrganization.name, `%${search}%`)
             )
+            if (searchCondition) {
+              conditions.push(searchCondition)
+            }
           }
 
           const users = await db
