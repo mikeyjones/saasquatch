@@ -17,7 +17,9 @@ import {
 	ticketsStore,
 	filterOptions,
 	fetchTickets,
+	fetchTicket,
 	type Ticket,
+	type TicketDetail,
 } from "@/data/tickets";
 
 export const Route = createFileRoute("/$tenant/app/support/tickets")({
@@ -34,6 +36,9 @@ function TicketsPage() {
 	);
 	const [activeFilter, setActiveFilter] = useState("all");
 	const [isLoading, setIsLoading] = useState(true);
+	const [selectedTicketDetail, setSelectedTicketDetail] =
+		useState<TicketDetail | null>(null);
+	const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
 	const selectedTicket = useMemo(
 		() => tickets.find((t) => t.id === selectedTicketId) || tickets[0],
@@ -52,6 +57,20 @@ function TicketsPage() {
 			loadTickets();
 		}
 	}, [tenant]);
+
+	// Fetch ticket details when selection changes
+	useEffect(() => {
+		const loadTicketDetail = async () => {
+			if (!selectedTicketId || !tenant) return;
+
+			setIsLoadingDetail(true);
+			const detail = await fetchTicket(tenant, selectedTicketId);
+			setSelectedTicketDetail(detail);
+			setIsLoadingDetail(false);
+		};
+
+		loadTicketDetail();
+	}, [selectedTicketId, tenant]);
 
 	const filteredTickets = useMemo(
 		() =>
@@ -141,7 +160,13 @@ function TicketsPage() {
 			</div>
 
 			{/* Ticket Detail Panel */}
-			{selectedTicket && <TicketDetail ticket={selectedTicket} />}
+			{selectedTicket && (
+				<TicketDetail
+					ticket={selectedTicket}
+					detail={selectedTicketDetail}
+					isLoadingDetail={isLoadingDetail}
+				/>
+			)}
 		</main>
 	);
 }
@@ -214,7 +239,15 @@ function TicketCard({
 	);
 }
 
-function TicketDetail({ ticket }: { ticket: Ticket }) {
+function TicketDetail({
+	ticket,
+	detail,
+	isLoadingDetail,
+}: {
+	ticket: Ticket;
+	detail: TicketDetail | null;
+	isLoadingDetail: boolean;
+}) {
 	const [replyText, setReplyText] = useState("");
 
 	const priorityStyles = {
@@ -228,6 +261,8 @@ function TicketDetail({ ticket }: { ticket: Ticket }) {
 		open: "bg-green-100 text-green-700 border-green-200",
 		closed: "bg-gray-100 text-gray-600 border-gray-200",
 		pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+		waiting_on_customer: "bg-orange-100 text-orange-700 border-orange-200",
+		escalated: "bg-red-100 text-red-700 border-red-200",
 	};
 
 	return (
@@ -287,78 +322,124 @@ function TicketDetail({ ticket }: { ticket: Ticket }) {
 
 			{/* Messages Area */}
 			<div className="flex-1 overflow-auto p-4 space-y-4">
-				{/* Customer Message */}
-				{ticket.messages?.map((message, index) => (
-					<div key={index} className="flex gap-3">
-						<div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
-							<span className="text-white text-sm font-medium">
-								{ticket.customer?.initials ||
-									ticket.customer?.name?.charAt(0) ||
-									"U"}
-							</span>
-						</div>
-						<div className="flex-1">
-							<div className="flex items-center gap-2 mb-1">
-								<span className="font-medium text-gray-900">
-									{message.author}
-								</span>
-								<span className="text-sm text-gray-500">
-									{ticket.customer?.company || ""}
-								</span>
-								<span className="text-sm text-gray-400">
-									• {message.timestamp}
-								</span>
-							</div>
-							<div className="bg-white rounded-lg border border-gray-200 p-4">
-								<p className="text-gray-700 whitespace-pre-line">
-									{message.content}
-								</p>
-							</div>
+				{isLoadingDetail ? (
+					<div className="flex items-center justify-center h-32">
+						<div className="text-sm text-gray-500">
+							Loading ticket details...
 						</div>
 					</div>
-				))}
+				) : detail ? (
+					<>
+						{/* Messages */}
+						{detail.messages?.map((message, index) => (
+							<div key={(message as any).id || index} className="flex gap-3">
+								<div
+									className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+										message.type === "customer"
+											? "bg-gradient-to-br from-blue-400 to-blue-600"
+											: message.type === "ai"
+												? "bg-gradient-to-br from-violet-400 to-violet-600"
+												: "bg-gradient-to-br from-emerald-400 to-emerald-600"
+									}`}
+								>
+									{message.type === "ai" ? (
+										<Bot size={20} className="text-white" />
+									) : (
+										<span className="text-white text-sm font-medium">
+											{message.author?.charAt(0) || "U"}
+										</span>
+									)}
+								</div>
+								<div className="flex-1">
+									<div className="flex items-center gap-2 mb-1">
+										<span className="font-medium text-gray-900">
+											{message.author}
+										</span>
+										{message.type === "customer" && (
+											<span className="text-sm text-gray-500">
+												{detail.customer?.company || ""}
+											</span>
+										)}
+										{message.type === "ai" && (
+											<span className="text-sm text-gray-500">
+												AI Assistant
+											</span>
+										)}
+										{message.type === "agent" && (
+											<span className="text-sm text-gray-500">
+												Support Agent
+											</span>
+										)}
+										<span className="text-sm text-gray-400">
+											• {message.timestamp}
+										</span>
+									</div>
+									<div
+										className={`rounded-lg border p-4 ${
+											message.type === "ai"
+												? "bg-violet-50 border-violet-200"
+												: "bg-white border-gray-200"
+										}`}
+									>
+										<p className="text-gray-700 whitespace-pre-line">
+											{message.content}
+										</p>
+									</div>
+								</div>
+							</div>
+						))}
 
-				{/* AI Triage Summary */}
-				{ticket.aiTriage && (
-					<div className="flex gap-3">
-						<div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center flex-shrink-0">
-							<Bot size={20} className="text-white" />
-						</div>
-						<div className="flex-1">
-							<div className="flex items-center gap-2 mb-1">
-								<span className="font-medium text-gray-900">Apollo (AI)</span>
-								<span className="text-sm text-gray-500">Internal Note</span>
-								<span className="text-sm text-gray-400">• 1h ago</span>
+						{/* AI Triage Summary */}
+						{detail.aiTriage && (
+							<div className="flex gap-3">
+								<div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center flex-shrink-0">
+									<Bot size={20} className="text-white" />
+								</div>
+								<div className="flex-1">
+									<div className="flex items-center gap-2 mb-1">
+										<span className="font-medium text-gray-900">
+											Apollo (AI)
+										</span>
+										<span className="text-sm text-gray-500">Internal Note</span>
+										<span className="text-sm text-gray-400">• 1h ago</span>
+									</div>
+									<div className="bg-violet-50 rounded-lg border border-violet-200 p-4">
+										<h4 className="font-medium text-violet-900 mb-2">
+											AI Triage Summary:
+										</h4>
+										<ul className="space-y-1 text-sm text-violet-800">
+											<li>
+												<span className="font-medium">Category:</span>{" "}
+												{detail.aiTriage.category}
+											</li>
+											<li>
+												<span className="font-medium">Sentiment:</span>{" "}
+												{detail.aiTriage.sentiment}
+											</li>
+											<li>
+												<span className="font-medium">Suggested Action:</span>{" "}
+												{detail.aiTriage.suggestedAction}
+											</li>
+											{detail.aiTriage.playbook && (
+												<li>
+													<span className="font-medium">Playbook:</span>{" "}
+													<a
+														href={detail.aiTriage.playbookLink}
+														className="text-blue-600 hover:underline"
+													>
+														{detail.aiTriage.playbook}
+													</a>
+												</li>
+											)}
+										</ul>
+									</div>
+								</div>
 							</div>
-							<div className="bg-violet-50 rounded-lg border border-violet-200 p-4">
-								<h4 className="font-medium text-violet-900 mb-2">
-									AI Triage Summary:
-								</h4>
-								<ul className="space-y-1 text-sm text-violet-800">
-									<li>
-										<span className="font-medium">Category:</span>{" "}
-										{ticket.aiTriage.category}
-									</li>
-									<li>
-										<span className="font-medium">Sentiment:</span>{" "}
-										{ticket.aiTriage.sentiment}
-									</li>
-									<li>
-										<span className="font-medium">Suggested Action:</span>{" "}
-										{ticket.aiTriage.suggestedAction}
-									</li>
-									<li>
-										<span className="font-medium">Playbook:</span>{" "}
-										<a
-											href={ticket.aiTriage.playbookLink}
-											className="text-blue-600 hover:underline"
-										>
-											{ticket.aiTriage.playbook}
-										</a>
-									</li>
-								</ul>
-							</div>
-						</div>
+						)}
+					</>
+				) : (
+					<div className="flex items-center justify-center h-32">
+						<div className="text-sm text-gray-500">No messages found</div>
 					</div>
 				)}
 			</div>
