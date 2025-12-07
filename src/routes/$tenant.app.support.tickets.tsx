@@ -73,7 +73,7 @@ function TicketsPage() {
 			setIsLoading(true);
 			
 			// Build filters based on activeFilter
-			const filters: { status?: string; assignedToUserId?: string } = {};
+			const filters: { status?: string; assignedToUserId?: string; unassigned?: boolean } = {};
 			
 			if (activeFilter === "my-open") {
 				// Filter for open tickets assigned to current user
@@ -81,6 +81,9 @@ function TicketsPage() {
 				if (session?.user?.id) {
 					filters.assignedToUserId = session.user.id;
 				}
+			} else if (activeFilter === "unassigned") {
+				// Filter for unassigned tickets
+				filters.unassigned = true;
 			} else if (activeFilter === "open") {
 				filters.status = "open";
 			} else if (activeFilter === "pending") {
@@ -118,7 +121,7 @@ function TicketsPage() {
 		() =>
 			tickets.filter((ticket) => {
 				// Apply status/priority filter
-				// Note: "my-open" is already filtered by the API, so we just pass through
+				// Note: "my-open" and "unassigned" are already filtered by the API, so we just pass through
 				let matchesFilter = true;
 				if (activeFilter === "all") matchesFilter = true;
 				else if (activeFilter === "my-open") {
@@ -126,6 +129,10 @@ function TicketsPage() {
 					// Just verify it's still open and assigned (in case of race conditions)
 					matchesFilter = ticket.status === "open" && 
 						(session?.user?.id ? ticket.assignedToUserId === session.user.id : false);
+				} else if (activeFilter === "unassigned") {
+					// Already filtered by API (unassigned tickets)
+					// Just verify it's still unassigned (in case of race conditions)
+					matchesFilter = !ticket.assignedToUserId;
 				} else if (activeFilter === "open")
 					matchesFilter = ticket.status === "open";
 				else if (activeFilter === "pending")
@@ -480,7 +487,7 @@ function TicketDetail({
 							<span className="text-gray-400">Assigned to:</span>
 							{detail?.assignedTo ? (
 								<div className="flex items-center gap-2">
-									<div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+									<div className="w-6 h-6 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
 										<span className="text-white text-xs font-medium">
 											{detail.assignedTo.initials || getInitials(detail.assignedTo.name)}
 										</span>
@@ -549,7 +556,7 @@ function TicketDetail({
 											onClick={() => handleAssign(member.id)}
 											className="cursor-pointer"
 										>
-											<div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mr-2">
+											<div className="w-6 h-6 rounded-full bg-linear-to-br from-blue-400 to-blue-600 flex items-center justify-center mr-2">
 												<span className="text-white text-xs font-medium">
 													{getInitials(member.name)}
 												</span>
@@ -591,14 +598,14 @@ function TicketDetail({
 						{detail.messages?.map((message, index) => (
 							<div key={message.id || `message-${index}-${message.timestamp}-${message.type}`} className="flex gap-3">
 								<div
-									className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+									className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
 										message.type === "customer"
-											? "bg-gradient-to-br from-blue-400 to-blue-600"
+											? "bg-linear-to-br from-blue-400 to-blue-600"
 											: message.type === "ai"
-												? "bg-gradient-to-br from-violet-400 to-violet-600"
+												? "bg-linear-to-br from-violet-400 to-violet-600"
 												: message.isInternal
-													? "bg-gradient-to-br from-amber-400 to-amber-600"
-													: "bg-gradient-to-br from-emerald-400 to-emerald-600"
+													? "bg-linear-to-br from-amber-400 to-amber-600"
+													: "bg-linear-to-br from-emerald-400 to-emerald-600"
 									}`}
 								>
 									{message.type === "ai" ? (
@@ -660,7 +667,7 @@ function TicketDetail({
 						{/* AI Triage Summary */}
 						{detail.aiTriage && (
 							<div className="flex gap-3">
-								<div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center flex-shrink-0">
+								<div className="w-10 h-10 rounded-full bg-linear-to-br from-violet-400 to-violet-600 flex items-center justify-center shrink-0">
 									<Bot size={20} className="text-white" />
 								</div>
 								<div className="flex-1">

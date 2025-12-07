@@ -8,7 +8,7 @@ import {
 	tenantOrganization,
 	organization,
 } from "@/db/schema";
-import { eq, and, desc, or } from "drizzle-orm";
+import { eq, and, desc, or, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 
 export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
@@ -54,6 +54,7 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 					const search = url.searchParams.get("search");
 					const customerId = url.searchParams.get("customerId");
 					const assignedToUserId = url.searchParams.get("assignedToUserId");
+					const unassigned = url.searchParams.get("unassigned") === "true";
 
 					// Build base conditions
 					let whereCondition = eq(ticket.organizationId, orgId);
@@ -99,6 +100,17 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 						)
 						if (assignedCondition) {
 							whereCondition = assignedCondition
+						}
+					}
+
+					// Add unassigned filter (tickets with no assigned user)
+					if (unassigned) {
+						const unassignedCondition = and(
+							whereCondition,
+							isNull(ticket.assignedToUserId),
+						)
+						if (unassignedCondition) {
+							whereCondition = unassignedCondition
 						}
 					}
 

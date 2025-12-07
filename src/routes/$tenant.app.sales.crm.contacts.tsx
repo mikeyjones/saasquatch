@@ -168,7 +168,8 @@ function ContactsPage() {
 				<div>
 					<div className="flex items-center gap-2 mb-2">
 						<Link
-							to={`/${tenant}/app/sales/crm`}
+							to="/$tenant/app/sales/crm"
+							params={{ tenant }}
 							className="text-gray-500 hover:text-gray-700 flex items-center gap-1 text-sm"
 						>
 							<ArrowLeft size={16} />

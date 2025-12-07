@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 /**
  * Tests for ticket data functions
@@ -8,7 +8,6 @@ describe('tickets data functions', () => {
   describe('fetchSupportMembers', () => {
     describe('API Request', () => {
       it('should make GET request to correct endpoint', () => {
-        const endpoint = '/api/tenant/:tenant/members'
         const expectedUrl = `/api/tenant/acme/members`
         expect(expectedUrl).toContain('/api/tenant/')
         expect(expectedUrl).toContain('/members')
@@ -112,7 +111,6 @@ describe('tickets data functions', () => {
   describe('postTicketMessage', () => {
     describe('API Request', () => {
       it('should make POST request to correct endpoint', () => {
-        const endpoint = '/api/tenant/:tenant/tickets/:ticketId'
         const expectedUrl = `/api/tenant/acme/tickets/ticket-123`
         expect(expectedUrl).toContain('/api/tenant/')
         expect(expectedUrl).toContain('/tickets/')
@@ -338,7 +336,12 @@ describe('tickets data functions', () => {
           content: 'Test message',
           isInternal: true,
         }
-        const paramsWithoutInternal = {
+        const paramsWithoutInternal: {
+          tenantSlug: string
+          ticketId: string
+          content: string
+          isInternal?: boolean
+        } = {
           tenantSlug: 'acme',
           ticketId: 'ticket-123',
           content: 'Test message',
@@ -367,7 +370,6 @@ describe('tickets data functions', () => {
       })
 
       it('should make PATCH request to correct endpoint', () => {
-        const endpoint = '/api/tenant/:tenant/tickets/:ticketId'
         const expectedUrl = `/api/tenant/acme/tickets/ticket-123`
         expect(expectedUrl).toContain('/api/tenant/')
         expect(expectedUrl).toContain('/tickets/')
