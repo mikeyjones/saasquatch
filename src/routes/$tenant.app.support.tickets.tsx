@@ -35,6 +35,7 @@ function TicketsPage() {
 		tickets[0]?.id || "",
 	);
 	const [activeFilter, setActiveFilter] = useState("all");
+	const [searchQuery, setSearchQuery] = useState("");
 	const [isLoading, setIsLoading] = useState(true);
 	const [selectedTicketDetail, setSelectedTicketDetail] =
 		useState<TicketDetail | null>(null);
@@ -75,12 +76,32 @@ function TicketsPage() {
 	const filteredTickets = useMemo(
 		() =>
 			tickets.filter((ticket) => {
-				if (activeFilter === "all") return true;
-				if (activeFilter === "open") return ticket.status === "open";
-				if (activeFilter === "urgent") return ticket.priority === "urgent";
-				return true;
+				// Apply status/priority filter
+				let matchesFilter = true;
+				if (activeFilter === "all") matchesFilter = true;
+				else if (activeFilter === "open")
+					matchesFilter = ticket.status === "open";
+				else if (activeFilter === "pending")
+					matchesFilter = ticket.status === "pending";
+				else if (activeFilter === "closed")
+					matchesFilter = ticket.status === "closed";
+				else if (activeFilter === "urgent")
+					matchesFilter = ticket.priority === "urgent";
+
+				// Apply search filter
+				let matchesSearch = true;
+				if (searchQuery.trim()) {
+					const query = searchQuery.toLowerCase();
+					matchesSearch =
+						ticket.title.toLowerCase().includes(query) ||
+						ticket.company.toLowerCase().includes(query) ||
+						ticket.ticketNumber.toLowerCase().includes(query) ||
+						ticket.preview.toLowerCase().includes(query);
+				}
+
+				return matchesFilter && matchesSearch;
 			}),
-		[tickets, activeFilter],
+		[tickets, activeFilter, searchQuery],
 	);
 
 	return (
@@ -110,6 +131,8 @@ function TicketsPage() {
 							<Input
 								type="text"
 								placeholder="Search tickets..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
 								className="pl-9 h-9 text-sm bg-gray-50 border-gray-200"
 							/>
 						</div>
