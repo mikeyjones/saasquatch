@@ -186,6 +186,7 @@ export const tenantUser = pgTable(
     email: text('email').notNull(),
     phone: text('phone'),
     avatarUrl: text('avatarUrl'),
+    title: text('title'), // Job title, e.g., "CEO", "VP of Sales"
     // Role within their organization
     role: text('role').notNull().default('user'), // owner, admin, user, viewer
     isOwner: boolean('isOwner').notNull().default(false),

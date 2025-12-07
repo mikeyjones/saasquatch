@@ -16,6 +16,7 @@ import {
   Headphones,
   Briefcase,
   FileText,
+  UserCircle,
 } from 'lucide-react'
 import { useTenantSlug, useTenant } from '@/hooks/use-tenant'
 import { useSession, signOut } from '@/lib/auth-client'
@@ -34,6 +35,7 @@ const getNavItems = (tenant: string) => [
   { id: 'product-catalog', label: 'Product Catalog', icon: Package, path: `/${tenant}/app/sales/product-catalog` },
   { id: 'add-ons', label: 'Add-Ons', icon: Puzzle, path: `/${tenant}/app/sales/add-ons` },
   { id: 'crm', label: 'CRM', icon: Users, path: `/${tenant}/app/sales/crm` },
+  { id: 'contacts', label: 'Contacts', icon: UserCircle, path: `/${tenant}/app/sales/crm/contacts` },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: `/${tenant}/app/sales/subscriptions` },
   { id: 'invoices', label: 'Invoices', icon: FileText, path: `/${tenant}/app/sales/invoices` },
   { id: 'agent', label: 'Agent Apollo', icon: Bot, path: '#' },

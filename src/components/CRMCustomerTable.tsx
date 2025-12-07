@@ -54,6 +54,7 @@ interface CRMCustomerTableProps {
   onSelectionChange: (ids: string[]) => void
   onEdit?: (customer: CRMCustomer) => void
   onCreateSubscription?: (customer: CRMCustomer) => void
+  onAddContact?: (customer: CRMCustomer) => void
 }
 
 const statusStyles = {
@@ -105,6 +106,7 @@ export function CRMCustomerTable({
   onSelectionChange,
   onEdit,
   onCreateSubscription,
+  onAddContact,
 }: CRMCustomerTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
@@ -330,7 +332,15 @@ export function CRMCustomerTable({
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem>Add Deal</DropdownMenuItem>
-              <DropdownMenuItem>Add Contact</DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onAddContact?.(row.original)
+                }}
+              >
+                Add Contact
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
             </DropdownMenuContent>

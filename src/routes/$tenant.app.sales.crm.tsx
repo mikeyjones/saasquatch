@@ -1,6 +1,6 @@
-import { createFileRoute, useParams } from '@tanstack/react-router'
+import { createFileRoute, useParams, Link } from '@tanstack/react-router'
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { Download, Plus, RefreshCw } from 'lucide-react'
+import { Download, Plus, RefreshCw, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CRMSegments } from '@/components/CRMSegments'
 import { CRMFilters, type CRMFiltersState } from '@/components/CRMFilters'
@@ -8,6 +8,7 @@ import { CRMBulkActions } from '@/components/CRMBulkActions'
 import { CRMCustomerTable, type CRMCustomer } from '@/components/CRMCustomerTable'
 import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
 import { CreateSubscriptionDialog } from '@/components/CreateSubscriptionDialog'
+import { CreateContactDialog } from '@/components/CreateContactDialog'
 
 export const Route = createFileRoute('/$tenant/app/sales/crm')({
   component: CRMPage,
@@ -45,6 +46,8 @@ function CRMPage() {
   const [editingCustomer, setEditingCustomer] = useState<CRMCustomer | null>(null)
   const [isCreateSubscriptionDialogOpen, setIsCreateSubscriptionDialogOpen] = useState(false)
   const [selectedCustomerForSubscription, setSelectedCustomerForSubscription] = useState<CRMCustomer | null>(null)
+  const [isCreateContactDialogOpen, setIsCreateContactDialogOpen] = useState(false)
+  const [selectedCustomerForContact, setSelectedCustomerForContact] = useState<CRMCustomer | null>(null)
 
   // Fetch customers from API
   const fetchCustomers = useCallback(async () => {
@@ -151,6 +154,12 @@ function CRMPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Link to={`/${tenant}/app/sales/crm/contacts`}>
+            <Button variant="outline">
+              <Users size={18} className="mr-1" />
+              View Contacts
+            </Button>
+          </Link>
           <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw size={18} className={`mr-1 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -210,6 +219,22 @@ function CRMPage() {
         }}
         preSelectedCompanyId={selectedCustomerForSubscription?.id}
         preSelectedCompanyName={selectedCustomerForSubscription?.name}
+      />
+
+      {/* Create Contact Dialog */}
+      <CreateContactDialog
+        open={isCreateContactDialogOpen}
+        onOpenChange={(open) => {
+          setIsCreateContactDialogOpen(open)
+          if (!open) setSelectedCustomerForContact(null)
+        }}
+        onContactCreated={() => {
+          setIsCreateContactDialogOpen(false)
+          setSelectedCustomerForContact(null)
+          fetchCustomers()
+        }}
+        customerId={selectedCustomerForContact?.id}
+        customerName={selectedCustomerForContact?.name}
       />
 
       {/* Error Banner */}
@@ -286,6 +311,10 @@ function CRMPage() {
           onCreateSubscription={(customer) => {
             setSelectedCustomerForSubscription(customer)
             setIsCreateSubscriptionDialogOpen(true)
+          }}
+          onAddContact={(customer) => {
+            setSelectedCustomerForContact(customer)
+            setIsCreateContactDialogOpen(true)
           }}
         />
       )}
