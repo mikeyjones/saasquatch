@@ -10,6 +10,9 @@ import {
 	CheckCircle2,
 	AlertCircle,
 	Bot,
+	Lock,
+	Send,
+	Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +21,7 @@ import {
 	filterOptions,
 	fetchTickets,
 	fetchTicket,
+	postTicketMessage,
 	type Ticket,
 	type TicketDetail as TicketDetailType,
 } from "@/data/tickets";
@@ -189,6 +193,12 @@ function TicketsPage() {
 					ticket={selectedTicket}
 					detail={selectedTicketDetail}
 					isLoadingDetail={isLoadingDetail}
+					tenant={tenant}
+					onMessageSent={async () => {
+						// Refresh ticket details after sending a message
+						const detail = await fetchTicket(tenant, selectedTicketId);
+						setSelectedTicketDetail(detail);
+					}}
 				/>
 			)}
 		</main>
@@ -268,12 +278,43 @@ function TicketDetail({
 	ticket,
 	detail,
 	isLoadingDetail,
+	tenant,
+	onMessageSent,
 }: {
 	ticket: Ticket;
 	detail: TicketDetailType | null;
 	isLoadingDetail: boolean;
+	tenant: string;
+	onMessageSent: () => Promise<void>;
 }) {
 	const [replyText, setReplyText] = useState("");
+	const [isPrivateNote, setIsPrivateNote] = useState(false);
+	const [isSending, setIsSending] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const handleSendReply = async () => {
+		if (!replyText.trim() || !detail?.id) return;
+
+		setIsSending(true);
+		setError(null);
+
+		const result = await postTicketMessage(
+			tenant,
+			detail.id,
+			replyText.trim(),
+			isPrivateNote,
+		);
+
+		if (result.success) {
+			setReplyText("");
+			setIsPrivateNote(false);
+			await onMessageSent();
+		} else {
+			setError(result.error || "Failed to send message");
+		}
+
+		setIsSending(false);
+	};
 
 	const priorityStyles = {
 		urgent: "bg-red-100 text-red-700 border-red-200",
@@ -364,11 +405,15 @@ function TicketDetail({
 											? "bg-gradient-to-br from-blue-400 to-blue-600"
 											: message.type === "ai"
 												? "bg-gradient-to-br from-violet-400 to-violet-600"
-												: "bg-gradient-to-br from-emerald-400 to-emerald-600"
+												: message.isInternal
+													? "bg-gradient-to-br from-amber-400 to-amber-600"
+													: "bg-gradient-to-br from-emerald-400 to-emerald-600"
 									}`}
 								>
 									{message.type === "ai" ? (
 										<Bot size={20} className="text-white" />
+									) : message.isInternal ? (
+										<Lock size={18} className="text-white" />
 									) : (
 										<span className="text-white text-sm font-medium">
 											{message.author?.charAt(0) || "U"}
@@ -390,9 +435,14 @@ function TicketDetail({
 												AI Assistant
 											</span>
 										)}
-										{message.type === "agent" && (
+										{message.type === "agent" && !message.isInternal && (
 											<span className="text-sm text-gray-500">
 												Support Agent
+											</span>
+										)}
+										{message.isInternal && (
+											<span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+												Internal Note
 											</span>
 										)}
 										<span className="text-sm text-gray-400">
@@ -403,7 +453,9 @@ function TicketDetail({
 										className={`rounded-lg border p-4 ${
 											message.type === "ai"
 												? "bg-violet-50 border-violet-200"
-												: "bg-white border-gray-200"
+												: message.isInternal
+													? "bg-amber-50 border-amber-200"
+													: "bg-white border-gray-200"
 										}`}
 									>
 										<p className="text-gray-700 whitespace-pre-line">
@@ -479,21 +531,59 @@ function TicketDetail({
 					<Button variant="outline" size="sm" className="text-sm">
 						Insert Article
 					</Button>
-					<Button variant="outline" size="sm" className="text-sm">
+					<Button
+						variant={isPrivateNote ? "default" : "outline"}
+						size="sm"
+						className={`text-sm ${isPrivateNote ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}`}
+						onClick={() => setIsPrivateNote(!isPrivateNote)}
+					>
+						<Lock size={14} className="mr-1" />
 						Private Note
 					</Button>
 				</div>
+				{isPrivateNote && (
+					<div className="mb-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+						<Lock size={14} className="inline-block mr-1" />
+						This is a private note and will not be visible to the customer.
+					</div>
+				)}
 				<div className="relative">
 					<textarea
 						value={replyText}
 						onChange={(e) => setReplyText(e.target.value)}
-						placeholder="Type your reply or use AI to draft..."
-						className="w-full h-24 px-4 py-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+						placeholder={isPrivateNote ? "Type your internal note..." : "Type your reply or use AI to draft..."}
+						className={`w-full h-24 px-4 py-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:border-transparent text-sm ${
+							isPrivateNote 
+								? "border-amber-300 focus:ring-amber-500 bg-amber-50" 
+								: "border-gray-200 focus:ring-emerald-500"
+						}`}
+						disabled={isSending}
 					/>
 				</div>
+				{error && (
+					<div className="mt-2 text-sm text-red-600">{error}</div>
+				)}
 				<div className="flex justify-end mt-3">
-					<Button className="bg-emerald-500 hover:bg-emerald-600 text-white">
-						Send Reply
+					<Button
+						onClick={handleSendReply}
+						disabled={!replyText.trim() || isSending}
+						className={`${
+							isPrivateNote
+								? "bg-amber-500 hover:bg-amber-600"
+								: "bg-emerald-500 hover:bg-emerald-600"
+						} text-white`}
+					>
+						{isSending ? (
+							<>
+								<Loader2 size={14} className="mr-1 animate-spin" />
+								Sending...
+							</>
+						) : (
+							<>
+								<Send size={14} className="mr-1" />
+								{isPrivateNote ? "Add Note" : "Send Reply"}
+							</>
+						)}
 					</Button>
 				</div>
 			</div>

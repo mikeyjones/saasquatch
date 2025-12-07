@@ -8,6 +8,7 @@ import {
   tenantOrganization,
   organization,
   user,
+  member,
 } from '@/db/schema'
 import { eq, and, asc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
@@ -274,6 +275,153 @@ export const Route = createFileRoute('/api/tenant/$tenant/tickets/$ticketId')({
           })
         } catch (error) {
           console.error('Error updating ticket:', error)
+          return new Response(
+            JSON.stringify({ error: 'Internal server error' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      },
+
+      /**
+       * POST /api/tenant/:tenant/tickets/:ticketId
+       * Add a message to a ticket (support staff reply or internal note)
+       */
+      POST: async ({ request, params }) => {
+        try {
+          const session = await auth.api.getSession({
+            headers: request.headers,
+          })
+
+          if (!session?.user) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+              status: 401,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+
+          // Get the organization by slug
+          const org = await db
+            .select({ id: organization.id })
+            .from(organization)
+            .where(eq(organization.slug, params.tenant))
+            .limit(1)
+
+          if (org.length === 0) {
+            return new Response(
+              JSON.stringify({ error: 'Organization not found' }),
+              { status: 404, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          const orgId = org[0].id
+
+          // Verify user is a member of this organization
+          const membership = await db
+            .select({ role: member.role })
+            .from(member)
+            .where(
+              and(
+                eq(member.organizationId, orgId),
+                eq(member.userId, session.user.id)
+              )
+            )
+            .limit(1)
+
+          if (membership.length === 0) {
+            return new Response(
+              JSON.stringify({ error: 'Forbidden: Not a member of this organization' }),
+              { status: 403, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          // Verify ticket exists and belongs to this organization
+          const existingTicket = await db
+            .select({ 
+              id: ticket.id, 
+              firstResponseAt: ticket.firstResponseAt 
+            })
+            .from(ticket)
+            .where(
+              and(eq(ticket.organizationId, orgId), eq(ticket.id, params.ticketId))
+            )
+            .limit(1)
+
+          if (existingTicket.length === 0) {
+            return new Response(JSON.stringify({ error: 'Ticket not found' }), {
+              status: 404,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+
+          // Parse request body
+          const body = await request.json()
+          const { content, isInternal } = body as {
+            content: string
+            isInternal?: boolean
+          }
+
+          if (!content || typeof content !== 'string' || content.trim().length === 0) {
+            return new Response(
+              JSON.stringify({ error: 'Message content is required' }),
+              { status: 400, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          const now = new Date()
+          const messageId = crypto
+            .randomUUID()
+            .replace(/-/g, '')
+            .substring(0, 24)
+
+          // Create the message
+          await db.insert(ticketMessage).values({
+            id: messageId,
+            ticketId: params.ticketId,
+            messageType: 'agent',
+            authorUserId: session.user.id,
+            authorTenantUserId: null,
+            authorName: session.user.name || 'Support Agent',
+            content: content.trim(),
+            isInternal: isInternal ?? false,
+            createdAt: now,
+            updatedAt: now,
+          })
+
+          // Update ticket's updatedAt and set firstResponseAt if this is the first agent response
+          const ticketUpdates: Record<string, unknown> = {
+            updatedAt: now,
+          }
+
+          // Only set firstResponseAt if it hasn't been set and this is a public response
+          if (!existingTicket[0].firstResponseAt && !isInternal) {
+            ticketUpdates.firstResponseAt = now
+          }
+
+          await db
+            .update(ticket)
+            .set(ticketUpdates)
+            .where(eq(ticket.id, params.ticketId))
+
+          // Return the created message
+          return new Response(
+            JSON.stringify({
+              message: {
+                id: messageId,
+                type: 'agent',
+                author: session.user.name || 'Support Agent',
+                timestamp: 'Just now',
+                createdAt: now.toISOString(),
+                content: content.trim(),
+                isInternal: isInternal ?? false,
+              },
+            }),
+            {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        } catch (error) {
+          console.error('Error creating message:', error)
           return new Response(
             JSON.stringify({ error: 'Internal server error' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }

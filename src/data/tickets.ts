@@ -274,6 +274,60 @@ export async function updateTicket(
 	}
 }
 
+/**
+ * Post a message to a ticket (support staff reply or internal note)
+ */
+export async function postTicketMessage(
+	tenantSlug: string,
+	ticketId: string,
+	content: string,
+	isInternal = false,
+): Promise<{
+	success: boolean;
+	message?: {
+		id: string;
+		type: "agent";
+		author: string;
+		timestamp: string;
+		content: string;
+		isInternal: boolean;
+	};
+	error?: string;
+}> {
+	try {
+		const response = await fetch(
+			`/api/tenant/${tenantSlug}/tickets/${ticketId}`,
+			{
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ content, isInternal }),
+			},
+		);
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}));
+			console.error("Failed to post message:", response.statusText);
+			return {
+				success: false,
+				error: errorData.error || "Failed to send message",
+			};
+		}
+
+		const data = await response.json();
+		return {
+			success: true,
+			message: data.message,
+		};
+	} catch (error) {
+		console.error("Error posting message:", error);
+		return {
+			success: false,
+			error: "Network error occurred",
+		};
+	}
+}
+
 // Legacy function for backward compatibility with CreateTicketDialog
 export function addTicket(
 	input: Omit<CreateTicketInput, "customerId">,
