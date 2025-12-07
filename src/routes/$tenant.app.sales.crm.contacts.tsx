@@ -125,6 +125,7 @@ function ContactsPage() {
 	// Clear selection when contacts change
 	useEffect(() => {
 		setSelectedIds([]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [contacts]);
 
 	const handleDelete = async (contact: Contact) => {

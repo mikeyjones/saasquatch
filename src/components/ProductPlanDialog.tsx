@@ -271,7 +271,7 @@ export function ProductPlanDialog({
       setNewFeature('')
       setError(null)
     }
-  }, [open, plan])
+  }, [open, plan, form.reset, form.setFieldValue])
 
   const handleDialogClose = (isOpen: boolean) => {
     if (!isOpen) {

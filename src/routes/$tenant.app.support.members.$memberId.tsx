@@ -48,6 +48,8 @@ function MemberDetailPage() {
   const nameId = useId()
   const emailId = useId()
   const phoneId = useId()
+  const titleId = useId()
+  const roleId = useId()
 
   const [data, setData] = useState<MemberData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -270,8 +272,9 @@ function MemberDetailPage() {
             >
               Overview
             </button>
-            <button
-              onClick={() => setActiveTab('activity')}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('activity')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'activity'
                   ? 'border-primary text-primary'
@@ -281,6 +284,7 @@ function MemberDetailPage() {
               Activity
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('notes')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'notes'
@@ -338,16 +342,17 @@ function MemberDetailPage() {
                       )}
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Email</label>
+                      <label htmlFor={emailId} className="text-sm font-medium text-muted-foreground">Email</label>
                       {isEditing ? (
                         <Input
+                          id={emailId}
                           type="email"
                           value={editedMember.email || ''}
                           onChange={(e) => setEditedMember({ ...editedMember, email: e.target.value })}
                           className="mt-1"
                         />
                       ) : (
-                        <div className="mt-1 font-medium">{member.email}</div>
+                        <div id={emailId} className="mt-1 font-medium">{member.email}</div>
                       )}
                     </div>
                     <div>
@@ -366,16 +371,17 @@ function MemberDetailPage() {
                       )}
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Title</label>
+                      <label htmlFor={titleId} className="text-sm font-medium text-muted-foreground">Title</label>
                       {isEditing ? (
                         <Input
+                          id={titleId}
                           value={editedMember.title || ''}
                           onChange={(e) => setEditedMember({ ...editedMember, title: e.target.value })}
                           className="mt-1"
                           placeholder="Optional"
                         />
                       ) : (
-                        <div className="mt-1 font-medium">{member.title || <span className="text-muted-foreground italic">Not provided</span>}</div>
+                        <div id={titleId} className="mt-1 font-medium">{member.title || <span className="text-muted-foreground italic">Not provided</span>}</div>
                       )}
                     </div>
                   </div>
@@ -386,9 +392,10 @@ function MemberDetailPage() {
                   <h2 className="text-lg font-semibold mb-4">Role & Permissions</h2>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Role</label>
+                      <label htmlFor={roleId} className="text-sm font-medium text-muted-foreground">Role</label>
                       {isEditing ? (
                         <select
+                          id={roleId}
                           value={editedMember.role || member.role}
                           onChange={(e) => setEditedMember({ ...editedMember, role: e.target.value })}
                           className="mt-1 w-full px-3 py-2 border rounded-md text-sm"
@@ -400,7 +407,7 @@ function MemberDetailPage() {
                           <option value="viewer">Viewer</option>
                         </select>
                       ) : (
-                        <div className="mt-1">
+                        <div id={roleId} className="mt-1">
                           <span className="font-medium capitalize">{member.role}</span>
                           {member.isOwner && <span className="text-purple-600 text-sm ml-2">(Owner)</span>}
                         </div>

@@ -62,16 +62,14 @@ export const Route = createFileRoute('/api/tenant/$tenant/users')({
           // Exclude prospects unless explicitly requested
           // Prospects have null or 'trialing' subscriptionStatus
           if (!includeProspects) {
-            conditions.push(
-              and(
-                // Must have a subscription status (not null)
-                isNotNull(tenantOrganization.subscriptionStatus),
-                // And not be trialing (trialing = prospect)
-                ne(tenantOrganization.subscriptionStatus, 'trialing')
-              ) ?? undefined
+            const prospectCondition = and(
+              // Must have a subscription status (not null)
+              isNotNull(tenantOrganization.subscriptionStatus),
+              // And not be trialing (trialing = prospect)
+              ne(tenantOrganization.subscriptionStatus, 'trialing')
             )
-            if (condition) {
-              conditions.push(condition)
+            if (prospectCondition) {
+              conditions.push(prospectCondition)
             }
           }
 
