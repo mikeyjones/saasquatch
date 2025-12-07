@@ -257,6 +257,7 @@ function OrganizationDetailPage() {
       <div className="border-b">
         <nav className="flex space-x-8">
           <button
+            type="button"
             onClick={() => setActiveTab('overview')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'overview'
@@ -267,6 +268,7 @@ function OrganizationDetailPage() {
             Overview
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('contacts')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'contacts'
@@ -277,6 +279,7 @@ function OrganizationDetailPage() {
             Contacts ({contacts.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('invoices')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'invoices'
@@ -287,6 +290,7 @@ function OrganizationDetailPage() {
             Invoices ({invoices.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('deals')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'deals'
@@ -297,6 +301,7 @@ function OrganizationDetailPage() {
             Deals ({deals.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('activity')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'activity'
@@ -307,6 +312,7 @@ function OrganizationDetailPage() {
             Activity
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('properties')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'properties'

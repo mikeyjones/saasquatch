@@ -192,7 +192,7 @@ function JourneyCard({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button type="button" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
               <MoreHorizontal size={18} className="text-gray-400" />
             </button>
           </DropdownMenuTrigger>

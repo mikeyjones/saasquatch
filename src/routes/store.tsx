@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 
@@ -8,11 +9,13 @@ export const Route = createFileRoute('/store')({
 })
 
 function FirstName() {
+  const firstNameId = useId()
   const firstName = useStore(store, (state) => state.firstName)
   return (
     <div>
-      <label className="block text-white mb-2 font-semibold">First Name</label>
+      <label htmlFor={firstNameId} className="block text-white mb-2 font-semibold">First Name</label>
       <input
+        id={firstNameId}
         type="text"
         value={firstName}
         onChange={(e) =>
@@ -25,11 +28,13 @@ function FirstName() {
 }
 
 function LastName() {
+  const lastNameId = useId()
   const lastName = useStore(store, (state) => state.lastName)
   return (
     <div>
-      <label className="block text-white mb-2 font-semibold">Last Name</label>
+      <label htmlFor={lastNameId} className="block text-white mb-2 font-semibold">Last Name</label>
       <input
+        id={lastNameId}
         type="text"
         value={lastName}
         onChange={(e) =>
@@ -42,11 +47,12 @@ function LastName() {
 }
 
 function FullName() {
+  const fullNameId = useId()
   const fName = useStore(fullName)
   return (
     <div>
-      <label className="block text-white mb-2 font-semibold">Full Name</label>
-      <div className="bg-white/10 rounded-lg px-4 py-2 outline-none text-white text-lg">
+      <label htmlFor={fullNameId} className="block text-white mb-2 font-semibold">Full Name</label>
+      <div id={fullNameId} className="bg-white/10 rounded-lg px-4 py-2 outline-none text-white text-lg">
         {fName}
       </div>
     </div>

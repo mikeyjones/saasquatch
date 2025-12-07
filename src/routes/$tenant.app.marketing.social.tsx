@@ -113,7 +113,7 @@ function SocialPage() {
         {/* Queue Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">Upcoming Queue</h2>
-          <button className="text-rose-500 hover:text-rose-600 text-sm font-medium transition-colors">
+          <button type="button" className="text-rose-500 hover:text-rose-600 text-sm font-medium transition-colors">
             View Calendar
           </button>
         </div>

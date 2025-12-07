@@ -1,5 +1,5 @@
 import { createFileRoute, useSearch, useParams } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -165,11 +165,11 @@ function TenantLoginPage() {
               </div>
             )}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={emailId} className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <Input
-                id="email"
+                id={emailId}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -178,11 +178,11 @@ function TenantLoginPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={passwordId} className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
               <Input
-                id="password"
+                id={passwordId}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

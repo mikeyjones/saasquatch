@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
-import { fileURLToPath } from 'url'
-import { dirname, resolve } from 'path'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
@@ -16,7 +16,12 @@ const projectRoot = resolve(__dirname, '../..')
 config({ path: resolve(projectRoot, '.env.local') })
 config({ path: resolve(projectRoot, '.env') })
 
+const databaseUrl = process.env.DATABASE_URL
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL environment variable is required')
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL!,
+  connectionString: databaseUrl,
 })
 export const db = drizzle(pool, { schema })

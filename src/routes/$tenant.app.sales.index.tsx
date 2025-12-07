@@ -149,7 +149,7 @@ function SalesDashboard() {
               <p className="text-gray-500 text-sm">
                 AI Service Unavailable for Brief Generation.
               </p>
-              <button className="mt-3 flex items-center gap-2 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors">
+              <button type="button" className="mt-3 flex items-center gap-2 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors">
                 <RefreshCw size={14} />
                 REFRESH ANALYSIS
               </button>
@@ -231,7 +231,7 @@ function SalesDashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Recent Deals</h2>
-              <button className="text-indigo-500 hover:text-indigo-600 text-sm font-medium transition-colors">
+              <button type="button" className="text-indigo-500 hover:text-indigo-600 text-sm font-medium transition-colors">
                 View All
               </button>
             </div>

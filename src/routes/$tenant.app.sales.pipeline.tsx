@@ -79,6 +79,7 @@ function PipelinePage() {
           {/* Pipeline Selector */}
           <div className="relative">
             <button
+              type="button"
               onClick={() => setShowPipelineSelector(!showPipelineSelector)}
               className="flex items-center gap-2 text-2xl font-semibold text-gray-900 hover:text-gray-700 transition-colors"
             >
@@ -92,13 +93,16 @@ function PipelinePage() {
             {/* Pipeline Dropdown */}
             {showPipelineSelector && pipelines.length > 0 && (
               <>
-                <div
+                <button
+                  type="button"
                   className="fixed inset-0 z-10"
                   onClick={() => setShowPipelineSelector(false)}
+                  aria-label="Close pipeline selector"
                 />
                 <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
                   {pipelines.map((pipeline) => (
                     <button
+                      type="button"
                       key={pipeline.id}
                       onClick={() => handleSelectPipeline(pipeline)}
                       className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${

@@ -87,6 +87,7 @@ function Home() {
           {features.map((feature, index) => {
             const content = (
               <div
+                key={`${feature.title}-content`}
                 className={`bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10 h-full flex flex-col ${feature.color}`}
               >
                 <div className="mb-4">{feature.icon}</div>
@@ -108,7 +109,7 @@ function Home() {
 
             return feature.external ? (
               <a
-                key={index}
+                key={`${feature.title}-${index}`}
                 href={feature.link}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -117,7 +118,7 @@ function Home() {
                 {content}
               </a>
             ) : (
-              <Link key={index} to={feature.link} className="block">
+              <Link key={`${feature.title}-${index}`} to={feature.link} className="block">
                 {content}
               </Link>
             )

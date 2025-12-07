@@ -166,8 +166,8 @@ async function searchArticles(
           sql`${knowledgeArticle.category} % ${query}`,
           sql`${knowledgeArticle.tags} % ${query}`,
           // Also include exact substring matches
-          sql`LOWER(${knowledgeArticle.title}) LIKE ${'%' + query + '%'}`,
-          sql`LOWER(COALESCE(${knowledgeArticle.content}, '')) LIKE ${'%' + query + '%'}`
+          sql`LOWER(${knowledgeArticle.title}) LIKE ${`%${query}%`}`,
+          sql`LOWER(COALESCE(${knowledgeArticle.content}, '')) LIKE ${`%${query}%`}`
         )
       )
     )
@@ -250,8 +250,8 @@ async function searchPlaybooks(
           sql`${playbook.category} % ${query}`,
           sql`${playbook.tags} % ${query}`,
           // Also include exact substring matches
-          sql`LOWER(${playbook.name}) LIKE ${'%' + query + '%'}`,
-          sql`LOWER(COALESCE(${playbook.description}, '')) LIKE ${'%' + query + '%'}`
+          sql`LOWER(${playbook.name}) LIKE ${`%${query}%`}`,
+          sql`LOWER(COALESCE(${playbook.description}, '')) LIKE ${`%${query}%`}`
         )
       )
     )

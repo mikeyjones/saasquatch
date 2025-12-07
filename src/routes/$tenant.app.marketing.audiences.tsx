@@ -145,6 +145,7 @@ function AudiencesPage() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <button
+                    type="button"
                     onClick={() => handleSync(segment)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >

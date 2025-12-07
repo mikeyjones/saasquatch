@@ -257,6 +257,7 @@ function MemberDetailPage() {
         <div className="border-b">
           <nav className="flex space-x-8">
             <button
+              type="button"
               onClick={() => setActiveTab('overview')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'overview'

@@ -296,6 +296,7 @@ function CampaignsPage() {
           <div className="flex gap-2">
             {filterOptions.map((filter) => (
               <button
+                type="button"
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -414,7 +415,7 @@ function CampaignsPage() {
                 <td className="px-6 py-4 text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button type="button" className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
                         <MoreHorizontal size={18} className="text-gray-500" />
                       </button>
                     </DropdownMenuTrigger>

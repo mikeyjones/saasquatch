@@ -231,6 +231,7 @@ function SupportOverview() {
                         {issue.description}
                       </p>
                       <button
+                        type="button"
                         className={`mt-3 px-3 py-1.5 text-sm font-medium rounded border transition-colors ${
                           issue.severity === 'critical'
                             ? 'text-red-600 border-red-300 hover:bg-red-100'
