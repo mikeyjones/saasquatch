@@ -19,7 +19,7 @@ import {
 	fetchTickets,
 	fetchTicket,
 	type Ticket,
-	type TicketDetail,
+	type TicketDetail as TicketDetailType,
 } from "@/data/tickets";
 
 export const Route = createFileRoute("/$tenant/app/support/tickets")({

@@ -1,6 +1,6 @@
 import { createFileRoute, useParams, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Edit, UserPlus, FileText, Plus } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OrganizationHeader } from '@/components/OrganizationHeader'
 import { OrganizationMetrics } from '@/components/OrganizationMetrics'

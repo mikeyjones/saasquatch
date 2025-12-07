@@ -106,7 +106,7 @@ function KnowledgePage() {
       grouped[category] = articles.filter((a) => a.category === category)
     }
     // Add uncategorized
-    grouped['UNCATEGORIZED'] = articles.filter((a) => !a.category)
+    grouped.UNCATEGORIZED = articles.filter((a) => !a.category)
     return grouped
   }, [articles])
 
@@ -380,13 +380,13 @@ function KnowledgePage() {
             })
           )}
           {/* Uncategorized articles */}
-          {articlesByCategory['UNCATEGORIZED']?.length > 0 && (
+          {articlesByCategory.UNCATEGORIZED?.length > 0 && (
             <div>
               <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
                 Uncategorized
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {articlesByCategory['UNCATEGORIZED'].map((article) => (
+                {articlesByCategory.UNCATEGORIZED.map((article) => (
                   <ArticleCard
                     key={article.id}
                     article={article}

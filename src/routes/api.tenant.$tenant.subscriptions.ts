@@ -7,7 +7,6 @@ import {
   productPlan,
   productPricing,
   organization,
-  user,
   coupon,
   invoice,
 } from '@/db/schema'

@@ -2,7 +2,6 @@ import { createFileRoute, useParams, Link } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
 import {
 	Download,
-	Plus,
 	RefreshCw,
 	Search,
 	ArrowLeft,
@@ -125,8 +124,7 @@ function ContactsPage() {
 	// Clear selection when contacts change
 	useEffect(() => {
 		setSelectedIds([]);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [contacts]);
+	}, [contacts, setSelectedIds]);
 
 	const handleDelete = async (contact: Contact) => {
 		if (!confirm(`Are you sure you want to delete ${contact.name}?`)) {

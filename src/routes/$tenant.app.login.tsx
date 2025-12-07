@@ -1,5 +1,5 @@
 import { createFileRoute, useSearch, useParams } from '@tanstack/react-router'
-import { useState, useEffect, useId } from 'react'
+import { useState, useEffect } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'

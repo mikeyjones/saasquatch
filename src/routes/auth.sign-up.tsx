@@ -37,7 +37,7 @@ function SignUpPage() {
         // Redirect to home page on success
         window.location.href = '/'
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)

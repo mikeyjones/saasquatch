@@ -107,8 +107,7 @@ function CRMPage() {
 	// Clear selection when customers change
 	useEffect(() => {
 		setSelectedIds([]);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [customers]);
+	}, [customers, setSelectedIds]);
 
 	// Segment definitions with counts from API
 	const segments = [

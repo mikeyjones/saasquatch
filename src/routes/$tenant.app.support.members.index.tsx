@@ -193,7 +193,7 @@ function MembersPage() {
 		try {
 			const data = await fetchMembers(tenant);
 			setAllMembers(data);
-		} catch (err) {
+		} catch {
 			setError("Failed to refresh members");
 		} finally {
 			setIsLoading(false);

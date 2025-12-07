@@ -42,7 +42,7 @@ function AppLayout() {
   const [authState, setAuthState] = useState<AuthState>('checking')
   
   // Check if we're on the login page - skip auth check for login route
-  const isLoginPage = typeof window !== 'undefined' && window.location.pathname.endsWith('/app/login')
+  const isLoginPage = typeof window !== 'undefined' && window.location.pathname?.endsWith('/app/login')
 
   useEffect(() => {
     // Skip auth check on login page

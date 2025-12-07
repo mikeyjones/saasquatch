@@ -434,7 +434,7 @@ describe('Bolt-On Pricing Calculations', () => {
       ],
     }
 
-    const calculateUsagePrice = (usage: number): number => {
+    const _calculateUsagePrice = (usage: number): number => {
       let remaining = usage
       let total = 0
 

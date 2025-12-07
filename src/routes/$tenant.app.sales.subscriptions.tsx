@@ -49,7 +49,7 @@ function SubscriptionsPage() {
     console.log('Modify plan for:', subscription.companyName)
   }
 
-  const handleViewInvoice = (subscription: Subscription) => {
+  const handleViewInvoice = (_subscription: Subscription) => {
     // Navigate to invoices page
     navigate({ 
       to: '/$tenant/app/sales/invoices',

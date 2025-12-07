@@ -67,15 +67,6 @@ const statusStyles: Record<ProgramStatus, string> = {
 }
 
 function AffiliatesPage() {
-  const formatCurrency = (value: number): string => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`
-    }
-    if (value >= 1000) {
-      return `$${value.toLocaleString()}`
-    }
-    return `$${value}`
-  }
 
   const handleManagePartners = (program: AffiliateProgram) => {
     console.log('Manage partners for:', program.name)
