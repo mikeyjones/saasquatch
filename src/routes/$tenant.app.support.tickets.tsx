@@ -13,17 +13,33 @@ import {
 	Lock,
 	Send,
 	Loader2,
+	User,
+	ChevronDown,
+	Check,
+	UserPlus,
 } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	ticketsStore,
 	filterOptions,
 	fetchTickets,
 	fetchTicket,
 	postTicketMessage,
+	updateTicket,
+	fetchSupportMembers,
 	type Ticket,
 	type TicketDetail as TicketDetailType,
+	type SupportMember,
 } from "@/data/tickets";
 
 export const Route = createFileRoute("/$tenant/app/support/tickets")({
@@ -291,6 +307,42 @@ function TicketDetail({
 	const [isPrivateNote, setIsPrivateNote] = useState(false);
 	const [isSending, setIsSending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [supportMembers, setSupportMembers] = useState<SupportMember[]>([]);
+	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+	const [isAssigning, setIsAssigning] = useState(false);
+	const { data: session } = useSession();
+
+	// Fetch support members when component mounts or tenant changes
+	useEffect(() => {
+		const loadMembers = async () => {
+			if (!tenant) return;
+			setIsLoadingMembers(true);
+			const members = await fetchSupportMembers(tenant);
+			setSupportMembers(members);
+			setIsLoadingMembers(false);
+		};
+		loadMembers();
+	}, [tenant]);
+
+	// Find current user in support members list
+	const currentUser = useMemo(() => {
+		if (!session?.user?.id) return null;
+		return supportMembers.find((m) => m.id === session.user.id) || null;
+	}, [supportMembers, session?.user?.id]);
+
+	const handleAssign = async (userId: string | null) => {
+		if (!detail?.id) return;
+
+		setIsAssigning(true);
+		const success = await updateTicket(tenant, detail.id, {
+			assignedToUserId: userId,
+		});
+
+		if (success) {
+			await onMessageSent(); // Refresh ticket details
+		}
+		setIsAssigning(false);
+	};
 
 	const handleSendReply = async () => {
 		if (!replyText.trim() || !detail?.id) return;
@@ -314,6 +366,16 @@ function TicketDetail({
 		}
 
 		setIsSending(false);
+	};
+
+	// Helper to get initials from name
+	const getInitials = (name: string) => {
+		return name
+			.split(" ")
+			.map((part) => part[0])
+			.join("")
+			.toUpperCase()
+			.substring(0, 2);
 	};
 
 	const priorityStyles = {
@@ -372,10 +434,99 @@ function TicketDetail({
 							)}
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
-						<Button variant="outline" size="sm">
-							Assign To...
-						</Button>
+					<div className="flex items-center gap-3">
+						{/* Current Assignee Display */}
+						<div className="flex items-center gap-2 text-sm text-gray-600">
+							<span className="text-gray-400">Assigned to:</span>
+							{detail?.assignedTo ? (
+								<div className="flex items-center gap-2">
+									<div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+										<span className="text-white text-xs font-medium">
+											{detail.assignedTo.initials || getInitials(detail.assignedTo.name)}
+										</span>
+									</div>
+									<span className="font-medium text-gray-900">{detail.assignedTo.name}</span>
+								</div>
+							) : (
+								<span className="text-gray-500">Unassigned</span>
+							)}
+						</div>
+
+						{/* Assignment Dropdown */}
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="sm" disabled={isAssigning || isLoadingMembers}>
+									{isAssigning ? (
+										<Loader2 size={14} className="mr-1 animate-spin" />
+									) : (
+										<User size={14} className="mr-1" />
+									)}
+									Assign
+									<ChevronDown size={14} className="ml-1" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-56">
+								<DropdownMenuLabel>Assign to team member</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								{currentUser && (
+									<>
+										<DropdownMenuItem
+											onClick={() => handleAssign(currentUser.id)}
+											className="cursor-pointer bg-emerald-50 hover:bg-emerald-100"
+										>
+											<UserPlus size={14} className="mr-2 text-emerald-600" />
+											<span className="font-medium text-emerald-900">Assign to me</span>
+											{detail?.assignedTo?.id === currentUser.id && (
+												<Check size={14} className="ml-auto text-emerald-600" />
+											)}
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
+									</>
+								)}
+								<DropdownMenuItem
+									onClick={() => handleAssign(null)}
+									className="cursor-pointer"
+								>
+									<User size={14} className="mr-2 text-gray-400" />
+									<span>Unassigned</span>
+									{!detail?.assignedTo && (
+										<Check size={14} className="ml-auto text-emerald-500" />
+									)}
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								{isLoadingMembers ? (
+									<div className="px-2 py-3 text-sm text-gray-500 text-center">
+										Loading team members...
+									</div>
+								) : supportMembers.length === 0 ? (
+									<div className="px-2 py-3 text-sm text-gray-500 text-center">
+										No team members found
+									</div>
+								) : (
+									supportMembers.map((member) => (
+										<DropdownMenuItem
+											key={member.id}
+											onClick={() => handleAssign(member.id)}
+											className="cursor-pointer"
+										>
+											<div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mr-2">
+												<span className="text-white text-xs font-medium">
+													{getInitials(member.name)}
+												</span>
+											</div>
+											<div className="flex flex-col">
+												<span className="font-medium">{member.name}</span>
+												<span className="text-xs text-gray-500">{member.email}</span>
+											</div>
+											{detail?.assignedTo?.id === member.id && (
+												<Check size={14} className="ml-auto text-emerald-500" />
+											)}
+										</DropdownMenuItem>
+									))
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+
 						<Button
 							size="sm"
 							className="bg-emerald-500 hover:bg-emerald-600 text-white"

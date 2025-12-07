@@ -364,3 +364,38 @@ export const filterOptions = [
 	{ id: "closed", label: "Closed" },
 	{ id: "urgent", label: "Urgent" },
 ];
+
+/**
+ * Support staff member for ticket assignment
+ */
+export interface SupportMember {
+	id: string;
+	name: string;
+	email: string;
+	role: string;
+	image?: string | null;
+}
+
+/**
+ * Fetch support staff members for ticket assignment dropdown
+ */
+export async function fetchSupportMembers(
+	tenantSlug: string,
+): Promise<SupportMember[]> {
+	try {
+		const response = await fetch(`/api/tenant/${tenantSlug}/members`, {
+			credentials: "include",
+		});
+
+		if (!response.ok) {
+			console.error("Failed to fetch support members:", response.statusText);
+			return [];
+		}
+
+		const data = await response.json();
+		return data.members || [];
+	} catch (error) {
+		console.error("Error fetching support members:", error);
+		return [];
+	}
+}

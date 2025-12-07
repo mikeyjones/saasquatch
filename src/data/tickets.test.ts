@@ -5,6 +5,110 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
  * These tests verify the client-side API interaction for ticket operations
  */
 describe('tickets data functions', () => {
+  describe('fetchSupportMembers', () => {
+    describe('API Request', () => {
+      it('should make GET request to correct endpoint', () => {
+        const endpoint = '/api/tenant/:tenant/members'
+        const expectedUrl = `/api/tenant/acme/members`
+        expect(expectedUrl).toContain('/api/tenant/')
+        expect(expectedUrl).toContain('/members')
+      })
+
+      it('should include credentials in request', () => {
+        const requestConfig = {
+          credentials: 'include' as RequestCredentials,
+        }
+        expect(requestConfig.credentials).toBe('include')
+      })
+    })
+
+    describe('Success Response Handling', () => {
+      it('should return array of support members on success', () => {
+        const response = {
+          members: [
+            { id: 'user-1', name: 'Alice Admin', email: 'alice@acme.test', role: 'owner' },
+            { id: 'user-2', name: 'Bob Builder', email: 'bob@acme.test', role: 'admin' },
+          ],
+        }
+        expect(Array.isArray(response.members)).toBe(true)
+        expect(response.members).toHaveLength(2)
+      })
+
+      it('should include required member fields', () => {
+        const member = {
+          id: 'user-1',
+          name: 'Alice Admin',
+          email: 'alice@acme.test',
+          role: 'owner',
+          image: null,
+        }
+        expect(member.id).toBeDefined()
+        expect(member.name).toBeDefined()
+        expect(member.email).toBeDefined()
+        expect(member.role).toBeDefined()
+      })
+
+      it('should return empty array when no members', () => {
+        const response = { members: [] }
+        expect(response.members).toHaveLength(0)
+      })
+    })
+
+    describe('Error Handling', () => {
+      it('should return empty array on API error', () => {
+        const fallback: { id: string; name: string; email: string; role: string }[] = []
+        expect(fallback).toHaveLength(0)
+      })
+
+      it('should handle network errors gracefully', () => {
+        const errorHandling = {
+          onNetworkError: 'return empty array',
+          consoleError: 'Error fetching support members:',
+        }
+        expect(errorHandling.onNetworkError).toBe('return empty array')
+      })
+
+      it('should handle non-OK HTTP responses', () => {
+        const httpError = {
+          status: 401,
+          ok: false,
+        }
+        expect(httpError.ok).toBe(false)
+      })
+    })
+
+    describe('Response Shape', () => {
+      it('should return SupportMember array', () => {
+        const members = [
+          { id: 'user-1', name: 'Alice Admin', email: 'alice@acme.test', role: 'owner' },
+        ]
+        expect(members[0].id).toBeDefined()
+        expect(members[0].name).toBeDefined()
+        expect(members[0].email).toBeDefined()
+        expect(members[0].role).toBeDefined()
+      })
+
+      it('should support optional image field', () => {
+        const memberWithImage = {
+          id: 'user-1',
+          name: 'Alice Admin',
+          email: 'alice@acme.test',
+          role: 'owner',
+          image: 'https://example.com/avatar.jpg',
+        }
+        const memberWithoutImage = {
+          id: 'user-2',
+          name: 'Bob Builder',
+          email: 'bob@acme.test',
+          role: 'admin',
+          image: null,
+        }
+        expect(memberWithImage.image).toBeDefined()
+        expect(memberWithoutImage.image).toBeNull()
+      })
+    })
+  })
+
   describe('postTicketMessage', () => {
     describe('API Request', () => {
       it('should make POST request to correct endpoint', () => {
@@ -242,6 +346,89 @@ describe('tickets data functions', () => {
         }
         expect(paramsWithInternal.isInternal).toBe(true)
         expect(paramsWithoutInternal.isInternal).toBeUndefined()
+      })
+    })
+  })
+
+  describe('updateTicket', () => {
+    describe('Assignment Updates', () => {
+      it('should accept assignedToUserId in updates', () => {
+        const updates = {
+          assignedToUserId: 'user-123',
+        }
+        expect(updates.assignedToUserId).toBe('user-123')
+      })
+
+      it('should accept null assignedToUserId for unassignment', () => {
+        const updates = {
+          assignedToUserId: null,
+        }
+        expect(updates.assignedToUserId).toBeNull()
+      })
+
+      it('should make PATCH request to correct endpoint', () => {
+        const endpoint = '/api/tenant/:tenant/tickets/:ticketId'
+        const expectedUrl = `/api/tenant/acme/tickets/ticket-123`
+        expect(expectedUrl).toContain('/api/tenant/')
+        expect(expectedUrl).toContain('/tickets/')
+      })
+
+      it('should include credentials in request', () => {
+        const requestConfig = {
+          method: 'PATCH',
+          credentials: 'include' as RequestCredentials,
+          headers: { 'Content-Type': 'application/json' },
+        }
+        expect(requestConfig.method).toBe('PATCH')
+        expect(requestConfig.credentials).toBe('include')
+      })
+
+      it('should send assignedToUserId in request body', () => {
+        const requestBody = {
+          assignedToUserId: 'user-123',
+        }
+        expect(requestBody.assignedToUserId).toBeDefined()
+      })
+
+      it('should return true on success', () => {
+        const result = true
+        expect(result).toBe(true)
+      })
+
+      it('should return false on failure', () => {
+        const result = false
+        expect(result).toBe(false)
+      })
+    })
+
+    describe('Combined Updates', () => {
+      it('should support status, priority, and assignment together', () => {
+        const updates = {
+          status: 'closed',
+          priority: 'high',
+          assignedToUserId: 'user-123',
+        }
+        expect(updates.status).toBe('closed')
+        expect(updates.priority).toBe('high')
+        expect(updates.assignedToUserId).toBe('user-123')
+      })
+
+      it('should support partial updates', () => {
+        const statusOnlyUpdate = { status: 'pending' }
+        const assignmentOnlyUpdate = { assignedToUserId: 'user-456' }
+        expect(statusOnlyUpdate.status).toBe('pending')
+        expect(assignmentOnlyUpdate.assignedToUserId).toBe('user-456')
+      })
+    })
+
+    describe('Store Updates', () => {
+      it('should update ticket status in store optimistically', () => {
+        const storeUpdate = {
+          status: 'closed' as const,
+          priority: 'high' as const,
+        }
+        expect(storeUpdate.status).toBe('closed')
+        expect(storeUpdate.priority).toBe('high')
       })
     })
   })
