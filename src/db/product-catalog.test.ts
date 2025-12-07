@@ -9,7 +9,6 @@ import {
   productPlanAddOn,
   coupon,
   productFeatureFlag,
-  organization,
 } from './schema'
 
 /**

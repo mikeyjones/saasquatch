@@ -12,7 +12,7 @@ import {
   dealActivity,
   pipelineStage,
 } from '@/db/schema'
-import { eq, and, desc, sql } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
 export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$customerId')({

@@ -238,7 +238,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/deals/$dealId')({
           const orgId = org[0].id
 
           // Delete the deal (cascades to contacts and activities)
-          const result = await db
+          await db
             .delete(deal)
             .where(
               and(

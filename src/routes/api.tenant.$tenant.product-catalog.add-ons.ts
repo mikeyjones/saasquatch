@@ -5,7 +5,7 @@ import {
   productAddOnPricing,
   organization,
 } from '@/db/schema'
-import { eq, and, desc, asc } from 'drizzle-orm'
+import { eq, and, asc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
 export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/add-ons')({

@@ -11,7 +11,7 @@ import {
   organization,
   user,
 } from '@/db/schema'
-import { eq, and, desc, or, asc } from 'drizzle-orm'
+import { eq, and, desc, or } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
 function generateId(): string {

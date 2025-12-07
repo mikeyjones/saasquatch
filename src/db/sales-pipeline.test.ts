@@ -5,10 +5,6 @@ import {
   deal,
   dealContact,
   dealActivity,
-  tenantOrganization,
-  organization,
-  user,
-  tenantUser,
 } from './schema'
 
 /**

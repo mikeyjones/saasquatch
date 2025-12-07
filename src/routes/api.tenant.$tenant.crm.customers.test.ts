@@ -606,7 +606,7 @@ describe('CRM Customer Creation API', () => {
 
     describe('Customer Creation (with subscription)', () => {
       it('should require productPlanId when creating subscription', () => {
-        const request = {
+        const _request = {
           name: 'Acme Corp',
           createSubscription: true,
           subscriptionData: {}, // missing productPlanId
@@ -933,7 +933,7 @@ describe('CRM Members API', () => {
       })
 
       it('should validate assignedToUserId exists if provided', () => {
-        const requestBody = {
+        const _requestBody = {
           assignedToUserId: 'non-existent-user-id',
         }
         const expectedError = {
