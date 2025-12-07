@@ -2348,7 +2348,7 @@ async function seed(): Promise<void> {
       }
 
       console.log(`\n   For support staff: ${staffOrgSlug}`)
-      console.log('   ' + '─'.repeat(40))
+      console.log(`   ${'─'.repeat(40)}`)
 
       for (const tenantOrg of tenantOrgsPerStaff[staffOrgSlug]) {
         logSection(`${tenantOrg.name} (${tenantOrg.slug})`)
@@ -2382,7 +2382,7 @@ async function seed(): Promise<void> {
       }
 
       console.log(`\n   For support staff: ${staffOrgSlug}`)
-      console.log('   ' + '─'.repeat(40))
+      console.log(`   ${'─'.repeat(40)}`)
 
       for (const ticketData of ticketsPerStaff[staffOrgSlug]) {
         await ensureTicket(db, staffOrgId, ticketData, tenantUserMap, supportStaffMap)
@@ -2409,7 +2409,7 @@ async function seed(): Promise<void> {
       const creatorId = creatorInfo?.id || ''
 
       console.log(`\n   For support staff: ${staffOrgSlug}`)
-      console.log('   ' + '─'.repeat(40))
+      console.log(`   ${'─'.repeat(40)}`)
 
       for (const article of knowledgeArticlesPerStaff[staffOrgSlug]) {
         await ensureKnowledgeArticle(db, staffOrgId, article, creatorId)
@@ -2436,7 +2436,7 @@ async function seed(): Promise<void> {
       const creatorId = creatorInfo?.id || ''
 
       console.log(`\n   For support staff: ${staffOrgSlug}`)
-      console.log('   ' + '─'.repeat(40))
+      console.log(`   ${'─'.repeat(40)}`)
 
       for (const playbookItem of playbooksPerStaff[staffOrgSlug]) {
         await ensurePlaybook(db, staffOrgId, playbookItem, creatorId)
@@ -2460,7 +2460,7 @@ async function seed(): Promise<void> {
       }
 
       console.log(`\n   For support staff: ${staffOrgSlug}`)
-      console.log('   ' + '─'.repeat(40))
+      console.log(`   ${'─'.repeat(40)}`)
 
       planMaps[staffOrgSlug] = new Map()
 
@@ -2496,7 +2496,7 @@ async function seed(): Promise<void> {
       }
 
       console.log(`\n   For support staff: ${staffOrgSlug}`)
-      console.log('   ' + '─'.repeat(40))
+      console.log(`   ${'─'.repeat(40)}`)
 
       for (const subData of subscriptionsPerStaff[staffOrgSlug]) {
         await ensureSubscription(db, staffOrgId, staffOrgSlug, subData, tenantOrgIds, planMap)
@@ -2517,7 +2517,7 @@ async function seed(): Promise<void> {
       }
 
       console.log(`\n   For tenant org: ${tenantOrgSlug}`)
-      console.log('   ' + '─'.repeat(40))
+      console.log(`   ${'─'.repeat(40)}`)
 
       for (const pipelineData of pipelinesPerTenantOrg[tenantOrgSlug]) {
         const { pipelineId, stageMap } = await ensurePipeline(db, tenantOrgInfo.id, pipelineData)
@@ -2541,7 +2541,7 @@ async function seed(): Promise<void> {
     // ========================================================================
     // Summary
     // ========================================================================
-    console.log('\n\n' + '═'.repeat(60))
+    console.log(`\n\n${'═'.repeat(60)}`)
     console.log('✅ Seed completed successfully!')
     console.log('═'.repeat(60))
 

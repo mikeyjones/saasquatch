@@ -75,7 +75,7 @@ function KnowledgePage() {
     if (!searchQuery) {
       loadData()
     }
-  }, [tenant, activeTab])
+  }, [tenant, activeTab, searchQuery])
 
   // Debounced search
   useEffect(() => {
@@ -632,12 +632,10 @@ function SearchResultCard({
     )
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onEdit}
-      onKeyDown={(e) => e.key === 'Enter' && onEdit()}
-      role="button"
-      tabIndex={0}
-      className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm hover:border-emerald-300 transition-all cursor-pointer"
+      className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm hover:border-emerald-300 transition-all cursor-pointer w-full text-left"
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -658,7 +656,7 @@ function SearchResultCard({
           {result.description}
         </p>
       )}
-    </div>
+    </button>
   )
 }
 

@@ -122,9 +122,10 @@ function ContactsPage() {
 	}, [fetchCustomers]);
 
 	// Clear selection when contacts change
+	// biome-ignore lint/correctness/useExhaustiveDependencies: we want to clear selection when contacts array reference changes
 	useEffect(() => {
 		setSelectedIds([]);
-	}, [contacts, setSelectedIds]);
+	}, [contacts]);
 
 	const handleDelete = async (contact: Contact) => {
 		if (!confirm(`Are you sure you want to delete ${contact.name}?`)) {

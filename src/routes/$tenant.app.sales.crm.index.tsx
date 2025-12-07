@@ -105,9 +105,10 @@ function CRMPage() {
 	}, [fetchCustomers]);
 
 	// Clear selection when customers change
+	// biome-ignore lint/correctness/useExhaustiveDependencies: we want to clear selection when customers array reference changes
 	useEffect(() => {
 		setSelectedIds([]);
-	}, [customers, setSelectedIds]);
+	}, [customers]);
 
 	// Segment definitions with counts from API
 	const segments = [

@@ -55,7 +55,7 @@ function PipelinePage() {
     }
 
     loadPipelines()
-  }, [tenant, setPipelines, setSelectedPipeline, selectedPipeline])
+  }, [tenant, selectedPipeline])
 
   const handlePipelineChange = useCallback((pipeline: Pipeline) => {
     setSelectedPipeline(pipeline)

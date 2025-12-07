@@ -42,7 +42,7 @@ function AppLayout() {
   const [authState, setAuthState] = useState<AuthState>('checking')
   
   // Check if we're on the login page - skip auth check for login route
-  const isLoginPage = typeof window !== 'undefined' && window.location.pathname?.endsWith('/app/login')
+  const isLoginPage = typeof window !== 'undefined' && window?.location?.pathname?.endsWith('/app/login')
 
   useEffect(() => {
     // Skip auth check on login page
@@ -99,7 +99,7 @@ function AppLayout() {
     
     // Redirect if not authenticated or not a member
     if (authState === 'not-authenticated' || authState === 'not-member') {
-      const currentPath = window.location.pathname
+      const currentPath = window.location.pathname ?? ''
       const returnTo = encodeURIComponent(currentPath)
       const errorParam = authState === 'not-member' ? '&error=not-member' : ''
       window.location.href = `/${tenantSlug}/app/login?returnTo=${returnTo}${errorParam}`
