@@ -63,6 +63,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
               billingEmail: tenantOrganization.billingEmail,
               billingAddress: tenantOrganization.billingAddress,
               assignedToUserId: tenantOrganization.assignedToUserId,
+              importance: tenantOrganization.importance,
               tags: tenantOrganization.tags,
               notes: tenantOrganization.notes,
               metadata: tenantOrganization.metadata,
@@ -390,6 +391,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             billingEmail,
             billingAddress,
             assignedToUserId,
+            importance,
             tags,
             notes,
             metadata,
@@ -400,6 +402,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             billingEmail?: string
             billingAddress?: string
             assignedToUserId?: string | null
+            importance?: string
             tags?: string[]
             notes?: string
             metadata?: Record<string, unknown>
@@ -413,6 +416,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             billingEmail?: string | null
             billingAddress?: string | null
             assignedToUserId?: string | null
+            importance?: string | null
             tags?: string | null
             notes?: string | null
             metadata?: string | null
@@ -439,6 +443,10 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
 
           if (billingAddress !== undefined) {
             updateData.billingAddress = billingAddress || null
+          }
+
+          if (importance !== undefined) {
+            updateData.importance = importance || 'normal'
           }
 
           if (assignedToUserId !== undefined) {

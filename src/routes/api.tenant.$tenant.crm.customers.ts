@@ -97,6 +97,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
           const search = url.searchParams.get('search')?.toLowerCase() || ''
           const industry = url.searchParams.get('industry') || ''
           const status = url.searchParams.get('status') || ''
+          const importance = url.searchParams.get('importance') || ''
 
           // Get all tenant organizations for this org
           const tenantOrgs = await db
@@ -109,6 +110,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
               industry: tenantOrganization.industry,
               subscriptionPlan: tenantOrganization.subscriptionPlan,
               subscriptionStatus: tenantOrganization.subscriptionStatus,
+              importance: tenantOrganization.importance,
               tags: tenantOrganization.tags,
               assignedToUserId: tenantOrganization.assignedToUserId,
               notes: tenantOrganization.notes,
@@ -322,6 +324,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
                 | 'past_due'
                 | undefined,
               subscriptionPlan: org.subscriptionPlan,
+              importance: (org.importance || 'normal') as 'low' | 'normal' | 'high' | 'vip',
               realizedValue: dealData.realizedValue,
               potentialValue: dealData.potentialValue,
               lastActivity: lastActivity.toISOString(),
@@ -391,6 +394,13 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
           if (status) {
             filteredCustomers = filteredCustomers.filter(
               (c) => c.subscriptionStatus === status
+            )
+          }
+
+          // Importance filter
+          if (importance) {
+            filteredCustomers = filteredCustomers.filter(
+              (c) => c.importance === importance
             )
           }
 
@@ -471,6 +481,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
             billingEmail,
             billingAddress,
             assignedToUserId,
+            importance,
             tags,
             notes,
             createSubscription,
@@ -483,6 +494,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
             billingEmail?: string
             billingAddress?: string
             assignedToUserId?: string
+            importance?: string
             tags?: string[]
             notes?: string
             createSubscription?: boolean
@@ -571,6 +583,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers')({
             billingEmail: billingEmail || null,
             billingAddress: billingAddress || null,
             assignedToUserId: assignedToUserId || null,
+            importance: importance || 'normal',
             tags: tags && tags.length > 0 ? JSON.stringify(tags) : null,
             notes: notes || null,
             subscriptionPlan: null,

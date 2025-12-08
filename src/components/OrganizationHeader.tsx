@@ -10,6 +10,7 @@ interface Customer {
   website: string | null
   billingEmail: string | null
   subscriptionStatus: string | null
+  importance: string | null
   tags: string[]
 }
 
@@ -47,6 +48,22 @@ export function OrganizationHeader({ customer, subscription }: OrganizationHeade
     }
   }
 
+  const getImportanceColor = (importance: string | null) => {
+    const imp = importance || 'normal'
+    switch (imp) {
+      case 'low':
+        return 'bg-gray-100 text-gray-600'
+      case 'normal':
+        return 'bg-blue-100 text-blue-700'
+      case 'high':
+        return 'bg-orange-100 text-orange-700'
+      case 'vip':
+        return 'bg-purple-100 text-purple-700'
+      default:
+        return 'bg-blue-100 text-blue-700'
+    }
+  }
+
   return (
     <div className="bg-card rounded-lg border p-6">
       <div className="flex items-start justify-between">
@@ -73,6 +90,9 @@ export function OrganizationHeader({ customer, subscription }: OrganizationHeade
                   {customer.subscriptionStatus}
                 </span>
               )}
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase ${getImportanceColor(customer.importance)}`}>
+                {customer.importance || 'normal'}
+              </span>
             </div>
 
             {/* Quick Info */}

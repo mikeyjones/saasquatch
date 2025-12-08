@@ -31,6 +31,7 @@ const customerSchema = z.object({
   billingEmail: z.string().optional(),
   billingAddress: z.string().optional(),
   assignedToUserId: z.string().optional(),
+  importance: z.enum(['low', 'normal', 'high', 'vip']).optional(),
   tags: z.string().optional(),
   notes: z.string().optional(),
   createSubscription: z.boolean().default(false),
@@ -64,6 +65,7 @@ interface CustomerData {
   billingEmail?: string | null
   billingAddress?: string | null
   assignedToUserId?: string | null
+  importance?: string | null
   tags?: string[]
   notes?: string | null
 }
@@ -114,6 +116,7 @@ export function CreateCustomerDialog({
   const [selectedPlanId, setSelectedPlanId] = useState('')
   const [selectedBillingCycle, setSelectedBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [selectedAssignee, setSelectedAssignee] = useState('')
+  const [selectedImportance, setSelectedImportance] = useState('normal')
   const [seats, setSeats] = useState(1)
 
   // Fetch customer data when in edit mode
@@ -133,6 +136,7 @@ export function CreateCustomerDialog({
           setLoadedCustomer(customer)
           setSelectedIndustry(customer.industry || '')
           setSelectedAssignee(customer.assignedToUserId || '')
+          setSelectedImportance(customer.importance || 'normal')
         }
       } catch (err) {
         console.error('Failed to load customer:', err)
@@ -225,6 +229,7 @@ export function CreateCustomerDialog({
           billingEmail: value.billingEmail || undefined,
           billingAddress: value.billingAddress || undefined,
           assignedToUserId: selectedAssignee && selectedAssignee !== 'unassigned' ? selectedAssignee : (selectedAssignee === 'unassigned' ? null : undefined),
+          importance: selectedImportance || 'normal',
           tags: tagsArray.length > 0 ? tagsArray : undefined,
           notes: value.notes || undefined,
         }
@@ -276,6 +281,7 @@ export function CreateCustomerDialog({
           setSelectedPlanId('')
           setSelectedBillingCycle('monthly')
           setSelectedAssignee('')
+          setSelectedImportance('normal')
           setSeats(1)
           onOpenChange(false)
           onCustomerCreated?.()
@@ -421,6 +427,24 @@ export function CreateCustomerDialog({
                     {member.name}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Importance */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">
+              Customer Importance
+            </Label>
+            <Select value={selectedImportance} onValueChange={setSelectedImportance}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select importance..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="vip">VIP</SelectItem>
               </SelectContent>
             </Select>
           </div>

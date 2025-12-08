@@ -38,6 +38,7 @@ function CRMPage() {
 		search: "",
 		industry: "all",
 		status: "all",
+		importance: "all",
 	});
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
 	const [customers, setCustomers] = useState<CRMCustomer[]>([]);
@@ -78,6 +79,8 @@ function CRMPage() {
 				queryParams.set("industry", filters.industry);
 			if (filters.status && filters.status !== "all")
 				queryParams.set("status", filters.status);
+			if (filters.importance && filters.importance !== "all")
+				queryParams.set("importance", filters.importance);
 
 			const response = await fetch(
 				`/api/tenant/${tenant}/crm/customers?${queryParams.toString()}`,

@@ -92,6 +92,7 @@ interface Customer {
   billingEmail: string | null
   billingAddress: string | null
   assignedToUserId: string | null
+  importance: string | null
   tags: string[]
   notes: string | null
   metadata: Record<string, unknown>

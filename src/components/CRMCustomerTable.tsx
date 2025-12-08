@@ -36,6 +36,7 @@ export interface CRMCustomer {
   status: 'customer' | 'prospect' | 'inactive'
   subscriptionStatus?: 'active' | 'trialing' | 'canceled' | 'past_due'
   subscriptionPlan?: string
+  importance?: 'low' | 'normal' | 'high' | 'vip'
   realizedValue: number
   potentialValue: number
   lastActivity: string
@@ -252,6 +253,28 @@ export function CRMCustomerTable({
             )}
           </div>
         ),
+      },
+      {
+        accessorKey: 'importance',
+        header: 'Importance',
+        cell: ({ row }) => {
+          const importance = row.original.importance || 'normal'
+          const importanceStyles = {
+            low: 'bg-gray-100 text-gray-600',
+            normal: 'bg-blue-100 text-blue-700',
+            high: 'bg-orange-100 text-orange-700',
+            vip: 'bg-purple-100 text-purple-700'
+          }
+          return (
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded-full uppercase ${
+                importanceStyles[importance as keyof typeof importanceStyles]
+              }`}
+            >
+              {importance}
+            </span>
+          )
+        },
       },
       {
         accessorKey: 'realizedValue',

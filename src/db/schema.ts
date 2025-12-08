@@ -157,6 +157,8 @@ export const tenantOrganization = pgTable(
     tags: text('tags'), // JSON array of tags, e.g., ["enterprise", "high-value"]
     assignedToUserId: text('assignedToUserId')
       .references(() => user.id, { onDelete: 'set null' }),
+    // Customer importance for support prioritization
+    importance: text('importance').default('normal'), // low, normal, high, vip
     // Metadata
     notes: text('notes'),
     metadata: text('metadata'), // JSON object for custom properties/fields
@@ -167,6 +169,7 @@ export const tenantOrganization = pgTable(
     orgIdx: index('tenant_org_organization_idx').on(table.organizationId),
     slugIdx: index('tenant_org_slug_idx').on(table.organizationId, table.slug),
     assignedIdx: index('tenant_org_assigned_idx').on(table.assignedToUserId),
+    importanceIdx: index('tenant_org_importance_idx').on(table.importance),
   })
 )
 

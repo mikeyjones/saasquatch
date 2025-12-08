@@ -13,6 +13,7 @@ export interface CRMFiltersState {
 	search: string;
 	industry: string;
 	status: string;
+	importance: string;
 }
 
 interface CRMFiltersProps {
@@ -27,13 +28,14 @@ export function CRMFilters({
 	industries,
 }: CRMFiltersProps) {
 	const hasActiveFilters =
-		filters.search || filters.industry !== "all" || filters.status !== "all";
+		filters.search || filters.industry !== "all" || filters.status !== "all" || filters.importance !== "all";
 
 	const clearFilters = () => {
 		onFiltersChange({
 			search: "",
 			industry: "all",
 			status: "all",
+			importance: "all",
 		});
 	};
 
@@ -96,6 +98,25 @@ export function CRMFilters({
 					<SelectItem value="trialing">Trialing</SelectItem>
 					<SelectItem value="canceled">Canceled</SelectItem>
 					<SelectItem value="past_due">Past Due</SelectItem>
+				</SelectContent>
+			</Select>
+
+			{/* Importance Filter */}
+			<Select
+				value={filters.importance}
+				onValueChange={(value) =>
+					onFiltersChange({ ...filters, importance: value })
+				}
+			>
+				<SelectTrigger className="w-[160px] bg-white">
+					<SelectValue placeholder="Importance" />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="all">All Importance</SelectItem>
+					<SelectItem value="low">Low</SelectItem>
+					<SelectItem value="normal">Normal</SelectItem>
+					<SelectItem value="high">High</SelectItem>
+					<SelectItem value="vip">VIP</SelectItem>
 				</SelectContent>
 			</Select>
 
