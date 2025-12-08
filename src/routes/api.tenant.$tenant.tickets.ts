@@ -131,6 +131,7 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 							tenantUserId: ticket.tenantUserId,
 							tenantUserName: tenantUser.name,
 							tenantUserEmail: tenantUser.email,
+							tenantOrgId: tenantOrganization.id,
 							tenantOrgName: tenantOrganization.name,
 						})
 						.from(ticket)
@@ -211,9 +212,11 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 									(firstMessage.content.length > 60 ? "..." : "")
 								: "",
 							company: t.tenantOrgName || "Unknown",
+							organizationId: t.tenantOrgId || undefined,
 							customer: {
 								name: t.tenantUserName || "Unknown",
 								company: t.tenantOrgName || "Unknown",
+								organizationId: t.tenantOrgId || undefined,
 								initials: getInitials(t.tenantUserName || "U"),
 							},
 							aiTriage: triage

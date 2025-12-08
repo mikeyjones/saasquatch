@@ -95,6 +95,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/users')({
               isOwner: tenantUser.isOwner,
               status: tenantUser.status,
               lastActivityAt: tenantUser.lastActivityAt,
+              organizationId: tenantOrganization.id,
               organizationName: tenantOrganization.name,
               organizationSlug: tenantOrganization.slug,
               organizationStatus: tenantOrganization.subscriptionStatus,
@@ -118,6 +119,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/users')({
               .toUpperCase()
               .substring(0, 2),
             organization: user.organizationName,
+            organizationId: user.organizationId,
             organizationSlug: user.organizationSlug,
             organizationStatus: user.organizationStatus,
             role: user.role === 'owner' || user.role === 'admin' ? 'Admin' : user.role === 'viewer' ? 'Viewer' : 'User',

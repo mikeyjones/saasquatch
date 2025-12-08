@@ -393,9 +393,18 @@ function MemberRow({
 			<td className="px-6 py-4">
 				<div className="flex items-center gap-2">
 					<Building size={16} className="text-gray-400" />
-					<span className="text-gray-700 text-sm">
-						<HighlightedText text={member.organization} query={searchQuery} />
-					</span>
+					{member.organizationId ? (
+						<Link
+							to={`/${tenant}/app/support/organizations/${member.organizationId}`}
+							className="text-gray-700 text-sm hover:text-blue-600 hover:underline"
+						>
+							<HighlightedText text={member.organization} query={searchQuery} />
+						</Link>
+					) : (
+						<span className="text-gray-700 text-sm">
+							<HighlightedText text={member.organization} query={searchQuery} />
+						</span>
+					)}
 				</div>
 			</td>
 

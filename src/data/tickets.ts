@@ -4,6 +4,7 @@ export interface Ticket {
 	id: string;
 	title: string;
 	company: string;
+	organizationId?: string;
 	ticketNumber: string;
 	priority: "urgent" | "high" | "normal" | "low";
 	status: "open" | "closed" | "pending" | "waiting_on_customer" | "escalated";
@@ -14,6 +15,7 @@ export interface Ticket {
 	customer: {
 		name: string;
 		company: string;
+		organizationId?: string;
 		initials: string;
 	};
 	messages: Array<{
@@ -46,6 +48,7 @@ export interface TicketDetail {
 		name: string;
 		email?: string;
 		company: string;
+		organizationId?: string;
 		initials: string;
 		subscriptionPlan?: string;
 		subscriptionStatus?: string;

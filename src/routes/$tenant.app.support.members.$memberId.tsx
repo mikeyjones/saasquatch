@@ -429,7 +429,7 @@ function MemberDetailPage() {
                     <div>
                       <div className="text-sm text-muted-foreground">Name</div>
                       <Link
-                        to={`/${tenant}/app/sales/crm/${organization.id}`}
+                        to={`/${tenant}/app/support/organizations/${organization.id}`}
                         className="font-medium text-primary hover:underline"
                       >
                         {organization.name}

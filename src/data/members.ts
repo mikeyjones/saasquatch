@@ -11,6 +11,7 @@ export interface Member {
 	email: string;
 	initials: string;
 	organization: string;
+	organizationId?: string;
 	organizationSlug?: string;
 	/** Organization's subscription status from Sales CRM */
 	organizationStatus?: "active" | "trialing" | "canceled" | "past_due" | null;

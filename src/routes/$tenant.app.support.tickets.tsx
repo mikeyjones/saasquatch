@@ -244,6 +244,7 @@ function TicketsPage() {
 								ticket={ticket}
 								isSelected={ticket.id === selectedTicketId}
 								onClick={() => setSelectedTicketId(ticket.id)}
+								tenant={tenant}
 							/>
 						))
 					)}
@@ -272,10 +273,12 @@ function TicketCard({
 	ticket,
 	isSelected,
 	onClick,
+	tenant,
 }: {
 	ticket: Ticket;
 	isSelected: boolean;
 	onClick: () => void;
+	tenant: string;
 }) {
 	const priorityStyles = {
 		urgent: "bg-red-100 text-red-700",
@@ -310,7 +313,17 @@ function TicketCard({
 			</div>
 
 			<div className="flex items-center gap-2 mb-2">
-				<span className="text-xs text-gray-500">{ticket.company}</span>
+				{ticket.organizationId || ticket.customer?.organizationId ? (
+					<Link
+						to={`/${tenant}/app/support/organizations/${ticket.organizationId || ticket.customer.organizationId}`}
+						className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
+						onClick={(e) => e.stopPropagation()}
+					>
+						{ticket.company}
+					</Link>
+				) : (
+					<span className="text-xs text-gray-500">{ticket.company}</span>
+				)}
 				<span className="text-xs text-gray-400">•</span>
 				<span className="text-xs text-gray-500">{ticket.ticketNumber}</span>
 
@@ -633,9 +646,20 @@ function TicketDetail({
 											</span>
 										)}
 										{message.type === "customer" && (
-											<span className="text-sm text-gray-500">
-												{detail.customer?.company || ""}
-											</span>
+											<>
+												{detail.customer?.organizationId ? (
+													<Link
+														to={`/${tenant}/app/support/organizations/${detail.customer.organizationId}`}
+														className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+													>
+														{detail.customer.company || ""}
+													</Link>
+												) : (
+													<span className="text-sm text-gray-500">
+														{detail.customer?.company || ""}
+													</span>
+												)}
+											</>
 										)}
 										{message.type === "ai" && (
 											<span className="text-sm text-gray-500">
