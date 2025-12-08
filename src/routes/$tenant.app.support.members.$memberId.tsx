@@ -4,6 +4,7 @@ import { ArrowLeft, Edit2, Save, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MemberHeader } from '@/components/MemberHeader'
 import { Input } from '@/components/ui/input'
+import { AuditLog } from '@/components/AuditLog'
 
 export const Route = createFileRoute('/$tenant/app/support/members/$memberId')({
   component: MemberDetailPage,
@@ -41,6 +42,18 @@ interface MemberData {
   organization: Organization
 }
 
+interface AuditLogEntry {
+  id: string
+  performedByUserId: string | null
+  performedByName: string
+  action: string
+  fieldName: string | null
+  oldValue: string | null
+  newValue: string | null
+  metadata: string | null
+  createdAt: string
+}
+
 function MemberDetailPage() {
   const { tenant, memberId } = useParams({
     from: '/$tenant/app/support/members/$memberId'
@@ -60,6 +73,11 @@ function MemberDetailPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [editedMember, setEditedMember] = useState<Partial<Member>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  // Audit log state
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([])
+  const [isLoadingAuditLogs, setIsLoadingAuditLogs] = useState(false)
 
   // Fetch member data
   useEffect(() => {
@@ -92,6 +110,32 @@ function MemberDetailPage() {
     fetchMember()
   }, [tenant, memberId])
 
+  // Fetch audit logs when activity tab is selected
+  useEffect(() => {
+    const fetchAuditLogs = async () => {
+      if (activeTab !== 'activity' || !tenant || !memberId) {
+        return
+      }
+
+      setIsLoadingAuditLogs(true)
+      try {
+        const url = `/api/tenant/${tenant}/members/${memberId}/audit-logs`
+        const response = await fetch(url)
+        const result = await response.json()
+
+        if (response.ok) {
+          setAuditLogs(result.logs || [])
+        }
+      } catch (err) {
+        console.error('Error fetching audit logs:', err)
+      } finally {
+        setIsLoadingAuditLogs(false)
+      }
+    }
+
+    fetchAuditLogs()
+  }, [activeTab, tenant, memberId])
+
   const handleEdit = () => {
     if (data) {
       setEditedMember({
@@ -109,12 +153,36 @@ function MemberDetailPage() {
   const handleCancelEdit = () => {
     setIsEditing(false)
     setEditedMember({})
+    setSaveError(null)
   }
 
   const handleSaveEdit = async () => {
-    if (!tenant || !memberId) return
+    if (!tenant || !memberId || !data) return
+
+    // Check if role is changing
+    const roleChanged = editedMember.role && editedMember.role !== data.member.role
+
+    // Confirm role changes, especially for owner role
+    if (roleChanged) {
+      const isChangingFromOwner = data.member.isOwner || data.member.role === 'owner'
+      const isChangingToOwner = editedMember.role === 'owner'
+
+      let confirmMessage = ''
+      if (isChangingFromOwner) {
+        confirmMessage = `Are you sure you want to change this member's role from Owner to ${editedMember.role}? This will remove their owner privileges.`
+      } else if (isChangingToOwner) {
+        confirmMessage = `Are you sure you want to promote this member to Owner? They will have full administrative access.`
+      } else {
+        confirmMessage = `Are you sure you want to change this member's role from ${data.member.role} to ${editedMember.role}?`
+      }
+
+      if (!confirm(confirmMessage)) {
+        return
+      }
+    }
 
     setIsSaving(true)
+    setSaveError(null)
     try {
       const response = await fetch(`/api/tenant/${tenant}/members/${memberId}`, {
         method: 'PUT',
@@ -129,17 +197,26 @@ function MemberDetailPage() {
       }
 
       // Update local data
-      if (data) {
-        setData({
-          ...data,
-          member: { ...data.member, ...result.member },
-        })
-      }
+      setData({
+        ...data,
+        member: { ...data.member, ...result.member },
+      })
       setIsEditing(false)
       setEditedMember({})
+      setSaveError(null)
+
+      // Refresh audit logs if we're on activity tab
+      if (activeTab === 'activity') {
+        const auditResponse = await fetch(`/api/tenant/${tenant}/members/${memberId}/audit-logs`)
+        const auditResult = await auditResponse.json()
+        if (auditResponse.ok) {
+          setAuditLogs(auditResult.logs || [])
+        }
+      }
     } catch (err) {
       console.error('Error updating member:', err)
-      alert(err instanceof Error ? err.message : 'Failed to update member')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update member'
+      setSaveError(errorMessage)
     } finally {
       setIsSaving(false)
     }
@@ -327,6 +404,12 @@ function MemberDetailPage() {
                     )}
                   </div>
 
+                  {saveError && (
+                    <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                      <p className="text-sm text-destructive">{saveError}</p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label htmlFor={nameId} className="text-sm font-medium text-muted-foreground">Name</label>
@@ -491,9 +574,7 @@ function MemberDetailPage() {
           {activeTab === 'activity' && (
             <div className="bg-card rounded-lg border p-6">
               <h2 className="text-lg font-semibold mb-4">Activity Timeline</h2>
-              <div className="text-center text-muted-foreground py-8">
-                Activity history coming soon
-              </div>
+              <AuditLog logs={auditLogs} isLoading={isLoadingAuditLogs} />
             </div>
           )}
 

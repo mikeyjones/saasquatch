@@ -207,6 +207,52 @@ export const tenantUser = pgTable(
 )
 
 // ============================================================================
+// Audit Log Tables
+// ============================================================================
+
+/**
+ * Audit Log - Tracks important changes to tenant data
+ * Used for security, compliance, and activity tracking
+ */
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this audit log belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // The tenant organization affected (if applicable)
+    tenantOrganizationId: text('tenantOrganizationId')
+      .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
+    // Who performed the action
+    performedByUserId: text('performedByUserId')
+      .references(() => user.id, { onDelete: 'set null' }),
+    performedByName: text('performedByName').notNull(), // Denormalized for display
+    // What was changed
+    entityType: text('entityType').notNull(), // tenant_user, ticket, subscription, etc.
+    entityId: text('entityId').notNull(), // ID of the entity that was changed
+    // Action performed
+    action: text('action').notNull(), // role_changed, status_changed, created, deleted, etc.
+    // Change details
+    fieldName: text('fieldName'), // e.g., 'role', 'status'
+    oldValue: text('oldValue'), // Previous value (JSON if complex)
+    newValue: text('newValue'), // New value (JSON if complex)
+    // Additional context
+    metadata: text('metadata'), // JSON object for additional context
+    // When it happened
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => ({
+    orgIdx: index('audit_log_organization_idx').on(table.organizationId),
+    tenantOrgIdx: index('audit_log_tenant_org_idx').on(table.tenantOrganizationId),
+    entityIdx: index('audit_log_entity_idx').on(table.entityType, table.entityId),
+    performedByIdx: index('audit_log_performed_by_idx').on(table.performedByUserId),
+    createdAtIdx: index('audit_log_created_at_idx').on(table.createdAt),
+  })
+)
+
+// ============================================================================
 // Support Ticket Tables
 // ============================================================================
 

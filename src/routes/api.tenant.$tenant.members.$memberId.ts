@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
-import { tenantUser, tenantOrganization, organization } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { tenantUser, tenantOrganization, organization, auditLog, member } from '@/db/schema'
+import { eq, and, ne, count } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
+import { nanoid } from 'nanoid'
 
 export const Route = createFileRoute('/api/tenant/$tenant/members/$memberId')({
   server: {
@@ -130,7 +131,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/members/$memberId')({
 
       /**
        * PUT /api/tenant/:tenant/members/:memberId
-       * Update member details
+       * Update member details with role management, authorization, and audit logging
        */
       PUT: async ({ request, params }) => {
         try {
@@ -162,9 +163,39 @@ export const Route = createFileRoute('/api/tenant/$tenant/members/$memberId')({
 
           const orgId = org[0].id
 
-          // Verify member exists and belongs to this organization
-          const existingMember = await db
-            .select({ id: tenantUser.id })
+          // Check if current user is a support staff member of this organization
+          const supportMember = await db
+            .select({ role: member.role })
+            .from(member)
+            .where(
+              and(
+                eq(member.organizationId, orgId),
+                eq(member.userId, session.user.id)
+              )
+            )
+            .limit(1)
+
+          if (supportMember.length === 0) {
+            return new Response(
+              JSON.stringify({ error: 'Forbidden: Not a support staff member' }),
+              { status: 403, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          // Fetch existing member with organization details
+          const existingMemberData = await db
+            .select({
+              id: tenantUser.id,
+              name: tenantUser.name,
+              email: tenantUser.email,
+              phone: tenantUser.phone,
+              title: tenantUser.title,
+              role: tenantUser.role,
+              isOwner: tenantUser.isOwner,
+              status: tenantUser.status,
+              notes: tenantUser.notes,
+              tenantOrganizationId: tenantUser.tenantOrganizationId,
+            })
             .from(tenantUser)
             .innerJoin(
               tenantOrganization,
@@ -178,12 +209,14 @@ export const Route = createFileRoute('/api/tenant/$tenant/members/$memberId')({
             )
             .limit(1)
 
-          if (existingMember.length === 0) {
+          if (existingMemberData.length === 0) {
             return new Response(
               JSON.stringify({ error: 'Member not found' }),
               { status: 404, headers: { 'Content-Type': 'application/json' } }
             )
           }
+
+          const existingMember = existingMemberData[0]
 
           // Parse request body
           const body = await request.json()
@@ -212,6 +245,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/members/$memberId')({
             phone?: string | null
             title?: string | null
             role?: string
+            isOwner?: boolean
             status?: string
             notes?: string | null
             updatedAt: Date
@@ -219,39 +253,157 @@ export const Route = createFileRoute('/api/tenant/$tenant/members/$memberId')({
             updatedAt: new Date(),
           }
 
+          // Track changes for audit log
+          const auditLogs: Array<{
+            fieldName: string
+            oldValue: string | null
+            newValue: string | null
+          }> = []
+
           if (name !== undefined && typeof name === 'string' && name.trim().length > 0) {
-            updateData.name = name.trim()
+            const newName = name.trim()
+            if (newName !== existingMember.name) {
+              updateData.name = newName
+              auditLogs.push({
+                fieldName: 'name',
+                oldValue: existingMember.name,
+                newValue: newName,
+              })
+            }
           }
 
           if (email !== undefined && typeof email === 'string' && email.trim().length > 0) {
-            updateData.email = email.trim().toLowerCase()
+            const newEmail = email.trim().toLowerCase()
+            if (newEmail !== existingMember.email) {
+              updateData.email = newEmail
+              auditLogs.push({
+                fieldName: 'email',
+                oldValue: existingMember.email,
+                newValue: newEmail,
+              })
+            }
           }
 
           if (phone !== undefined) {
-            updateData.phone = phone && phone.trim().length > 0 ? phone.trim() : null
+            const newPhone = phone && phone.trim().length > 0 ? phone.trim() : null
+            if (newPhone !== existingMember.phone) {
+              updateData.phone = newPhone
+              auditLogs.push({
+                fieldName: 'phone',
+                oldValue: existingMember.phone,
+                newValue: newPhone,
+              })
+            }
           }
 
           if (title !== undefined) {
-            updateData.title = title && title.trim().length > 0 ? title.trim() : null
+            const newTitle = title && title.trim().length > 0 ? title.trim() : null
+            if (newTitle !== existingMember.title) {
+              updateData.title = newTitle
+              auditLogs.push({
+                fieldName: 'title',
+                oldValue: existingMember.title,
+                newValue: newTitle,
+              })
+            }
           }
 
+          // Role change validation and synchronization
           if (role !== undefined && ['owner', 'admin', 'user', 'viewer'].includes(role)) {
-            updateData.role = role
+            if (role !== existingMember.role) {
+              // If changing FROM owner role, ensure at least one other owner exists
+              if (existingMember.isOwner || existingMember.role === 'owner') {
+                // Count other owners in the same tenant organization
+                const ownerCount = await db
+                  .select({ count: count() })
+                  .from(tenantUser)
+                  .where(
+                    and(
+                      eq(tenantUser.tenantOrganizationId, existingMember.tenantOrganizationId),
+                      eq(tenantUser.isOwner, true),
+                      ne(tenantUser.id, params.memberId)
+                    )
+                  )
+
+                if (ownerCount[0].count === 0) {
+                  return new Response(
+                    JSON.stringify({
+                      error: 'Cannot change role: This is the last owner. At least one owner must remain.'
+                    }),
+                    { status: 400, headers: { 'Content-Type': 'application/json' } }
+                  )
+                }
+              }
+
+              // Update role and synchronize isOwner flag
+              updateData.role = role
+              updateData.isOwner = role === 'owner'
+
+              auditLogs.push({
+                fieldName: 'role',
+                oldValue: existingMember.role,
+                newValue: role,
+              })
+
+              // Track isOwner change if it differs
+              if (updateData.isOwner !== existingMember.isOwner) {
+                auditLogs.push({
+                  fieldName: 'isOwner',
+                  oldValue: existingMember.isOwner ? 'true' : 'false',
+                  newValue: updateData.isOwner ? 'true' : 'false',
+                })
+              }
+            }
           }
 
           if (status !== undefined && ['active', 'suspended', 'invited'].includes(status)) {
-            updateData.status = status
+            if (status !== existingMember.status) {
+              updateData.status = status
+              auditLogs.push({
+                fieldName: 'status',
+                oldValue: existingMember.status,
+                newValue: status,
+              })
+            }
           }
 
           if (notes !== undefined) {
-            updateData.notes = notes && notes.trim().length > 0 ? notes.trim() : null
+            const newNotes = notes && notes.trim().length > 0 ? notes.trim() : null
+            if (newNotes !== existingMember.notes) {
+              updateData.notes = newNotes
+              auditLogs.push({
+                fieldName: 'notes',
+                oldValue: existingMember.notes,
+                newValue: newNotes,
+              })
+            }
           }
 
-          // Update member
-          await db
-            .update(tenantUser)
-            .set(updateData)
-            .where(eq(tenantUser.id, params.memberId))
+          // Only update if there are changes
+          if (Object.keys(updateData).length > 1) { // > 1 because updatedAt is always present
+            // Update member
+            await db
+              .update(tenantUser)
+              .set(updateData)
+              .where(eq(tenantUser.id, params.memberId))
+
+            // Create audit log entries
+            for (const log of auditLogs) {
+              await db.insert(auditLog).values({
+                id: nanoid(),
+                organizationId: orgId,
+                tenantOrganizationId: existingMember.tenantOrganizationId,
+                performedByUserId: session.user.id,
+                performedByName: session.user.name,
+                entityType: 'tenant_user',
+                entityId: params.memberId,
+                action: `${log.fieldName}_changed`,
+                fieldName: log.fieldName,
+                oldValue: log.oldValue,
+                newValue: log.newValue,
+              })
+            }
+          }
 
           // Fetch updated member
           const updatedMember = await db
