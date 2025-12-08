@@ -41,6 +41,7 @@ import {
 	type SupportMember,
 } from "@/data/tickets";
 import { useSession } from "@/lib/auth-client";
+import { AuditLog } from "@/components/AuditLog";
 
 export const Route = createFileRoute("/$tenant/app/support/tickets")({
 	component: TicketsPage,
@@ -370,6 +371,9 @@ function TicketDetail({
 	const [supportMembers, setSupportMembers] = useState<SupportMember[]>([]);
 	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 	const [isAssigning, setIsAssigning] = useState(false);
+	const [activeTab, setActiveTab] = useState<'messages' | 'activity'>('messages');
+	const [auditLogs, setAuditLogs] = useState<any[]>([]);
+	const [isLoadingAuditLogs, setIsLoadingAuditLogs] = useState(false);
 	const { data: session } = useSession();
 
 	// Fetch support members when component mounts or tenant changes
@@ -383,6 +387,32 @@ function TicketDetail({
 		};
 		loadMembers();
 	}, [tenant]);
+
+	// Fetch audit logs when activity tab is selected
+	useEffect(() => {
+		const fetchAuditLogs = async () => {
+			if (activeTab !== 'activity' || !tenant || !detail?.id) {
+				return;
+			}
+
+			setIsLoadingAuditLogs(true);
+			try {
+				const url = `/api/tenant/${tenant}/tickets/${detail.id}/audit-logs`;
+				const response = await fetch(url);
+				const result = await response.json();
+
+				if (response.ok) {
+					setAuditLogs(result.logs || []);
+				}
+			} catch (err) {
+				console.error('Error fetching audit logs:', err);
+			} finally {
+				setIsLoadingAuditLogs(false);
+			}
+		};
+
+		fetchAuditLogs();
+	}, [activeTab, tenant, detail?.id]);
 
 	// Find current user in support members list
 	const currentUser = useMemo(() => {
@@ -402,6 +432,27 @@ function TicketDetail({
 			await onMessageSent(); // Refresh ticket details
 		}
 		setIsAssigning(false);
+	};
+
+	const [isResolving, setIsResolving] = useState(false);
+
+	const handleResolve = async () => {
+		if (!detail?.id) return;
+
+		// Show confirmation dialog
+		if (!confirm('Are you sure you want to resolve this ticket?')) {
+			return;
+		}
+
+		setIsResolving(true);
+		const success = await updateTicket(tenant, detail.id, {
+			status: 'closed',
+		});
+
+		if (success) {
+			await onMessageSent(); // Refresh ticket details
+		}
+		setIsResolving(false);
 	};
 
 	const handleSendReply = async () => {
@@ -590,14 +641,53 @@ function TicketDetail({
 						<Button
 							size="sm"
 							className="bg-emerald-500 hover:bg-emerald-600 text-white"
+							onClick={handleResolve}
+							disabled={isResolving || detail?.status === 'closed'}
 						>
-							Resolve
+							{isResolving ? (
+								<>
+									<Loader2 size={14} className="mr-2 animate-spin" />
+									Resolving...
+								</>
+							) : detail?.status === 'closed' ? (
+								'Resolved'
+							) : (
+								'Resolve'
+							)}
 						</Button>
 					</div>
 				</div>
 			</div>
 
-			{/* Messages Area */}
+			{/* Tabs */}
+			<div className="border-b border-gray-200">
+				<nav className="flex space-x-8 px-4">
+					<button
+						type="button"
+						onClick={() => setActiveTab('messages')}
+						className={`py-4 px-1 border-b-2 font-medium text-sm ${
+							activeTab === 'messages'
+								? 'border-primary text-primary'
+								: 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+						}`}
+					>
+						Messages
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab('activity')}
+						className={`py-4 px-1 border-b-2 font-medium text-sm ${
+							activeTab === 'activity'
+								? 'border-primary text-primary'
+								: 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+						}`}
+					>
+						Activity
+					</button>
+				</nav>
+			</div>
+
+			{/* Tab Content */}
 			<div className="flex-1 overflow-auto p-4 space-y-4">
 				{isLoadingDetail ? (
 					<div className="flex items-center justify-center h-32">
@@ -607,8 +697,10 @@ function TicketDetail({
 					</div>
 				) : detail ? (
 					<>
-						{/* Messages */}
-						{detail.messages?.map((message, index) => (
+						{activeTab === 'messages' && (
+							<>
+								{/* Messages */}
+								{detail.messages?.map((message, index) => (
 							<div key={message.id || `message-${index}-${message.timestamp}-${message.type}`} className="flex gap-3">
 								<div
 									className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
@@ -743,6 +835,12 @@ function TicketDetail({
 									</div>
 								</div>
 							</div>
+						)}
+							</>
+						)}
+
+						{activeTab === 'activity' && (
+							<AuditLog logs={auditLogs} isLoading={isLoadingAuditLogs} />
 						)}
 					</>
 				) : (

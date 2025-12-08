@@ -9,9 +9,11 @@ import {
   organization,
   user,
   member,
+  auditLog,
 } from '@/db/schema'
 import { eq, and, asc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
+import { nanoid } from 'nanoid'
 
 export const Route = createFileRoute('/api/tenant/$tenant/tickets/$ticketId')({
   server: {
@@ -205,7 +207,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/tickets/$ticketId')({
 
       /**
        * PATCH /api/tenant/:tenant/tickets/:ticketId
-       * Update ticket status, priority, or assignment
+       * Update ticket status, priority, or assignment with audit logging
        */
       PATCH: async ({ request, params }) => {
         try {
@@ -236,6 +238,35 @@ export const Route = createFileRoute('/api/tenant/$tenant/tickets/$ticketId')({
 
           const orgId = org[0].id
 
+          // Fetch existing ticket to track changes
+          const existingTickets = await db
+            .select({
+              id: ticket.id,
+              status: ticket.status,
+              priority: ticket.priority,
+              assignedToUserId: ticket.assignedToUserId,
+              tenantUserId: ticket.tenantUserId,
+            })
+            .from(ticket)
+            .leftJoin(tenantUser, eq(ticket.tenantUserId, tenantUser.id))
+            .leftJoin(
+              tenantOrganization,
+              eq(tenantUser.tenantOrganizationId, tenantOrganization.id)
+            )
+            .where(
+              and(eq(ticket.organizationId, orgId), eq(ticket.id, params.ticketId))
+            )
+            .limit(1)
+
+          if (existingTickets.length === 0) {
+            return new Response(
+              JSON.stringify({ error: 'Ticket not found' }),
+              { status: 404, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+
+          const existingTicket = existingTickets[0]
+
           // Parse request body
           const body = await request.json()
           const { status, priority, assignedToUserId } = body as {
@@ -249,28 +280,81 @@ export const Route = createFileRoute('/api/tenant/$tenant/tickets/$ticketId')({
             updatedAt: new Date(),
           }
 
-          if (status) {
+          // Track changes for audit log
+          const auditLogs: Array<{
+            fieldName: string
+            oldValue: string | null
+            newValue: string | null
+            action: string
+          }> = []
+
+          if (status && status !== existingTicket.status) {
             updates.status = status
+            auditLogs.push({
+              fieldName: 'status',
+              oldValue: existingTicket.status,
+              newValue: status,
+              action: status === 'closed' ? 'resolved' : 'status_changed',
+            })
+
             if (status === 'closed') {
               updates.resolvedAt = new Date()
+              auditLogs.push({
+                fieldName: 'resolvedAt',
+                oldValue: null,
+                newValue: new Date().toISOString(),
+                action: 'resolved',
+              })
             }
           }
 
-          if (priority) {
+          if (priority && priority !== existingTicket.priority) {
             updates.priority = priority
+            auditLogs.push({
+              fieldName: 'priority',
+              oldValue: existingTicket.priority,
+              newValue: priority,
+              action: 'priority_changed',
+            })
           }
 
-          if (assignedToUserId !== undefined) {
+          if (assignedToUserId !== undefined && assignedToUserId !== existingTicket.assignedToUserId) {
             updates.assignedToUserId = assignedToUserId
+            auditLogs.push({
+              fieldName: 'assignedToUserId',
+              oldValue: existingTicket.assignedToUserId,
+              newValue: assignedToUserId,
+              action: 'assignment_changed',
+            })
           }
 
-          // Update ticket
-          await db
-            .update(ticket)
-            .set(updates)
-            .where(
-              and(eq(ticket.organizationId, orgId), eq(ticket.id, params.ticketId))
-            )
+          // Only update if there are changes
+          if (Object.keys(updates).length > 1) {
+            // Update ticket
+            await db
+              .update(ticket)
+              .set(updates)
+              .where(
+                and(eq(ticket.organizationId, orgId), eq(ticket.id, params.ticketId))
+              )
+
+            // Create audit log entries
+            for (const log of auditLogs) {
+              await db.insert(auditLog).values({
+                id: nanoid(),
+                organizationId: orgId,
+                tenantOrganizationId: null, // Tickets may not always have a tenant org
+                performedByUserId: session.user.id,
+                performedByName: session.user.name,
+                entityType: 'ticket',
+                entityId: params.ticketId,
+                action: log.action,
+                fieldName: log.fieldName,
+                oldValue: log.oldValue,
+                newValue: log.newValue,
+              })
+            }
+          }
 
           return new Response(JSON.stringify({ success: true }), {
             status: 200,

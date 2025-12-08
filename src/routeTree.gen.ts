@@ -72,6 +72,7 @@ import { Route as TenantAppSupportOrganizationsOrganizationIdRouteImport } from 
 import { Route as TenantAppSupportMembersMemberIdRouteImport } from './routes/$tenant.app.support.members.$memberId'
 import { Route as TenantAppSalesCrmContactsRouteImport } from './routes/$tenant.app.sales.crm.contacts'
 import { Route as TenantAppSalesCrmCustomerIdRouteImport } from './routes/$tenant.app.sales.crm.$customerId'
+import { Route as ApiTenantTenantTicketsTicketIdAuditLogsRouteImport } from './routes/api.tenant.$tenant.tickets.$ticketId.audit-logs'
 import { Route as ApiTenantTenantSupportOrganizationsOrganizationIdRouteImport } from './routes/api.tenant.$tenant.support.organizations.$organizationId'
 import { Route as ApiTenantTenantProductCatalogPlansPlanIdRouteImport } from './routes/api.tenant.$tenant.product-catalog.plans.$planId'
 import { Route as ApiTenantTenantMembersMemberIdAuditLogsRouteImport } from './routes/api.tenant.$tenant.members.$memberId.audit-logs'
@@ -425,6 +426,12 @@ const TenantAppSalesCrmCustomerIdRoute =
     path: '/$customerId',
     getParentRoute: () => TenantAppSalesCrmRoute,
   } as any)
+const ApiTenantTenantTicketsTicketIdAuditLogsRoute =
+  ApiTenantTenantTicketsTicketIdAuditLogsRouteImport.update({
+    id: '/audit-logs',
+    path: '/audit-logs',
+    getParentRoute: () => ApiTenantTenantTicketsTicketIdRoute,
+  } as any)
 const ApiTenantTenantSupportOrganizationsOrganizationIdRoute =
   ApiTenantTenantSupportOrganizationsOrganizationIdRouteImport.update({
     id: '/api/tenant/$tenant/support/organizations/$organizationId',
@@ -535,7 +542,7 @@ export interface FileRoutesByFullPath {
   '/api/tenant/$tenant/product-catalog/add-ons': typeof ApiTenantTenantProductCatalogAddOnsRoute
   '/api/tenant/$tenant/product-catalog/plans': typeof ApiTenantTenantProductCatalogPlansRouteWithChildren
   '/api/tenant/$tenant/subscriptions/$subscriptionId': typeof ApiTenantTenantSubscriptionsSubscriptionIdRoute
-  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRoute
+  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRouteWithChildren
   '/$tenant/app/sales/crm/': typeof TenantAppSalesCrmIndexRoute
   '/$tenant/app/support/members/': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
@@ -545,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/api/tenant/$tenant/members/$memberId/audit-logs': typeof ApiTenantTenantMembersMemberIdAuditLogsRoute
   '/api/tenant/$tenant/product-catalog/plans/$planId': typeof ApiTenantTenantProductCatalogPlansPlanIdRoute
   '/api/tenant/$tenant/support/organizations/$organizationId': typeof ApiTenantTenantSupportOrganizationsOrganizationIdRoute
+  '/api/tenant/$tenant/tickets/$ticketId/audit-logs': typeof ApiTenantTenantTicketsTicketIdAuditLogsRoute
   '/api/tenant/$tenant/crm/customers/$customerId/contacts': typeof ApiTenantTenantCrmCustomersCustomerIdContactsRoute
 }
 export interface FileRoutesByTo {
@@ -603,7 +611,7 @@ export interface FileRoutesByTo {
   '/api/tenant/$tenant/product-catalog/add-ons': typeof ApiTenantTenantProductCatalogAddOnsRoute
   '/api/tenant/$tenant/product-catalog/plans': typeof ApiTenantTenantProductCatalogPlansRouteWithChildren
   '/api/tenant/$tenant/subscriptions/$subscriptionId': typeof ApiTenantTenantSubscriptionsSubscriptionIdRoute
-  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRoute
+  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRouteWithChildren
   '/$tenant/app/sales/crm': typeof TenantAppSalesCrmIndexRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
@@ -613,6 +621,7 @@ export interface FileRoutesByTo {
   '/api/tenant/$tenant/members/$memberId/audit-logs': typeof ApiTenantTenantMembersMemberIdAuditLogsRoute
   '/api/tenant/$tenant/product-catalog/plans/$planId': typeof ApiTenantTenantProductCatalogPlansPlanIdRoute
   '/api/tenant/$tenant/support/organizations/$organizationId': typeof ApiTenantTenantSupportOrganizationsOrganizationIdRoute
+  '/api/tenant/$tenant/tickets/$ticketId/audit-logs': typeof ApiTenantTenantTicketsTicketIdAuditLogsRoute
   '/api/tenant/$tenant/crm/customers/$customerId/contacts': typeof ApiTenantTenantCrmCustomersCustomerIdContactsRoute
 }
 export interface FileRoutesById {
@@ -677,7 +686,7 @@ export interface FileRoutesById {
   '/api/tenant/$tenant/product-catalog/add-ons': typeof ApiTenantTenantProductCatalogAddOnsRoute
   '/api/tenant/$tenant/product-catalog/plans': typeof ApiTenantTenantProductCatalogPlansRouteWithChildren
   '/api/tenant/$tenant/subscriptions/$subscriptionId': typeof ApiTenantTenantSubscriptionsSubscriptionIdRoute
-  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRoute
+  '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRouteWithChildren
   '/$tenant/app/sales/crm/': typeof TenantAppSalesCrmIndexRoute
   '/$tenant/app/support/members/': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
@@ -687,6 +696,7 @@ export interface FileRoutesById {
   '/api/tenant/$tenant/members/$memberId/audit-logs': typeof ApiTenantTenantMembersMemberIdAuditLogsRoute
   '/api/tenant/$tenant/product-catalog/plans/$planId': typeof ApiTenantTenantProductCatalogPlansPlanIdRoute
   '/api/tenant/$tenant/support/organizations/$organizationId': typeof ApiTenantTenantSupportOrganizationsOrganizationIdRoute
+  '/api/tenant/$tenant/tickets/$ticketId/audit-logs': typeof ApiTenantTenantTicketsTicketIdAuditLogsRoute
   '/api/tenant/$tenant/crm/customers/$customerId/contacts': typeof ApiTenantTenantCrmCustomersCustomerIdContactsRoute
 }
 export interface FileRouteTypes {
@@ -762,6 +772,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/members/$memberId/audit-logs'
     | '/api/tenant/$tenant/product-catalog/plans/$planId'
     | '/api/tenant/$tenant/support/organizations/$organizationId'
+    | '/api/tenant/$tenant/tickets/$ticketId/audit-logs'
     | '/api/tenant/$tenant/crm/customers/$customerId/contacts'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -830,6 +841,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/members/$memberId/audit-logs'
     | '/api/tenant/$tenant/product-catalog/plans/$planId'
     | '/api/tenant/$tenant/support/organizations/$organizationId'
+    | '/api/tenant/$tenant/tickets/$ticketId/audit-logs'
     | '/api/tenant/$tenant/crm/customers/$customerId/contacts'
   id:
     | '__root__'
@@ -903,6 +915,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/members/$memberId/audit-logs'
     | '/api/tenant/$tenant/product-catalog/plans/$planId'
     | '/api/tenant/$tenant/support/organizations/$organizationId'
+    | '/api/tenant/$tenant/tickets/$ticketId/audit-logs'
     | '/api/tenant/$tenant/crm/customers/$customerId/contacts'
   fileRoutesById: FileRoutesById
 }
@@ -1380,6 +1393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TenantAppSalesCrmCustomerIdRouteImport
       parentRoute: typeof TenantAppSalesCrmRoute
     }
+    '/api/tenant/$tenant/tickets/$ticketId/audit-logs': {
+      id: '/api/tenant/$tenant/tickets/$ticketId/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/api/tenant/$tenant/tickets/$ticketId/audit-logs'
+      preLoaderRoute: typeof ApiTenantTenantTicketsTicketIdAuditLogsRouteImport
+      parentRoute: typeof ApiTenantTenantTicketsTicketIdRoute
+    }
     '/api/tenant/$tenant/support/organizations/$organizationId': {
       id: '/api/tenant/$tenant/support/organizations/$organizationId'
       path: '/api/tenant/$tenant/support/organizations/$organizationId'
@@ -1667,13 +1687,29 @@ const ApiTenantTenantSubscriptionsRouteWithChildren =
     ApiTenantTenantSubscriptionsRouteChildren,
   )
 
+interface ApiTenantTenantTicketsTicketIdRouteChildren {
+  ApiTenantTenantTicketsTicketIdAuditLogsRoute: typeof ApiTenantTenantTicketsTicketIdAuditLogsRoute
+}
+
+const ApiTenantTenantTicketsTicketIdRouteChildren: ApiTenantTenantTicketsTicketIdRouteChildren =
+  {
+    ApiTenantTenantTicketsTicketIdAuditLogsRoute:
+      ApiTenantTenantTicketsTicketIdAuditLogsRoute,
+  }
+
+const ApiTenantTenantTicketsTicketIdRouteWithChildren =
+  ApiTenantTenantTicketsTicketIdRoute._addFileChildren(
+    ApiTenantTenantTicketsTicketIdRouteChildren,
+  )
+
 interface ApiTenantTenantTicketsRouteChildren {
-  ApiTenantTenantTicketsTicketIdRoute: typeof ApiTenantTenantTicketsTicketIdRoute
+  ApiTenantTenantTicketsTicketIdRoute: typeof ApiTenantTenantTicketsTicketIdRouteWithChildren
 }
 
 const ApiTenantTenantTicketsRouteChildren: ApiTenantTenantTicketsRouteChildren =
   {
-    ApiTenantTenantTicketsTicketIdRoute: ApiTenantTenantTicketsTicketIdRoute,
+    ApiTenantTenantTicketsTicketIdRoute:
+      ApiTenantTenantTicketsTicketIdRouteWithChildren,
   }
 
 const ApiTenantTenantTicketsRouteWithChildren =
