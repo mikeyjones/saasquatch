@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { useStore } from "@tanstack/react-store";
 import { useParams } from "@tanstack/react-router";
@@ -620,9 +620,18 @@ function TicketDetail({
 								</div>
 								<div className="flex-1">
 									<div className="flex items-center gap-2 mb-1">
-										<span className="font-medium text-gray-900">
-											{message.author}
-										</span>
+										{message.type === "customer" && message.authorTenantUserId ? (
+											<Link
+												to={`/${tenant}/app/support/members/${message.authorTenantUserId}`}
+												className="font-medium text-gray-900 hover:underline"
+											>
+												{message.author}
+											</Link>
+										) : (
+											<span className="font-medium text-gray-900">
+												{message.author}
+											</span>
+										)}
 										{message.type === "customer" && (
 											<span className="text-sm text-gray-500">
 												{detail.customer?.company || ""}

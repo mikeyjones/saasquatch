@@ -167,6 +167,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/tickets/$ticketId')({
               id: m.id,
               type: m.messageType as 'customer' | 'agent' | 'ai' | 'system',
               author: m.authorName,
+              authorTenantUserId: m.authorTenantUserId,
               timestamp: formatTimeAgo(m.createdAt),
               createdAt: m.createdAt.toISOString(),
               content: m.content,

@@ -54,6 +54,7 @@ export interface TicketDetail {
 		id?: string;
 		type: "customer" | "agent" | "ai" | "system";
 		author: string;
+		authorTenantUserId?: string | null;
 		timestamp: string;
 		content: string;
 		isInternal?: boolean;
