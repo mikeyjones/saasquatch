@@ -1,6 +1,6 @@
 import { createFileRoute, useParams, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OrganizationHeader } from '@/components/OrganizationHeader'
 import { OrganizationMetrics } from '@/components/OrganizationMetrics'
@@ -8,6 +8,8 @@ import { OrganizationInvoiceHistory } from '@/components/OrganizationInvoiceHist
 import { OrganizationCustomProperties } from '@/components/OrganizationCustomProperties'
 import { CRMContactsList } from '@/components/CRMContactsList'
 import { CRMActivityTimeline } from '@/components/CRMActivityTimeline'
+import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
+import { CreateContactDialog } from '@/components/CreateContactDialog'
 
 export const Route = createFileRoute('/$tenant/app/sales/crm/$customerId')({
   component: OrganizationDetailPage,
@@ -128,35 +130,37 @@ function OrganizationDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'invoices' | 'deals' | 'activity' | 'properties'>('overview')
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false)
 
   // Fetch organization data
-  useEffect(() => {
-    const fetchOrganization = async () => {
-      if (!tenant || !customerId) {
-        return
-      }
-
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const url = `/api/tenant/${tenant}/crm/customers/${customerId}`
-        const response = await fetch(url)
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to fetch organization data')
-        }
-
-        setData(result)
-      } catch (err) {
-        console.error('Error fetching organization:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load organization')
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchOrganization = async () => {
+    if (!tenant || !customerId) {
+      return
     }
 
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const url = `/api/tenant/${tenant}/crm/customers/${customerId}`
+      const response = await fetch(url)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch organization data')
+      }
+
+      setData(result)
+    } catch (err) {
+      console.error('Error fetching organization:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load organization')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchOrganization()
   }, [tenant, customerId])
 
@@ -249,6 +253,8 @@ function OrganizationDetailPage() {
       <OrganizationHeader
         customer={customer}
         subscription={activeSubscription || null}
+        onEdit={() => setIsEditDialogOpen(true)}
+        onAddContact={() => setIsAddContactDialogOpen(true)}
       />
 
       {/* Metrics Cards */}
@@ -533,6 +539,23 @@ function OrganizationDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Customer Dialog */}
+      <CreateCustomerDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onCustomerCreated={fetchOrganization}
+        customerId={customerId}
+      />
+
+      {/* Add Contact Dialog */}
+      <CreateContactDialog
+        open={isAddContactDialogOpen}
+        onOpenChange={setIsAddContactDialogOpen}
+        onContactCreated={fetchOrganization}
+        customerId={customerId}
+        customerName={customer.name}
+      />
     </div>
   )
 }

@@ -26,9 +26,11 @@ interface Subscription {
 interface OrganizationHeaderProps {
   customer: Customer
   subscription: Subscription | null
+  onEdit?: () => void
+  onAddContact?: () => void
 }
 
-export function OrganizationHeader({ customer, subscription }: OrganizationHeaderProps) {
+export function OrganizationHeader({ customer, subscription, onEdit, onAddContact }: OrganizationHeaderProps) {
   const getStatusColor = (status: string | null) => {
     if (!status) return 'bg-gray-100 text-gray-800'
 
@@ -163,11 +165,11 @@ export function OrganizationHeader({ customer, subscription }: OrganizationHeade
 
         {/* Quick Actions */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={onEdit}>
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={onAddContact}>
             <UserPlus className="h-4 w-4 mr-2" />
             Add Contact
           </Button>
