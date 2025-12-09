@@ -39,10 +39,12 @@ import { Route as ApiTenantTenantMembershipRouteImport } from './routes/api.tena
 import { Route as ApiTenantTenantMembersRouteImport } from './routes/api.tenant.$tenant.members'
 import { Route as ApiTenantTenantInvoicesRouteImport } from './routes/api.tenant.$tenant.invoices'
 import { Route as ApiTenantTenantDealsRouteImport } from './routes/api.tenant.$tenant.deals'
+import { Route as ApiTenantTenantCouponsRouteImport } from './routes/api.tenant.$tenant.coupons'
 import { Route as TenantAppSupportTicketsRouteImport } from './routes/$tenant.app.support.tickets'
 import { Route as TenantAppSupportMembersRouteImport } from './routes/$tenant.app.support.members'
 import { Route as TenantAppSupportKnowledgeRouteImport } from './routes/$tenant.app.support.knowledge'
 import { Route as TenantAppSalesSubscriptionsRouteImport } from './routes/$tenant.app.sales.subscriptions'
+import { Route as TenantAppSalesPromotionsRouteImport } from './routes/$tenant.app.sales.promotions'
 import { Route as TenantAppSalesProductCatalogRouteImport } from './routes/$tenant.app.sales.product-catalog'
 import { Route as TenantAppSalesPipelineRouteImport } from './routes/$tenant.app.sales.pipeline'
 import { Route as TenantAppSalesInvoicesRouteImport } from './routes/$tenant.app.sales.invoices'
@@ -55,6 +57,7 @@ import { Route as TenantAppMarketingCampaignsRouteImport } from './routes/$tenan
 import { Route as TenantAppMarketingAudiencesRouteImport } from './routes/$tenant.app.marketing.audiences'
 import { Route as TenantAppMarketingAffiliatesRouteImport } from './routes/$tenant.app.marketing.affiliates'
 import { Route as TenantAppSupportMembersIndexRouteImport } from './routes/$tenant.app.support.members.index'
+import { Route as TenantAppSalesPromotionsIndexRouteImport } from './routes/$tenant.app.sales.promotions.index'
 import { Route as TenantAppSalesCrmIndexRouteImport } from './routes/$tenant.app.sales.crm.index'
 import { Route as ApiTenantTenantTicketsTicketIdRouteImport } from './routes/api.tenant.$tenant.tickets.$ticketId'
 import { Route as ApiTenantTenantSubscriptionsSubscriptionIdRouteImport } from './routes/api.tenant.$tenant.subscriptions.$subscriptionId'
@@ -68,6 +71,8 @@ import { Route as ApiTenantTenantInvoicesInvoiceIdRouteImport } from './routes/a
 import { Route as ApiTenantTenantDealsDealIdRouteImport } from './routes/api.tenant.$tenant.deals.$dealId'
 import { Route as ApiTenantTenantCrmCustomersRouteImport } from './routes/api.tenant.$tenant.crm.customers'
 import { Route as ApiTenantTenantCrmContactsRouteImport } from './routes/api.tenant.$tenant.crm.contacts'
+import { Route as ApiTenantTenantCouponsValidateRouteImport } from './routes/api.tenant.$tenant.coupons.validate'
+import { Route as ApiTenantTenantCouponsCouponIdRouteImport } from './routes/api.tenant.$tenant.coupons.$couponId'
 import { Route as TenantAppSupportOrganizationsOrganizationIdRouteImport } from './routes/$tenant.app.support.organizations.$organizationId'
 import { Route as TenantAppSupportMembersMemberIdRouteImport } from './routes/$tenant.app.support.members.$memberId'
 import { Route as TenantAppSalesCrmContactsRouteImport } from './routes/$tenant.app.sales.crm.contacts'
@@ -235,6 +240,11 @@ const ApiTenantTenantDealsRoute = ApiTenantTenantDealsRouteImport.update({
   path: '/api/tenant/$tenant/deals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTenantTenantCouponsRoute = ApiTenantTenantCouponsRouteImport.update({
+  id: '/api/tenant/$tenant/coupons',
+  path: '/api/tenant/$tenant/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TenantAppSupportTicketsRoute = TenantAppSupportTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -255,6 +265,12 @@ const TenantAppSalesSubscriptionsRoute =
   TenantAppSalesSubscriptionsRouteImport.update({
     id: '/subscriptions',
     path: '/subscriptions',
+    getParentRoute: () => TenantAppSalesRoute,
+  } as any)
+const TenantAppSalesPromotionsRoute =
+  TenantAppSalesPromotionsRouteImport.update({
+    id: '/promotions',
+    path: '/promotions',
     getParentRoute: () => TenantAppSalesRoute,
   } as any)
 const TenantAppSalesProductCatalogRoute =
@@ -324,6 +340,12 @@ const TenantAppSupportMembersIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => TenantAppSupportMembersRoute,
+  } as any)
+const TenantAppSalesPromotionsIndexRoute =
+  TenantAppSalesPromotionsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => TenantAppSalesPromotionsRoute,
   } as any)
 const TenantAppSalesCrmIndexRoute = TenantAppSalesCrmIndexRouteImport.update({
   id: '/',
@@ -401,6 +423,18 @@ const ApiTenantTenantCrmContactsRoute =
     id: '/api/tenant/$tenant/crm/contacts',
     path: '/api/tenant/$tenant/crm/contacts',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiTenantTenantCouponsValidateRoute =
+  ApiTenantTenantCouponsValidateRouteImport.update({
+    id: '/validate',
+    path: '/validate',
+    getParentRoute: () => ApiTenantTenantCouponsRoute,
+  } as any)
+const ApiTenantTenantCouponsCouponIdRoute =
+  ApiTenantTenantCouponsCouponIdRouteImport.update({
+    id: '/$couponId',
+    path: '/$couponId',
+    getParentRoute: () => ApiTenantTenantCouponsRoute,
   } as any)
 const TenantAppSupportOrganizationsOrganizationIdRoute =
   TenantAppSupportOrganizationsOrganizationIdRouteImport.update({
@@ -512,10 +546,12 @@ export interface FileRoutesByFullPath {
   '/$tenant/app/sales/invoices': typeof TenantAppSalesInvoicesRoute
   '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
   '/$tenant/app/sales/product-catalog': typeof TenantAppSalesProductCatalogRoute
+  '/$tenant/app/sales/promotions': typeof TenantAppSalesPromotionsRouteWithChildren
   '/$tenant/app/sales/subscriptions': typeof TenantAppSalesSubscriptionsRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRouteWithChildren
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
+  '/api/tenant/$tenant/coupons': typeof ApiTenantTenantCouponsRouteWithChildren
   '/api/tenant/$tenant/deals': typeof ApiTenantTenantDealsRouteWithChildren
   '/api/tenant/$tenant/invoices': typeof ApiTenantTenantInvoicesRouteWithChildren
   '/api/tenant/$tenant/members': typeof ApiTenantTenantMembersRouteWithChildren
@@ -531,6 +567,8 @@ export interface FileRoutesByFullPath {
   '/$tenant/app/sales/crm/contacts': typeof TenantAppSalesCrmContactsRoute
   '/$tenant/app/support/members/$memberId': typeof TenantAppSupportMembersMemberIdRoute
   '/$tenant/app/support/organizations/$organizationId': typeof TenantAppSupportOrganizationsOrganizationIdRoute
+  '/api/tenant/$tenant/coupons/$couponId': typeof ApiTenantTenantCouponsCouponIdRoute
+  '/api/tenant/$tenant/coupons/validate': typeof ApiTenantTenantCouponsValidateRoute
   '/api/tenant/$tenant/crm/contacts': typeof ApiTenantTenantCrmContactsRouteWithChildren
   '/api/tenant/$tenant/crm/customers': typeof ApiTenantTenantCrmCustomersRouteWithChildren
   '/api/tenant/$tenant/deals/$dealId': typeof ApiTenantTenantDealsDealIdRoute
@@ -544,6 +582,7 @@ export interface FileRoutesByFullPath {
   '/api/tenant/$tenant/subscriptions/$subscriptionId': typeof ApiTenantTenantSubscriptionsSubscriptionIdRoute
   '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRouteWithChildren
   '/$tenant/app/sales/crm/': typeof TenantAppSalesCrmIndexRoute
+  '/$tenant/app/sales/promotions/': typeof TenantAppSalesPromotionsIndexRoute
   '/$tenant/app/support/members/': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
   '/api/tenant/$tenant/crm/customers/$customerId': typeof ApiTenantTenantCrmCustomersCustomerIdRouteWithChildren
@@ -585,6 +624,7 @@ export interface FileRoutesByTo {
   '/$tenant/app/sales/subscriptions': typeof TenantAppSalesSubscriptionsRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
+  '/api/tenant/$tenant/coupons': typeof ApiTenantTenantCouponsRouteWithChildren
   '/api/tenant/$tenant/deals': typeof ApiTenantTenantDealsRouteWithChildren
   '/api/tenant/$tenant/invoices': typeof ApiTenantTenantInvoicesRouteWithChildren
   '/api/tenant/$tenant/members': typeof ApiTenantTenantMembersRouteWithChildren
@@ -600,6 +640,8 @@ export interface FileRoutesByTo {
   '/$tenant/app/sales/crm/contacts': typeof TenantAppSalesCrmContactsRoute
   '/$tenant/app/support/members/$memberId': typeof TenantAppSupportMembersMemberIdRoute
   '/$tenant/app/support/organizations/$organizationId': typeof TenantAppSupportOrganizationsOrganizationIdRoute
+  '/api/tenant/$tenant/coupons/$couponId': typeof ApiTenantTenantCouponsCouponIdRoute
+  '/api/tenant/$tenant/coupons/validate': typeof ApiTenantTenantCouponsValidateRoute
   '/api/tenant/$tenant/crm/contacts': typeof ApiTenantTenantCrmContactsRouteWithChildren
   '/api/tenant/$tenant/crm/customers': typeof ApiTenantTenantCrmCustomersRouteWithChildren
   '/api/tenant/$tenant/deals/$dealId': typeof ApiTenantTenantDealsDealIdRoute
@@ -613,6 +655,7 @@ export interface FileRoutesByTo {
   '/api/tenant/$tenant/subscriptions/$subscriptionId': typeof ApiTenantTenantSubscriptionsSubscriptionIdRoute
   '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRouteWithChildren
   '/$tenant/app/sales/crm': typeof TenantAppSalesCrmIndexRoute
+  '/$tenant/app/sales/promotions': typeof TenantAppSalesPromotionsIndexRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
   '/api/tenant/$tenant/crm/customers/$customerId': typeof ApiTenantTenantCrmCustomersCustomerIdRouteWithChildren
@@ -656,10 +699,12 @@ export interface FileRoutesById {
   '/$tenant/app/sales/invoices': typeof TenantAppSalesInvoicesRoute
   '/$tenant/app/sales/pipeline': typeof TenantAppSalesPipelineRoute
   '/$tenant/app/sales/product-catalog': typeof TenantAppSalesProductCatalogRoute
+  '/$tenant/app/sales/promotions': typeof TenantAppSalesPromotionsRouteWithChildren
   '/$tenant/app/sales/subscriptions': typeof TenantAppSalesSubscriptionsRoute
   '/$tenant/app/support/knowledge': typeof TenantAppSupportKnowledgeRoute
   '/$tenant/app/support/members': typeof TenantAppSupportMembersRouteWithChildren
   '/$tenant/app/support/tickets': typeof TenantAppSupportTicketsRoute
+  '/api/tenant/$tenant/coupons': typeof ApiTenantTenantCouponsRouteWithChildren
   '/api/tenant/$tenant/deals': typeof ApiTenantTenantDealsRouteWithChildren
   '/api/tenant/$tenant/invoices': typeof ApiTenantTenantInvoicesRouteWithChildren
   '/api/tenant/$tenant/members': typeof ApiTenantTenantMembersRouteWithChildren
@@ -675,6 +720,8 @@ export interface FileRoutesById {
   '/$tenant/app/sales/crm/contacts': typeof TenantAppSalesCrmContactsRoute
   '/$tenant/app/support/members/$memberId': typeof TenantAppSupportMembersMemberIdRoute
   '/$tenant/app/support/organizations/$organizationId': typeof TenantAppSupportOrganizationsOrganizationIdRoute
+  '/api/tenant/$tenant/coupons/$couponId': typeof ApiTenantTenantCouponsCouponIdRoute
+  '/api/tenant/$tenant/coupons/validate': typeof ApiTenantTenantCouponsValidateRoute
   '/api/tenant/$tenant/crm/contacts': typeof ApiTenantTenantCrmContactsRouteWithChildren
   '/api/tenant/$tenant/crm/customers': typeof ApiTenantTenantCrmCustomersRouteWithChildren
   '/api/tenant/$tenant/deals/$dealId': typeof ApiTenantTenantDealsDealIdRoute
@@ -688,6 +735,7 @@ export interface FileRoutesById {
   '/api/tenant/$tenant/subscriptions/$subscriptionId': typeof ApiTenantTenantSubscriptionsSubscriptionIdRoute
   '/api/tenant/$tenant/tickets/$ticketId': typeof ApiTenantTenantTicketsTicketIdRouteWithChildren
   '/$tenant/app/sales/crm/': typeof TenantAppSalesCrmIndexRoute
+  '/$tenant/app/sales/promotions/': typeof TenantAppSalesPromotionsIndexRoute
   '/$tenant/app/support/members/': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
   '/api/tenant/$tenant/crm/customers/$customerId': typeof ApiTenantTenantCrmCustomersCustomerIdRouteWithChildren
@@ -732,10 +780,12 @@ export interface FileRouteTypes {
     | '/$tenant/app/sales/invoices'
     | '/$tenant/app/sales/pipeline'
     | '/$tenant/app/sales/product-catalog'
+    | '/$tenant/app/sales/promotions'
     | '/$tenant/app/sales/subscriptions'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
+    | '/api/tenant/$tenant/coupons'
     | '/api/tenant/$tenant/deals'
     | '/api/tenant/$tenant/invoices'
     | '/api/tenant/$tenant/members'
@@ -751,6 +801,8 @@ export interface FileRouteTypes {
     | '/$tenant/app/sales/crm/contacts'
     | '/$tenant/app/support/members/$memberId'
     | '/$tenant/app/support/organizations/$organizationId'
+    | '/api/tenant/$tenant/coupons/$couponId'
+    | '/api/tenant/$tenant/coupons/validate'
     | '/api/tenant/$tenant/crm/contacts'
     | '/api/tenant/$tenant/crm/customers'
     | '/api/tenant/$tenant/deals/$dealId'
@@ -764,6 +816,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/subscriptions/$subscriptionId'
     | '/api/tenant/$tenant/tickets/$ticketId'
     | '/$tenant/app/sales/crm/'
+    | '/$tenant/app/sales/promotions/'
     | '/$tenant/app/support/members/'
     | '/api/tenant/$tenant/crm/contacts/$contactId'
     | '/api/tenant/$tenant/crm/customers/$customerId'
@@ -805,6 +858,7 @@ export interface FileRouteTypes {
     | '/$tenant/app/sales/subscriptions'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/tickets'
+    | '/api/tenant/$tenant/coupons'
     | '/api/tenant/$tenant/deals'
     | '/api/tenant/$tenant/invoices'
     | '/api/tenant/$tenant/members'
@@ -820,6 +874,8 @@ export interface FileRouteTypes {
     | '/$tenant/app/sales/crm/contacts'
     | '/$tenant/app/support/members/$memberId'
     | '/$tenant/app/support/organizations/$organizationId'
+    | '/api/tenant/$tenant/coupons/$couponId'
+    | '/api/tenant/$tenant/coupons/validate'
     | '/api/tenant/$tenant/crm/contacts'
     | '/api/tenant/$tenant/crm/customers'
     | '/api/tenant/$tenant/deals/$dealId'
@@ -833,6 +889,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/subscriptions/$subscriptionId'
     | '/api/tenant/$tenant/tickets/$ticketId'
     | '/$tenant/app/sales/crm'
+    | '/$tenant/app/sales/promotions'
     | '/$tenant/app/support/members'
     | '/api/tenant/$tenant/crm/contacts/$contactId'
     | '/api/tenant/$tenant/crm/customers/$customerId'
@@ -875,10 +932,12 @@ export interface FileRouteTypes {
     | '/$tenant/app/sales/invoices'
     | '/$tenant/app/sales/pipeline'
     | '/$tenant/app/sales/product-catalog'
+    | '/$tenant/app/sales/promotions'
     | '/$tenant/app/sales/subscriptions'
     | '/$tenant/app/support/knowledge'
     | '/$tenant/app/support/members'
     | '/$tenant/app/support/tickets'
+    | '/api/tenant/$tenant/coupons'
     | '/api/tenant/$tenant/deals'
     | '/api/tenant/$tenant/invoices'
     | '/api/tenant/$tenant/members'
@@ -894,6 +953,8 @@ export interface FileRouteTypes {
     | '/$tenant/app/sales/crm/contacts'
     | '/$tenant/app/support/members/$memberId'
     | '/$tenant/app/support/organizations/$organizationId'
+    | '/api/tenant/$tenant/coupons/$couponId'
+    | '/api/tenant/$tenant/coupons/validate'
     | '/api/tenant/$tenant/crm/contacts'
     | '/api/tenant/$tenant/crm/customers'
     | '/api/tenant/$tenant/deals/$dealId'
@@ -907,6 +968,7 @@ export interface FileRouteTypes {
     | '/api/tenant/$tenant/subscriptions/$subscriptionId'
     | '/api/tenant/$tenant/tickets/$ticketId'
     | '/$tenant/app/sales/crm/'
+    | '/$tenant/app/sales/promotions/'
     | '/$tenant/app/support/members/'
     | '/api/tenant/$tenant/crm/contacts/$contactId'
     | '/api/tenant/$tenant/crm/customers/$customerId'
@@ -932,6 +994,7 @@ export interface RootRouteChildren {
   AuthSignUpRoute: typeof AuthSignUpRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiUserOrganizationsRoute: typeof ApiUserOrganizationsRoute
+  ApiTenantTenantCouponsRoute: typeof ApiTenantTenantCouponsRouteWithChildren
   ApiTenantTenantDealsRoute: typeof ApiTenantTenantDealsRouteWithChildren
   ApiTenantTenantInvoicesRoute: typeof ApiTenantTenantInvoicesRouteWithChildren
   ApiTenantTenantMembersRoute: typeof ApiTenantTenantMembersRouteWithChildren
@@ -1162,6 +1225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTenantTenantDealsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tenant/$tenant/coupons': {
+      id: '/api/tenant/$tenant/coupons'
+      path: '/api/tenant/$tenant/coupons'
+      fullPath: '/api/tenant/$tenant/coupons'
+      preLoaderRoute: typeof ApiTenantTenantCouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$tenant/app/support/tickets': {
       id: '/$tenant/app/support/tickets'
       path: '/tickets'
@@ -1188,6 +1258,13 @@ declare module '@tanstack/react-router' {
       path: '/subscriptions'
       fullPath: '/$tenant/app/sales/subscriptions'
       preLoaderRoute: typeof TenantAppSalesSubscriptionsRouteImport
+      parentRoute: typeof TenantAppSalesRoute
+    }
+    '/$tenant/app/sales/promotions': {
+      id: '/$tenant/app/sales/promotions'
+      path: '/promotions'
+      fullPath: '/$tenant/app/sales/promotions'
+      preLoaderRoute: typeof TenantAppSalesPromotionsRouteImport
       parentRoute: typeof TenantAppSalesRoute
     }
     '/$tenant/app/sales/product-catalog': {
@@ -1273,6 +1350,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$tenant/app/support/members/'
       preLoaderRoute: typeof TenantAppSupportMembersIndexRouteImport
       parentRoute: typeof TenantAppSupportMembersRoute
+    }
+    '/$tenant/app/sales/promotions/': {
+      id: '/$tenant/app/sales/promotions/'
+      path: '/'
+      fullPath: '/$tenant/app/sales/promotions/'
+      preLoaderRoute: typeof TenantAppSalesPromotionsIndexRouteImport
+      parentRoute: typeof TenantAppSalesPromotionsRoute
     }
     '/$tenant/app/sales/crm/': {
       id: '/$tenant/app/sales/crm/'
@@ -1364,6 +1448,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/tenant/$tenant/crm/contacts'
       preLoaderRoute: typeof ApiTenantTenantCrmContactsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/tenant/$tenant/coupons/validate': {
+      id: '/api/tenant/$tenant/coupons/validate'
+      path: '/validate'
+      fullPath: '/api/tenant/$tenant/coupons/validate'
+      preLoaderRoute: typeof ApiTenantTenantCouponsValidateRouteImport
+      parentRoute: typeof ApiTenantTenantCouponsRoute
+    }
+    '/api/tenant/$tenant/coupons/$couponId': {
+      id: '/api/tenant/$tenant/coupons/$couponId'
+      path: '/$couponId'
+      fullPath: '/api/tenant/$tenant/coupons/$couponId'
+      preLoaderRoute: typeof ApiTenantTenantCouponsCouponIdRouteImport
+      parentRoute: typeof ApiTenantTenantCouponsRoute
     }
     '/$tenant/app/support/organizations/$organizationId': {
       id: '/$tenant/app/support/organizations/$organizationId'
@@ -1497,12 +1595,27 @@ const TenantAppSalesCrmRouteChildren: TenantAppSalesCrmRouteChildren = {
 const TenantAppSalesCrmRouteWithChildren =
   TenantAppSalesCrmRoute._addFileChildren(TenantAppSalesCrmRouteChildren)
 
+interface TenantAppSalesPromotionsRouteChildren {
+  TenantAppSalesPromotionsIndexRoute: typeof TenantAppSalesPromotionsIndexRoute
+}
+
+const TenantAppSalesPromotionsRouteChildren: TenantAppSalesPromotionsRouteChildren =
+  {
+    TenantAppSalesPromotionsIndexRoute: TenantAppSalesPromotionsIndexRoute,
+  }
+
+const TenantAppSalesPromotionsRouteWithChildren =
+  TenantAppSalesPromotionsRoute._addFileChildren(
+    TenantAppSalesPromotionsRouteChildren,
+  )
+
 interface TenantAppSalesRouteChildren {
   TenantAppSalesAddOnsRoute: typeof TenantAppSalesAddOnsRoute
   TenantAppSalesCrmRoute: typeof TenantAppSalesCrmRouteWithChildren
   TenantAppSalesInvoicesRoute: typeof TenantAppSalesInvoicesRoute
   TenantAppSalesPipelineRoute: typeof TenantAppSalesPipelineRoute
   TenantAppSalesProductCatalogRoute: typeof TenantAppSalesProductCatalogRoute
+  TenantAppSalesPromotionsRoute: typeof TenantAppSalesPromotionsRouteWithChildren
   TenantAppSalesSubscriptionsRoute: typeof TenantAppSalesSubscriptionsRoute
   TenantAppSalesIndexRoute: typeof TenantAppSalesIndexRoute
 }
@@ -1513,6 +1626,7 @@ const TenantAppSalesRouteChildren: TenantAppSalesRouteChildren = {
   TenantAppSalesInvoicesRoute: TenantAppSalesInvoicesRoute,
   TenantAppSalesPipelineRoute: TenantAppSalesPipelineRoute,
   TenantAppSalesProductCatalogRoute: TenantAppSalesProductCatalogRoute,
+  TenantAppSalesPromotionsRoute: TenantAppSalesPromotionsRouteWithChildren,
   TenantAppSalesSubscriptionsRoute: TenantAppSalesSubscriptionsRoute,
   TenantAppSalesIndexRoute: TenantAppSalesIndexRoute,
 }
@@ -1597,6 +1711,22 @@ const FormsRouteChildren: FormsRouteChildren = {
 }
 
 const FormsRouteWithChildren = FormsRoute._addFileChildren(FormsRouteChildren)
+
+interface ApiTenantTenantCouponsRouteChildren {
+  ApiTenantTenantCouponsCouponIdRoute: typeof ApiTenantTenantCouponsCouponIdRoute
+  ApiTenantTenantCouponsValidateRoute: typeof ApiTenantTenantCouponsValidateRoute
+}
+
+const ApiTenantTenantCouponsRouteChildren: ApiTenantTenantCouponsRouteChildren =
+  {
+    ApiTenantTenantCouponsCouponIdRoute: ApiTenantTenantCouponsCouponIdRoute,
+    ApiTenantTenantCouponsValidateRoute: ApiTenantTenantCouponsValidateRoute,
+  }
+
+const ApiTenantTenantCouponsRouteWithChildren =
+  ApiTenantTenantCouponsRoute._addFileChildren(
+    ApiTenantTenantCouponsRouteChildren,
+  )
 
 interface ApiTenantTenantDealsRouteChildren {
   ApiTenantTenantDealsDealIdRoute: typeof ApiTenantTenantDealsDealIdRoute
@@ -1790,6 +1920,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignUpRoute: AuthSignUpRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiUserOrganizationsRoute: ApiUserOrganizationsRoute,
+  ApiTenantTenantCouponsRoute: ApiTenantTenantCouponsRouteWithChildren,
   ApiTenantTenantDealsRoute: ApiTenantTenantDealsRouteWithChildren,
   ApiTenantTenantInvoicesRoute: ApiTenantTenantInvoicesRouteWithChildren,
   ApiTenantTenantMembersRoute: ApiTenantTenantMembersRouteWithChildren,

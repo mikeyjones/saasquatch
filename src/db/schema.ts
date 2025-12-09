@@ -159,6 +159,11 @@ export const tenantOrganization = pgTable(
       .references(() => user.id, { onDelete: 'set null' }),
     // Customer importance for support prioritization
     importance: text('importance').default('normal'), // low, normal, high, vip
+    // Customer discount for pricing
+    customerDiscountType: text('customerDiscountType'), // percentage, fixed_amount, null
+    customerDiscountValue: integer('customerDiscountValue'), // percentage (0-100) or cents for fixed_amount
+    customerDiscountIsRecurring: boolean('customerDiscountIsRecurring').default(false), // true = applies to all future subscriptions, false = one-time
+    customerDiscountNotes: text('customerDiscountNotes'),
     // Metadata
     notes: text('notes'),
     metadata: text('metadata'), // JSON object for custom properties/fields

@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from '@tanstack/react-router'
-import { z } from 'zod'
 import { CreditCard, RefreshCw, Building, Package, FileText } from 'lucide-react'
 
-import { useAppForm } from '@/hooks/demo.form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,15 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-const subscriptionSchema = z.object({
-  tenantOrganizationId: z.string().min(1, 'Company is required'),
-  productPlanId: z.string().min(1, 'Product plan is required'),
-  billingCycle: z.enum(['monthly', 'yearly']).default('monthly'),
-  seats: z.number().min(1).default(1),
-  couponId: z.string().optional(),
-  notes: z.string().optional(),
-})
 
 interface Company {
   id: string
@@ -130,79 +119,7 @@ export function CreateSubscriptionDialog({
     return selectedCompany.subscriptionStatus === 'active'
   }, [selectedCompany])
 
-  const form = useAppForm({
-    defaultValues: {
-      tenantOrganizationId: '',
-      productPlanId: '',
-      billingCycle: 'monthly' as const,
-      seats: 1,
-      couponId: '',
-      notes: '',
-    },
-    validators: {
-      onBlur: subscriptionSchema,
-    },
-    onSubmit: async () => {
-      // Validation checks
-      if (!tenant) {
-        setError('Tenant is required')
-        return
-      }
-      if (!selectedCompanyId) {
-        setError('Please select a company')
-        return
-      }
-      if (!selectedPlanId) {
-        setError('Please select a product plan')
-        return
-      }
-      if (companyHasActiveSubscription) {
-        setError('This company already has an active subscription. Please cancel the existing subscription before creating a new one.')
-        return
-      }
-
-      setIsSubmitting(true)
-      setError(null)
-
-      try {
-        const requestBody = {
-          tenantOrganizationId: selectedCompanyId,
-          productPlanId: selectedPlanId,
-          billingCycle: selectedBillingCycle,
-          seats: seats,
-          notes: notes || undefined,
-        }
-
-        const response = await fetch(`/api/tenant/${tenant}/subscriptions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-        })
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          if (response.status === 409) {
-            throw new Error('This company already has an active subscription. Please cancel the existing subscription before creating a new one.')
-          }
-          throw new Error(data.error || 'Failed to create subscription')
-        }
-
-        // Reset form and close dialog
-        resetForm()
-        onOpenChange(false)
-        onSubscriptionCreated?.()
-      } catch (err) {
-        console.error('Error creating subscription:', err)
-        setError(err instanceof Error ? err.message : 'Failed to create subscription')
-      } finally {
-        setIsSubmitting(false)
-      }
-    },
-  })
-
   const resetForm = () => {
-    form.reset()
     setSelectedCompanyId(preSelectedCompanyId || '')
     setSelectedPlanId('')
     setSelectedBillingCycle('monthly')

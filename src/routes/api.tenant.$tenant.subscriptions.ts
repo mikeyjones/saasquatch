@@ -211,13 +211,17 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             )
           }
 
-          // Verify tenant org belongs to this org (get billing info for invoice)
+          // Verify tenant org belongs to this org (get billing info and discounts for invoice)
           const tenantOrg = await db
-            .select({ 
-              id: tenantOrganization.id, 
+            .select({
+              id: tenantOrganization.id,
               name: tenantOrganization.name,
               billingEmail: tenantOrganization.billingEmail,
               billingAddress: tenantOrganization.billingAddress,
+              customerDiscountType: tenantOrganization.customerDiscountType,
+              customerDiscountValue: tenantOrganization.customerDiscountValue,
+              customerDiscountIsRecurring: tenantOrganization.customerDiscountIsRecurring,
+              customerDiscountNotes: tenantOrganization.customerDiscountNotes,
             })
             .from(tenantOrganization)
             .where(
@@ -298,23 +302,129 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             )
             .limit(1)
 
-          // Calculate MRR
-          let mrr = 0
+          // Calculate base MRR
+          let baseMRR = 0
           if (pricing.length > 0) {
             const p = pricing[0]
             if (p.pricingType === 'base') {
               if (p.interval === 'yearly') {
                 // Convert yearly to monthly
-                mrr = Math.round(p.amount / 12)
+                baseMRR = Math.round(p.amount / 12)
               } else {
-                mrr = p.amount
+                baseMRR = p.amount
               }
             }
             // Add per-seat pricing
             if (p.perSeatAmount) {
-              mrr += p.perSeatAmount * seats
+              baseMRR += p.perSeatAmount * seats
             }
           }
+
+          // Apply discounts (customer discount first, then coupon)
+          let mrr = baseMRR
+          let customerDiscountAmount = 0
+          let couponDiscountAmount = 0
+          let appliedCoupon = null
+
+          // Apply customer-level discount
+          const customerDiscount = tenantOrg[0]
+          if (customerDiscount.customerDiscountType && customerDiscount.customerDiscountValue) {
+            if (customerDiscount.customerDiscountType === 'percentage') {
+              customerDiscountAmount = Math.round((baseMRR * customerDiscount.customerDiscountValue) / 100)
+            } else if (customerDiscount.customerDiscountType === 'fixed_amount') {
+              customerDiscountAmount = customerDiscount.customerDiscountValue
+            }
+            mrr -= customerDiscountAmount
+          }
+
+          // Apply coupon discount if provided
+          if (couponId) {
+            const couponResult = await db
+              .select({
+                id: coupon.id,
+                code: coupon.code,
+                discountType: coupon.discountType,
+                discountValue: coupon.discountValue,
+                status: coupon.status,
+                expiresAt: coupon.expiresAt,
+                maxRedemptions: coupon.maxRedemptions,
+                redemptionCount: coupon.redemptionCount,
+                applicablePlanIds: coupon.applicablePlanIds,
+              })
+              .from(coupon)
+              .where(
+                and(
+                  eq(coupon.id, couponId),
+                  eq(coupon.organizationId, orgId)
+                )
+              )
+              .limit(1)
+
+            if (couponResult.length === 0) {
+              return new Response(
+                JSON.stringify({ error: 'Coupon not found' }),
+                { status: 404, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+
+            const cpn = couponResult[0]
+
+            // Validate coupon
+            if (cpn.status !== 'active') {
+              return new Response(
+                JSON.stringify({ error: 'Coupon is not active' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+
+            if (cpn.expiresAt && new Date(cpn.expiresAt) < new Date()) {
+              return new Response(
+                JSON.stringify({ error: 'Coupon has expired' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+
+            if (cpn.maxRedemptions && cpn.redemptionCount >= cpn.maxRedemptions) {
+              return new Response(
+                JSON.stringify({ error: 'Coupon has reached maximum redemptions' }),
+                { status: 400, headers: { 'Content-Type': 'application/json' } }
+              )
+            }
+
+            // Check if coupon applies to this plan
+            if (cpn.applicablePlanIds) {
+              const planIds: string[] = JSON.parse(cpn.applicablePlanIds)
+              if (!planIds.includes(productPlanId)) {
+                return new Response(
+                  JSON.stringify({ error: 'Coupon does not apply to this plan' }),
+                  { status: 400, headers: { 'Content-Type': 'application/json' } }
+                )
+              }
+            }
+
+            // Apply coupon discount (on already customer-discounted price)
+            if (cpn.discountType === 'percentage') {
+              couponDiscountAmount = Math.round((baseMRR * cpn.discountValue) / 100)
+            } else if (cpn.discountType === 'fixed_amount') {
+              couponDiscountAmount = cpn.discountValue
+            }
+            // Note: free_months and trial_extension are handled differently (not as MRR discounts)
+
+            mrr -= couponDiscountAmount
+            appliedCoupon = cpn
+
+            // Increment coupon redemption count
+            await db
+              .update(coupon)
+              .set({
+                redemptionCount: cpn.redemptionCount + 1,
+                updatedAt: new Date(),
+              })
+              .where(eq(coupon.id, couponId))
+          }
+
+          // Ensure MRR doesn't go negative
+          mrr = Math.max(0, mrr)
 
           // Generate subscription number
           const existingCount = await db
@@ -368,13 +478,36 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             userId: session.user.id,
             metadata: JSON.stringify({
               plan: plan[0].name,
-              mrr,
+              baseMRR,
+              customerDiscountAmount,
+              couponDiscountAmount,
+              finalMRR: mrr,
               seats,
               billingCycle,
               status: subscriptionStatus,
+              couponCode: appliedCoupon?.code || null,
             }),
             createdAt: now,
           })
+
+          // If coupon was applied, record it
+          if (appliedCoupon) {
+            await db.insert(subscriptionActivity).values({
+              id: generateId(),
+              subscriptionId,
+              activityType: 'coupon_applied',
+              description: `Coupon ${appliedCoupon.code} applied: ${appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `$${(appliedCoupon.discountValue / 100).toFixed(2)}`} discount`,
+              userId: session.user.id,
+              metadata: JSON.stringify({
+                couponId: appliedCoupon.id,
+                couponCode: appliedCoupon.code,
+                discountType: appliedCoupon.discountType,
+                discountValue: appliedCoupon.discountValue,
+                discountAmount: couponDiscountAmount,
+              }),
+              createdAt: now,
+            })
+          }
 
           // Update tenant organization subscription info
           await db
@@ -394,7 +527,10 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
           
           const invoiceNumber = `INV-${orgSlug.toUpperCase()}-${(invoiceCount[0]?.count || 0) + 1001}`
 
-          // Calculate invoice amounts
+          // Calculate invoice amounts with discounts
+          const baseInvoiceAmount = billingCycle === 'yearly' ? baseMRR * 12 : baseMRR
+          const customerDiscountInvoiceAmount = billingCycle === 'yearly' ? customerDiscountAmount * 12 : customerDiscountAmount
+          const couponDiscountInvoiceAmount = billingCycle === 'yearly' ? couponDiscountAmount * 12 : couponDiscountAmount
           const invoiceSubtotal = billingCycle === 'yearly' ? mrr * 12 : mrr
           const invoiceTax = 0 // Tax calculation could be added later
           const invoiceTotal = invoiceSubtotal + invoiceTax
@@ -404,8 +540,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
             {
               description: `${plan[0].name} - ${billingCycle === 'yearly' ? 'Annual' : 'Monthly'} subscription`,
               quantity: 1,
-              unitPrice: invoiceSubtotal,
-              total: invoiceSubtotal,
+              unitPrice: baseInvoiceAmount,
+              total: baseInvoiceAmount,
             },
           ]
 
@@ -417,6 +553,26 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
               quantity: seats - 1,
               unitPrice: pricing[0].perSeatAmount * (billingCycle === 'yearly' ? 12 : 1),
               total: seatTotal,
+            })
+          }
+
+          // Add customer discount line item
+          if (customerDiscountAmount > 0) {
+            lineItems.push({
+              description: `Customer Discount (${customerDiscount.customerDiscountType === 'percentage' ? `${customerDiscount.customerDiscountValue}%` : `$${(customerDiscount.customerDiscountValue! / 100).toFixed(2)}`})`,
+              quantity: 1,
+              unitPrice: -customerDiscountInvoiceAmount,
+              total: -customerDiscountInvoiceAmount,
+            })
+          }
+
+          // Add coupon discount line item
+          if (couponDiscountAmount > 0 && appliedCoupon) {
+            lineItems.push({
+              description: `Coupon: ${appliedCoupon.code} (${appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `$${(appliedCoupon.discountValue / 100).toFixed(2)}`})`,
+              quantity: 1,
+              unitPrice: -couponDiscountInvoiceAmount,
+              total: -couponDiscountInvoiceAmount,
             })
           }
 
