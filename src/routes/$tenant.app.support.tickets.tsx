@@ -372,7 +372,17 @@ function TicketDetail({
 	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 	const [isAssigning, setIsAssigning] = useState(false);
 	const [activeTab, setActiveTab] = useState<'messages' | 'activity'>('messages');
-	const [auditLogs, setAuditLogs] = useState<any[]>([]);
+	const [auditLogs, setAuditLogs] = useState<Array<{
+		id: string;
+		performedByUserId: string | null;
+		performedByName: string;
+		action: string;
+		fieldName: string | null;
+		oldValue: string | null;
+		newValue: string | null;
+		metadata: string | null;
+		createdAt: string;
+	}>>([]);
 	const [isLoadingAuditLogs, setIsLoadingAuditLogs] = useState(false);
 	const { data: session } = useSession();
 
@@ -738,20 +748,18 @@ function TicketDetail({
 											</span>
 										)}
 										{message.type === "customer" && (
-											<>
-												{detail.customer?.organizationId ? (
-													<Link
-														to={`/${tenant}/app/support/organizations/${detail.customer.organizationId}`}
-														className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
-													>
-														{detail.customer.company || ""}
-													</Link>
-												) : (
-													<span className="text-sm text-gray-500">
-														{detail.customer?.company || ""}
-													</span>
-												)}
-											</>
+											detail.customer?.organizationId ? (
+												<Link
+													to={`/${tenant}/app/support/organizations/${detail.customer.organizationId}`}
+													className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+												>
+													{detail.customer.company || ""}
+												</Link>
+											) : (
+												<span className="text-sm text-gray-500">
+													{detail.customer?.company || ""}
+												</span>
+											)
 										)}
 										{message.type === "ai" && (
 											<span className="text-sm text-gray-500">

@@ -557,9 +557,10 @@ export const Route = createFileRoute('/api/tenant/$tenant/subscriptions')({
           }
 
           // Add customer discount line item
-          if (customerDiscountAmount > 0) {
+          if (customerDiscountAmount > 0 && customerDiscount.customerDiscountValue) {
+            const discountValue = customerDiscount.customerDiscountValue
             lineItems.push({
-              description: `Customer Discount (${customerDiscount.customerDiscountType === 'percentage' ? `${customerDiscount.customerDiscountValue}%` : `$${(customerDiscount.customerDiscountValue! / 100).toFixed(2)}`})`,
+              description: `Customer Discount (${customerDiscount.customerDiscountType === 'percentage' ? `${discountValue}%` : `$${(discountValue / 100).toFixed(2)}`})`,
               quantity: 1,
               unitPrice: -customerDiscountInvoiceAmount,
               total: -customerDiscountInvoiceAmount,

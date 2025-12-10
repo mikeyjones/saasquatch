@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import { coupon, productPlan, organization } from '@/db/schema'
-import { eq, and, desc, or, sql } from 'drizzle-orm'
+import { eq, and, desc, or } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
 function generateId(): string {
@@ -208,21 +208,31 @@ export const Route = createFileRoute('/api/tenant/$tenant/coupons')({
           if (!code) {
             // Generate unique code
             let attempts = 0
+            let generatedCode: string | null = null
             while (attempts < 10) {
-              code = generateCouponCode()
+              generatedCode = generateCouponCode()
               const existing = await db
                 .select({ id: coupon.id })
                 .from(coupon)
                 .where(
                   and(
                     eq(coupon.organizationId, orgId),
-                    eq(coupon.code, code)
+                    eq(coupon.code, generatedCode)
                   )
                 )
                 .limit(1)
 
-              if (existing.length === 0) break
+              if (existing.length === 0) {
+                code = generatedCode
+                break
+              }
               attempts++
+            }
+            if (!code) {
+              return new Response(
+                JSON.stringify({ error: 'Failed to generate unique coupon code' }),
+                { status: 500, headers: { 'Content-Type': 'application/json' } }
+              )
             }
           } else {
             // Check if code already exists
@@ -272,7 +282,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/coupons')({
           await db.insert(coupon).values({
             id: couponId,
             organizationId: orgId,
-            code: code!,
+            code: code,
             discountType,
             discountValue,
             applicablePlanIds: applicablePlanIds && applicablePlanIds.length > 0

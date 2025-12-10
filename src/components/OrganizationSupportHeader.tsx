@@ -100,9 +100,9 @@ export function OrganizationSupportHeader({
 						{/* Tags */}
 						{organization.tags && organization.tags.length > 0 && (
 							<div className="flex items-center gap-2 flex-wrap">
-								{organization.tags.map((tag, index) => (
+								{organization.tags.map((tag) => (
 									<span
-										key={index}
+										key={tag}
 										className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded"
 									>
 										{tag}

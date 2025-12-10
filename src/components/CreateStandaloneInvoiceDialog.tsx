@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo, useId } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { FileText, Plus, Trash2 } from 'lucide-react'
 
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 
 interface LineItem {
+  id: string
   description: string
   quantity: number
   unitPrice: number // in dollars
@@ -39,11 +40,15 @@ export function CreateStandaloneInvoiceDialog({
 }: CreateStandaloneInvoiceDialogProps) {
   const params = useParams({ strict: false }) as { tenant?: string }
   const tenant = params.tenant || ''
+  const issueDateId = useId()
+  const dueDateId = useId()
+  const taxId = useId()
+  const notesId = useId()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { description: '', quantity: 1, unitPrice: 0, total: 0 },
+    { id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0, total: 0 },
   ])
   const [tax, setTax] = useState<number>(0) // in dollars
   const [notes, setNotes] = useState('')
@@ -62,7 +67,7 @@ export function CreateStandaloneInvoiceDialog({
   }, [subtotal, tax])
 
   const resetForm = () => {
-    setLineItems([{ description: '', quantity: 1, unitPrice: 0, total: 0 }])
+    setLineItems([{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0, total: 0 }])
     setTax(0)
     setNotes('')
     setIssueDate(new Date().toISOString().split('T')[0])
@@ -78,25 +83,30 @@ export function CreateStandaloneInvoiceDialog({
   }
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: '', quantity: 1, unitPrice: 0, total: 0 }])
+    setLineItems([...lineItems, { id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0, total: 0 }])
   }
 
-  const removeLineItem = (index: number) => {
+  const removeLineItem = (id: string) => {
     if (lineItems.length > 1) {
-      setLineItems(lineItems.filter((_, i) => i !== index))
+      setLineItems(lineItems.filter((item) => item.id !== id))
     }
   }
 
-  const updateLineItem = (index: number, field: keyof LineItem, value: string | number) => {
-    const updated = [...lineItems]
-    updated[index] = { ...updated[index], [field]: value }
+  const updateLineItem = (id: string, field: keyof Omit<LineItem, 'id'>, value: string | number) => {
+    const updated = lineItems.map((item) => {
+      if (item.id !== id) return item
+      
+      const updatedItem = { ...item, [field]: value }
 
-    // Recalculate total for this line item
-    if (field === 'quantity' || field === 'unitPrice') {
-      const qty = field === 'quantity' ? Number(value) : updated[index].quantity
-      const price = field === 'unitPrice' ? Number(value) : updated[index].unitPrice
-      updated[index].total = qty * price
-    }
+      // Recalculate total for this line item
+      if (field === 'quantity' || field === 'unitPrice') {
+        const qty = field === 'quantity' ? Number(value) : updatedItem.quantity
+        const price = field === 'unitPrice' ? Number(value) : updatedItem.unitPrice
+        updatedItem.total = qty * price
+      }
+
+      return updatedItem
+    })
 
     setLineItems(updated)
   }
@@ -191,9 +201,9 @@ export function CreateStandaloneInvoiceDialog({
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="issueDate">Issue Date</Label>
+              <Label htmlFor={issueDateId}>Issue Date</Label>
               <Input
-                id="issueDate"
+                id={issueDateId}
                 type="date"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
@@ -201,9 +211,9 @@ export function CreateStandaloneInvoiceDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date</Label>
+              <Label htmlFor={dueDateId}>Due Date</Label>
               <Input
-                id="dueDate"
+                id={dueDateId}
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -229,9 +239,9 @@ export function CreateStandaloneInvoiceDialog({
             </div>
 
             <div className="space-y-3">
-              {lineItems.map((item, index) => (
+              {lineItems.map((item) => (
                 <div
-                  key={index}
+                  key={item.id}
                   className="p-4 border rounded-lg space-y-3 bg-muted/30"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -307,9 +317,9 @@ export function CreateStandaloneInvoiceDialog({
 
           {/* Tax */}
           <div className="space-y-2">
-            <Label htmlFor="tax">Tax Amount ($)</Label>
+            <Label htmlFor={taxId}>Tax Amount ($)</Label>
             <Input
-              id="tax"
+              id={taxId}
               type="number"
               min="0"
               step="0.01"
@@ -337,9 +347,9 @@ export function CreateStandaloneInvoiceDialog({
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label htmlFor={notesId}>Notes (Optional)</Label>
             <Textarea
-              id="notes"
+              id={notesId}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Internal notes about this invoice..."

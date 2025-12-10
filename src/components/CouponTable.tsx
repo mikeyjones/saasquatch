@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -41,7 +41,7 @@ interface CouponTableProps {
 export function CouponTable({ coupons, onEdit, onDelete }: CouponTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const formatDiscount = (type: string, value: number) => {
+  const formatDiscount = useCallback((type: string, value: number) => {
     if (type === 'percentage') {
       return `${value}%`
     } else if (type === 'fixed_amount') {
@@ -52,21 +52,21 @@ export function CouponTable({ coupons, onEdit, onDelete }: CouponTableProps) {
       return `+${value} ${value === 1 ? 'day' : 'days'} trial`
     }
     return `${value}`
-  }
+  }, [])
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = useCallback((dateString: string | null) => {
     if (!dateString) return 'Never'
     return new Date(dateString).toLocaleDateString()
-  }
+  }, [])
 
-  const copyToClipboard = async (code: string) => {
+  const copyToClipboard = useCallback(async (code: string) => {
     try {
       await navigator.clipboard.writeText(code)
       // TODO: Add toast notification
     } catch (err) {
       console.error('Failed to copy code:', err)
     }
-  }
+  }, [])
 
   const columns = useMemo<ColumnDef<Coupon>[]>(
     () => [
@@ -236,7 +236,7 @@ export function CouponTable({ coupons, onEdit, onDelete }: CouponTableProps) {
         ),
       },
     ],
-    [onEdit, onDelete]
+    [onEdit, onDelete, copyToClipboard, formatDate, formatDiscount]
   )
 
   const table = useReactTable({

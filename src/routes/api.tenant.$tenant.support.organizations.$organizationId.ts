@@ -6,7 +6,6 @@ import {
 	ticket,
 	subscription,
 	productPlan,
-	invoice,
 	organization,
 } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -166,7 +165,15 @@ export const Route = createFileRoute(
 
 					// Fetch invoices (for billing support)
 					// Temporarily disabled to debug
-					const invoices: any[] = [];
+					const invoices: Array<{
+						id: string;
+						invoiceNumber: string;
+						status: string;
+						total: number;
+						dueDate: Date | null;
+						paidAt: Date | null;
+						createdAt: Date;
+					}> = [];
 					/*
 					const invoices = await db
 						.select({

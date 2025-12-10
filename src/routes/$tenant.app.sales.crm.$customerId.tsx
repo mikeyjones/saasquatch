@@ -1,6 +1,6 @@
 import { createFileRoute, useParams, Link } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Plus, Pencil } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OrganizationHeader } from '@/components/OrganizationHeader'
 import { OrganizationMetrics } from '@/components/OrganizationMetrics'
@@ -136,7 +136,7 @@ function OrganizationDetailPage() {
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
 
   // Fetch organization data
-  const fetchOrganization = async () => {
+  const fetchOrganization = useCallback(async () => {
     if (!tenant || !customerId) {
       return
     }
@@ -160,11 +160,11 @@ function OrganizationDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [tenant, customerId])
 
   useEffect(() => {
     fetchOrganization()
-  }, [tenant, customerId])
+  }, [fetchOrganization])
 
   const handleMetadataUpdate = async (newMetadata: Record<string, unknown>) => {
     if (!tenant || !customerId) return

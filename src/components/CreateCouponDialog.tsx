@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams } from '@tanstack/react-router'
-import { z } from 'zod'
 import { Tag, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Dialog,
@@ -16,13 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const couponSchema = z.object({
-  code: z.string().optional(),
-  discountType: z.enum(['percentage', 'fixed_amount', 'free_months', 'trial_extension']),
-  discountValue: z.coerce.number().min(0), // Use coerce to handle string inputs
-  maxRedemptions: z.coerce.number().min(1).optional().or(z.undefined()),
-  expiresAt: z.string().optional(),
-})
+// Schema removed - validation is handled in onSubmit
 
 interface ProductPlan {
   id: string
@@ -182,7 +174,7 @@ export function CreateCouponDialog({
             throw new Error(errorMessage)
           }
 
-          const data = await response.json()
+          await response.json()
 
           onOpenChange(false)
           onCouponCreated?.()
@@ -206,7 +198,7 @@ export function CreateCouponDialog({
             throw new Error(errorMessage)
           }
 
-          const data = await response.json()
+          await response.json()
 
           // Reset form and close dialog
           form.reset()
@@ -227,7 +219,7 @@ export function CreateCouponDialog({
   useEffect(() => {
     if (couponData && isEditMode && form) {
       form.setFieldValue('code', couponData.code || '')
-      form.setFieldValue('discountType', couponData.discountType as any)
+      form.setFieldValue('discountType', couponData.discountType as 'percentage' | 'fixed_amount' | 'free_months' | 'trial_extension')
       form.setFieldValue('discountValue', couponData.discountValue)
       form.setFieldValue('maxRedemptions', couponData.maxRedemptions || undefined)
       form.setFieldValue('expiresAt', couponData.expiresAt || '')
@@ -428,7 +420,7 @@ export function CreateCouponDialog({
                   {isEditMode ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
-                <>{isEditMode ? 'Update Coupon' : 'Create Coupon'}</>
+                isEditMode ? 'Update Coupon' : 'Create Coupon'
               )}
             </Button>
           </DialogFooter>

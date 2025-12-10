@@ -1,4 +1,4 @@
-import { Ticket, Clock, CheckCircle2, AlertCircle, Users } from "lucide-react";
+import { Ticket, Clock, AlertCircle, Users } from "lucide-react";
 
 interface SupportMetrics {
 	totalTickets: number;
