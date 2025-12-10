@@ -10,6 +10,7 @@ import { CRMContactsList } from '@/components/CRMContactsList'
 import { CRMActivityTimeline } from '@/components/CRMActivityTimeline'
 import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
 import { CreateContactDialog } from '@/components/CreateContactDialog'
+import { CreateStandaloneInvoiceDialog } from '@/components/CreateStandaloneInvoiceDialog'
 
 export const Route = createFileRoute('/$tenant/app/sales/crm/$customerId')({
   component: OrganizationDetailPage,
@@ -132,6 +133,7 @@ function OrganizationDetailPage() {
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false)
+  const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
 
   // Fetch organization data
   const fetchOrganization = async () => {
@@ -255,6 +257,7 @@ function OrganizationDetailPage() {
         subscription={activeSubscription || null}
         onEdit={() => setIsEditDialogOpen(true)}
         onAddContact={() => setIsAddContactDialogOpen(true)}
+        onCreateInvoice={() => setIsCreateInvoiceDialogOpen(true)}
       />
 
       {/* Metrics Cards */}
@@ -553,6 +556,15 @@ function OrganizationDetailPage() {
         open={isAddContactDialogOpen}
         onOpenChange={setIsAddContactDialogOpen}
         onContactCreated={fetchOrganization}
+        customerId={customerId}
+        customerName={customer.name}
+      />
+
+      {/* Create Standalone Invoice Dialog */}
+      <CreateStandaloneInvoiceDialog
+        open={isCreateInvoiceDialogOpen}
+        onOpenChange={setIsCreateInvoiceDialogOpen}
+        onInvoiceCreated={fetchOrganization}
         customerId={customerId}
         customerName={customer.name}
       />

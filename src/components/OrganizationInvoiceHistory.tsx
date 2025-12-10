@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { useParams } from '@tanstack/react-router'
 import { FileText, Download, Eye, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { InvoiceDetailDialog } from '@/components/InvoiceDetailDialog'
+import type { Invoice as InvoiceType } from '@/components/InvoiceList'
 
 interface Invoice {
   id: string
@@ -15,6 +18,13 @@ interface Invoice {
   paidAt: string | null
   subscriptionId: string
   createdAt: string
+  pdfPath?: string | null
+  lineItems?: Array<{
+    description: string
+    quantity: number
+    unitPrice: number
+    total: number
+  }>
 }
 
 interface OrganizationInvoiceHistoryProps {
@@ -22,7 +32,11 @@ interface OrganizationInvoiceHistoryProps {
 }
 
 export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHistoryProps) {
+  const params = useParams({ strict: false }) as { tenant?: string }
+  const tenant = params.tenant || ''
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceType | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -70,6 +84,78 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
     paid: invoices.filter(inv => inv.status.toLowerCase() === 'paid').length,
     draft: invoices.filter(inv => inv.status.toLowerCase() === 'draft').length,
     overdue: invoices.filter(inv => inv.status.toLowerCase() === 'overdue').length,
+  }
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    // Convert to InvoiceType format expected by InvoiceDetailDialog
+    const invoiceDetail: InvoiceType = {
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      status: invoice.status as 'draft' | 'paid' | 'overdue' | 'canceled',
+      subtotal: invoice.subtotal,
+      tax: invoice.tax,
+      total: invoice.total,
+      currency: invoice.currency,
+      issueDate: invoice.issueDate,
+      dueDate: invoice.dueDate,
+      paidAt: invoice.paidAt,
+      lineItems: invoice.lineItems || [],
+      pdfPath: invoice.pdfPath || null,
+      billingName: null,
+      billingEmail: null,
+      notes: null,
+      subscription: invoice.subscriptionId ? {
+        id: invoice.subscriptionId,
+        subscriptionNumber: '',
+        status: '',
+        plan: '',
+      } : null,
+      tenantOrganization: {
+        id: '',
+        name: '',
+      },
+      createdAt: invoice.createdAt,
+      updatedAt: invoice.createdAt,
+    }
+    setSelectedInvoice(invoiceDetail)
+    setIsDetailDialogOpen(true)
+  }
+
+  const handleDownloadPDF = async (invoice: Invoice) => {
+    if (!tenant) {
+      alert('Tenant information is missing')
+      return
+    }
+
+    try {
+      // Use the PDF API endpoint instead of direct pdfPath
+      const response = await fetch(`/api/tenant/${tenant}/invoices/${invoice.id}/pdf`)
+      if (!response.ok) {
+        if (response.status === 404) {
+          alert('PDF not available for this invoice')
+          return
+        }
+        throw new Error('Failed to download PDF')
+      }
+
+      // Create a blob from the response
+      const blob = await response.blob()
+
+      // Create a blob URL and trigger download
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = `${invoice.invoiceNumber}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      // Clean up the blob URL
+      URL.revokeObjectURL(blobUrl)
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      alert('Failed to download PDF. Please try again.')
+    }
   }
 
   return (
@@ -170,10 +256,20 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewInvoice(invoice)}
+                        title="View invoice details"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownloadPDF(invoice)}
+                        title="Download PDF"
+                      >
                         <Download className="h-4 w-4" />
                       </Button>
                     </div>
@@ -201,6 +297,44 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
           </div>
         </div>
       )}
+
+      {/* Invoice Detail Dialog */}
+      <InvoiceDetailDialog
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+        invoice={selectedInvoice}
+        onDownloadPDF={async (inv) => {
+          if (!tenant) {
+            alert('Tenant information is missing')
+            return
+          }
+
+          try {
+            // Use the PDF API endpoint instead of direct pdfPath
+            const response = await fetch(`/api/tenant/${tenant}/invoices/${inv.id}/pdf`)
+            if (!response.ok) {
+              if (response.status === 404) {
+                alert('PDF not available for this invoice')
+                return
+              }
+              throw new Error('Failed to fetch PDF')
+            }
+
+            const blob = await response.blob()
+            const blobUrl = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = blobUrl
+            link.download = `${inv.invoiceNumber}.pdf`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(blobUrl)
+          } catch (error) {
+            console.error('Error downloading PDF:', error)
+            alert('Failed to download PDF. Please try again.')
+          }
+        }}
+      />
     </div>
   )
 }

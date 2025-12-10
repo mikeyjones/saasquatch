@@ -98,7 +98,7 @@ export function InvoiceDetailDialog({
 
         <div className="space-y-6 py-4">
           {/* Customer & Subscription Info */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className={invoice.subscription ? "grid grid-cols-2 gap-6" : "grid grid-cols-1 gap-6"}>
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
                 <Building size={14} />
@@ -112,14 +112,16 @@ export function InvoiceDetailDialog({
                 </p>
               )}
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                <CreditCard size={14} />
-                Subscription
+            {invoice.subscription && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
+                  <CreditCard size={14} />
+                  Subscription
+                </div>
+                <p className="font-semibold text-gray-900">{invoice.subscription.subscriptionNumber}</p>
+                <p className="text-sm text-gray-500">{invoice.subscription.plan}</p>
               </div>
-              <p className="font-semibold text-gray-900">{invoice.subscription.subscriptionNumber}</p>
-              <p className="text-sm text-gray-500">{invoice.subscription.plan}</p>
-            </div>
+            )}
           </div>
 
           {/* Dates */}

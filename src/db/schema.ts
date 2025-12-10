@@ -1124,9 +1124,8 @@ export const invoice = pgTable(
     organizationId: text('organizationId')
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
-    // The subscription this invoice is for
+    // The subscription this invoice is for (optional - null for standalone invoices)
     subscriptionId: text('subscriptionId')
-      .notNull()
       .references(() => subscription.id, { onDelete: 'cascade' }),
     // The customer organization
     tenantOrganizationId: text('tenantOrganizationId')

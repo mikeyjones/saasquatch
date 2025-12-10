@@ -28,9 +28,10 @@ interface OrganizationHeaderProps {
   subscription: Subscription | null
   onEdit?: () => void
   onAddContact?: () => void
+  onCreateInvoice?: () => void
 }
 
-export function OrganizationHeader({ customer, subscription, onEdit, onAddContact }: OrganizationHeaderProps) {
+export function OrganizationHeader({ customer, subscription, onEdit, onAddContact, onCreateInvoice }: OrganizationHeaderProps) {
   const getStatusColor = (status: string | null) => {
     if (!status) return 'bg-gray-100 text-gray-800'
 
@@ -173,7 +174,7 @@ export function OrganizationHeader({ customer, subscription, onEdit, onAddContac
             <UserPlus className="h-4 w-4 mr-2" />
             Add Contact
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={onCreateInvoice}>
             <FileText className="h-4 w-4 mr-2" />
             Create Invoice
           </Button>
