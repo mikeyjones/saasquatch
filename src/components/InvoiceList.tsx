@@ -30,7 +30,7 @@ export interface Invoice {
     subscriptionNumber: string
     status: string
     plan: string
-  }
+  } | null
   tenantOrganization: {
     id: string
     name: string
@@ -196,15 +196,19 @@ export function InvoiceList({
                     <FileText size={16} className="text-indigo-500" />
                     <span className="font-medium text-gray-900">{invoice.invoiceNumber}</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {invoice.subscription.subscriptionNumber}
-                  </p>
+                  {invoice.subscription && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {invoice.subscription.subscriptionNumber}
+                    </p>
+                  )}
                 </div>
 
                 {/* Customer */}
                 <div className="col-span-3">
                   <p className="font-medium text-gray-900 truncate">{invoice.tenantOrganization.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{invoice.subscription.plan}</p>
+                  {invoice.subscription && (
+                    <p className="text-xs text-gray-500 truncate">{invoice.subscription.plan}</p>
+                  )}
                 </div>
 
                 {/* Amount */}
