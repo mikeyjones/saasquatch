@@ -1,5 +1,5 @@
 import { createFileRoute, useSearch, useParams } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -55,6 +55,8 @@ function TenantLoginPage() {
   const { returnTo, error: urlError } = useSearch({ from: '/$tenant/app/login' })
   const tenant = useTenant()
   
+  const emailId = useId()
+  const passwordId = useId()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(urlError || '')
