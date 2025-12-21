@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useId } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { CreditCard, RefreshCw, Building, Package, FileText } from 'lucide-react'
 
@@ -52,6 +52,7 @@ export function CreateSubscriptionDialog({
 }: CreateSubscriptionDialogProps) {
   const params = useParams({ strict: false }) as { tenant?: string }
   const tenant = params.tenant || ''
+  const seatsInputId = useId()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -340,9 +341,9 @@ export function CreateSubscriptionDialog({
 
           {/* Seats */}
           <div className="space-y-2">
-            <Label htmlFor="seats-input" className="text-sm font-medium text-gray-700">Seats</Label>
+            <Label htmlFor={seatsInputId} className="text-sm font-medium text-gray-700">Seats</Label>
             <Input
-              id="seats-input"
+              id={seatsInputId}
               type="number"
               min={1}
               value={seats}
