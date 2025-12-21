@@ -239,7 +239,7 @@ export function CreateStandaloneInvoiceDialog({
             </div>
 
             <div className="space-y-3">
-              {lineItems.map((item) => (
+              {lineItems.map((item, index) => (
                 <div
                   key={item.id}
                   className="p-4 border rounded-lg space-y-3 bg-muted/30"
@@ -253,7 +253,7 @@ export function CreateStandaloneInvoiceDialog({
                         id={`description-${index}`}
                         value={item.description}
                         onChange={(e) =>
-                          updateLineItem(index, 'description', e.target.value)
+                          updateLineItem(item.id, 'description', e.target.value)
                         }
                         placeholder="e.g., Consulting Services"
                         required={index === 0}
@@ -264,7 +264,7 @@ export function CreateStandaloneInvoiceDialog({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeLineItem(index)}
+                        onClick={() => removeLineItem(item.id)}
                         className="h-8 w-8 p-0 mt-6"
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -284,7 +284,7 @@ export function CreateStandaloneInvoiceDialog({
                         step="1"
                         value={item.quantity}
                         onChange={(e) =>
-                          updateLineItem(index, 'quantity', Number(e.target.value))
+                          updateLineItem(item.id, 'quantity', Number(e.target.value))
                         }
                       />
                     </div>
@@ -299,7 +299,7 @@ export function CreateStandaloneInvoiceDialog({
                         step="0.01"
                         value={item.unitPrice}
                         onChange={(e) =>
-                          updateLineItem(index, 'unitPrice', Number(e.target.value))
+                          updateLineItem(item.id, 'unitPrice', Number(e.target.value))
                         }
                       />
                     </div>
