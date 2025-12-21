@@ -53,6 +53,12 @@ The project enforces minimum coverage thresholds (defined in `vite.config.ts`):
 
 ## Test File Patterns
 
+### Important: Route Test File Naming
+
+**Test files in `src/routes/` must be prefixed with `-` (hyphen)** so TanStack Router ignores them. This prevents warnings about test files not containing route definitions.
+
+Example: `-api.tenant.$tenant.resource.test.ts` instead of `api.tenant.$tenant.resource.test.ts`
+
 ### Component Tests (`*.test.tsx`)
 
 Location: Co-located with components in `src/components/`
@@ -121,9 +127,11 @@ describe('MyComponent', () => {
 })
 ```
 
-### API/Route Tests (`*.test.ts`)
+### API/Route Tests (`-*.test.ts`)
 
 Location: Co-located with route files in `src/routes/`
+
+**Important**: Test files in the `routes/` directory must be prefixed with `-` (hyphen) so TanStack Router ignores them. For example: `-api.tenant.$tenant.resource.test.ts`
 
 ```typescript
 import { describe, it, expect } from 'vitest'
@@ -486,7 +494,7 @@ src/
 ├── routes/              # TanStack Router routes
 │   ├── api.*.ts         # API endpoints
 │   ├── $tenant.*.tsx    # Page routes
-│   └── *.test.ts        # Route tests
+│   └── -*.test.ts       # Route tests (hyphen prefix required)
 └── test/                # Test setup
     └── setup.ts         # Global test configuration
 ```
