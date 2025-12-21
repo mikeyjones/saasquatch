@@ -376,7 +376,7 @@ bun run dev              # Start dev server on port 3000
 # Testing
 bun run test             # Run all tests
 bun run test --watch     # Watch mode
-bun run test:coverage    # Coverage report
+bun run test:coverage    # Coverage report (generates HTML in ./coverage/)
 
 # Code Quality
 bun run check            # Biome check (lint + format)
@@ -500,6 +500,19 @@ src/
 ```
 
 ---
+
+## Coverage Reports
+
+Coverage reports are automatically generated when running `bun run test:coverage`. The HTML report is available in the `./coverage/` directory.
+
+### GitHub Actions
+
+When code is pushed to the `main` branch, GitHub Actions will:
+1. Run all tests with coverage
+2. Generate HTML coverage reports
+3. Publish reports to GitHub Pages at: `https://<username>.github.io/<repo>/coverage/`
+
+The workflow is defined in `.github/workflows/coverage.yml`.
 
 ## When Adding New Features
 

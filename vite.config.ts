@@ -33,7 +33,8 @@ const config = defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json-summary'],
+      reporter: ['text', 'html', 'json-summary', 'json'],
+      reportsDirectory: './coverage',
       exclude: [
         'node_modules/**',
         'src/test/**',
