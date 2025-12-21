@@ -1,760 +1,553 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { CreateCustomerDialog } from './CreateCustomerDialog'
+import { mockFetchSuccess, mockFetchError } from '@/test/setup'
+import * as router from '@tanstack/react-router'
 
-/**
- * Tests for CreateCustomerDialog component
- *
- * These tests document the expected component behavior.
- * Full integration tests would require React Testing Library setup.
- */
+// Mock useParams
+vi.mock('@tanstack/react-router', () => ({
+	useParams: vi.fn(() => ({ tenant: 'acme' })),
+}))
 
-describe('CreateCustomerDialog Component', () => {
-  describe('Dialog State', () => {
-    it('should be controlled by open prop', () => {
-      const props = {
-        open: true,
-        onOpenChange: 'function',
-      }
-      expect(props.open).toBe(true)
-    })
+const mockUseParams = router.useParams as ReturnType<typeof vi.fn>
 
-    it('should call onOpenChange when closing', () => {
-      const callbacks = {
-        onOpenChange: 'called with false when closing',
-      }
-      expect(callbacks.onOpenChange).toContain('false')
-    })
+// Helper to mock fetch
+function mockFetch() {
+	return global.fetch as ReturnType<typeof vi.fn>
+}
 
-    it('should call onCustomerCreated callback on success', () => {
-      const callbacks = {
-        onCustomerCreated: 'called after successful creation',
-      }
-      expect(callbacks.onCustomerCreated).toContain('success')
-    })
-  })
+describe('CreateCustomerDialog', () => {
+	const mockOnOpenChange = vi.fn()
+	const mockOnCustomerCreated = vi.fn()
 
-  describe('Form Fields', () => {
-    describe('Company Name', () => {
-      it('should be required', () => {
-        const field = {
-          name: 'name',
-          required: true,
-          label: 'Company Name *',
-        }
-        expect(field.required).toBe(true)
-        expect(field.label).toContain('*')
-      })
+	beforeEach(() => {
+		vi.clearAllMocks()
+		mockUseParams.mockReturnValue({ tenant: 'acme' })
+		global.fetch = vi.fn(() => {
+			return Promise.resolve(
+				new Response(JSON.stringify({ error: 'Not found' }), {
+					status: 404,
+					headers: { 'Content-Type': 'application/json' },
+				})
+			)
+		}) as typeof fetch
+	})
 
-      it('should show validation error when empty', () => {
-        const validation = {
-          value: '',
-          error: 'Company name is required',
-        }
-        expect(validation.error).toBe('Company name is required')
-      })
-    })
+	describe('Render & Close Behavior', () => {
+		it('should show "Add New Customer" title in create mode', () => {
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: [] }))
 
-    describe('Industry', () => {
-      it('should be a select dropdown', () => {
-        const field = {
-          name: 'industry',
-          type: 'select',
-          options: [
-            'Technology',
-            'Finance',
-            'Healthcare',
-            'Retail',
-            'Education',
-            'Manufacturing',
-            'Legal',
-            'Energy',
-            'Real Estate',
-            'Media',
-            'Other',
-          ],
-        }
-        expect(field.type).toBe('select')
-        expect(field.options).toContain('Technology')
-      })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
 
-      it('should be optional', () => {
-        const field = {
-          name: 'industry',
-          required: false,
-        }
-        expect(field.required).toBe(false)
-      })
-    })
+			expect(screen.getByText('Add New Customer')).toBeInTheDocument()
+		})
 
-    describe('Website', () => {
-      it('should be a text input', () => {
-        const field = {
-          name: 'website',
-          type: 'text',
-          placeholder: 'https://example.com',
-        }
-        expect(field.type).toBe('text')
-      })
+		it('should show "Edit Customer" title in edit mode', () => {
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customer: { id: 'customer-123', name: 'Acme' } }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: [] }))
 
-      it('should be optional', () => {
-        const field = {
-          name: 'website',
-          required: false,
-        }
-        expect(field.required).toBe(false)
-      })
-    })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+					customerId="customer-123"
+				/>
+			)
 
-    describe('Billing Email', () => {
-      it('should be a text input', () => {
-        const field = {
-          name: 'billingEmail',
-          type: 'text',
-          placeholder: 'billing@example.com',
-        }
-        expect(field.placeholder).toContain('@')
-      })
+			expect(screen.getByText('Edit Customer')).toBeInTheDocument()
+		})
 
-      it('should be optional', () => {
-        const field = {
-          name: 'billingEmail',
-          required: false,
-        }
-        expect(field.required).toBe(false)
-      })
-    })
+		it('should call onOpenChange(false) when Cancel clicked', async () => {
+			const user = userEvent.setup()
 
-    describe('Billing Address', () => {
-      it('should be a textarea', () => {
-        const field = {
-          name: 'billingAddress',
-          type: 'textarea',
-          rows: 2,
-        }
-        expect(field.type).toBe('textarea')
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: [] }))
 
-      it('should be optional', () => {
-        const field = {
-          name: 'billingAddress',
-          required: false,
-        }
-        expect(field.required).toBe(false)
-      })
-    })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
 
-    describe('Assign To', () => {
-      it('should be a select dropdown', () => {
-        const field = {
-          name: 'assignedToUserId',
-          type: 'select',
-          placeholder: 'Select sales rep...',
-        }
-        expect(field.type).toBe('select')
-      })
+			const cancelButton = screen.getByRole('button', { name: /cancel/i })
+			await user.click(cancelButton)
 
-      it('should include Unassigned option', () => {
-        const options = [
-          { value: '', label: 'Unassigned' },
-          { value: 'user-1', label: 'John Smith' },
-        ]
-        expect(options[0].value).toBe('')
-        expect(options[0].label).toBe('Unassigned')
-      })
+			expect(mockOnOpenChange).toHaveBeenCalledWith(false)
+		})
+	})
 
-      it('should be populated from API', () => {
-        const dataFetching = {
-          endpoint: '/api/tenant/:tenant/members',
-          responseField: 'members',
-        }
-        expect(dataFetching.endpoint).toContain('members')
-      })
-    })
+	describe('Data Fetching on Open (Create Mode)', () => {
+		it('should fetch plans and members when dialog opens', async () => {
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
+			const mockMembers = [
+				{ id: 'user-1', name: 'John Smith' },
+			]
 
-    describe('Tags', () => {
-      it('should be a text input', () => {
-        const field = {
-          name: 'tags',
-          type: 'text',
-          placeholder: 'enterprise, high-value (comma-separated)',
-        }
-        expect(field.placeholder).toContain('comma-separated')
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
 
-      it('should be optional', () => {
-        const field = {
-          name: 'tags',
-          required: false,
-        }
-        expect(field.required).toBe(false)
-      })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
 
-      it('should parse comma-separated values', () => {
-        const parsing = {
-          input: 'enterprise, high-value, vip',
-          output: ['enterprise', 'high-value', 'vip'],
-        }
-        expect(parsing.output).toHaveLength(3)
-      })
-    })
+			await waitFor(() => {
+				expect(fetch).toHaveBeenCalledWith(
+					expect.stringContaining('/api/tenant/acme/product-catalog/plans?status=active')
+				)
+				expect(fetch).toHaveBeenCalledWith(
+					expect.stringContaining('/api/tenant/acme/members')
+				)
+			})
+		})
 
-    describe('Notes', () => {
-      it('should be a textarea', () => {
-        const field = {
-          name: 'notes',
-          type: 'textarea',
-          rows: 2,
-        }
-        expect(field.type).toBe('textarea')
-      })
+		it('should not fetch plans in edit mode', async () => {
+			const mockCustomer = {
+				id: 'customer-123',
+				name: 'Acme Corp',
+				industry: 'Technology',
+			}
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
 
-      it('should be optional', () => {
-        const field = {
-          name: 'notes',
-          required: false,
-        }
-        expect(field.required).toBe(false)
-      })
-    })
-  })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customer: mockCustomer }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
 
-  describe('Create Subscription Toggle', () => {
-    it('should be a checkbox', () => {
-      const toggle = {
-        type: 'checkbox',
-        label: 'Create subscription now (make this a customer)',
-      }
-      expect(toggle.type).toBe('checkbox')
-    })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+					customerId="customer-123"
+				/>
+			)
 
-    it('should default to unchecked', () => {
-      const defaultState = {
-        createSubscription: false,
-      }
-      expect(defaultState.createSubscription).toBe(false)
-    })
+			await waitFor(() => {
+				// Give the component time to make fetch calls
+				expect(fetch).toHaveBeenCalledTimes(2)
+			})
 
-    it('should show subscription fields when checked', () => {
-      const conditionalRendering = {
-        createSubscription: true,
-        subscriptionFieldsVisible: true,
-      }
-      expect(conditionalRendering.subscriptionFieldsVisible).toBe(true)
-    })
+			// Should not have called plans endpoint
+			const calls = mockFetch().mock.calls.map((call) => call[0]?.toString())
+			expect(calls.some((url) => url?.includes('/product-catalog/plans'))).toBe(false)
+		})
+	})
 
-    it('should hide subscription fields when unchecked', () => {
-      const conditionalRendering = {
-        createSubscription: false,
-        subscriptionFieldsVisible: false,
-      }
-      expect(conditionalRendering.subscriptionFieldsVisible).toBe(false)
-    })
-  })
+	describe('Create Subscription Toggle', () => {
+		it('should show subscription section when toggle is checked', async () => {
+			const user = userEvent.setup()
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
 
-  describe('Subscription Fields', () => {
-    describe('Product Plan', () => {
-      it('should be required when creating subscription', () => {
-        const field = {
-          name: 'productPlanId',
-          required: true, // when createSubscription is true
-          label: 'Product Plan *',
-        }
-        expect(field.required).toBe(true)
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
 
-      it('should be populated from API', () => {
-        const dataFetching = {
-          endpoint: '/api/tenant/:tenant/product-catalog/plans?status=active',
-          responseField: 'plans',
-        }
-        expect(dataFetching.endpoint).toContain('plans')
-      })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
 
-      it('should only show active plans', () => {
-        const filtering = {
-          statusFilter: 'active',
-        }
-        expect(filtering.statusFilter).toBe('active')
-      })
-    })
+			// Subscription section should not be visible initially
+			expect(screen.queryByText('Subscription Details')).not.toBeInTheDocument()
 
-    describe('Billing Cycle', () => {
-      it('should have monthly and yearly options', () => {
-        const options = ['monthly', 'yearly']
-        expect(options).toContain('monthly')
-        expect(options).toContain('yearly')
-      })
+			const checkbox = screen.getByLabelText(/create subscription now/i)
+			await user.click(checkbox)
 
-      it('should default to monthly', () => {
-        const defaultValue = 'monthly'
-        expect(defaultValue).toBe('monthly')
-      })
+			await waitFor(() => {
+				expect(screen.getByText('Subscription Details')).toBeInTheDocument()
+			})
+		})
 
-      it('should be button toggle style', () => {
-        const uiStyle = {
-          type: 'button-toggle',
-          options: ['Monthly', 'Yearly'],
-        }
-        expect(uiStyle.type).toBe('button-toggle')
-      })
-    })
+		it('should disable submit when subscription enabled but no plan selected', async () => {
+			const user = userEvent.setup()
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
 
-    describe('Seats', () => {
-      it('should be a number input', () => {
-        const field = {
-          name: 'seats',
-          type: 'number',
-          min: 1,
-        }
-        expect(field.type).toBe('number')
-        expect(field.min).toBe(1)
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
 
-      it('should default to 1', () => {
-        const defaultValue = 1
-        expect(defaultValue).toBe(1)
-      })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
 
-      it('should not allow values less than 1', () => {
-        const validation = {
-          value: 0,
-          correctedValue: 1,
-        }
-        expect(validation.correctedValue).toBeGreaterThanOrEqual(1)
-      })
-    })
-  })
+			await waitFor(() => {
+				expect(screen.getByPlaceholderText(/acme corporation/i)).toBeInTheDocument()
+			})
 
-  describe('Form Submission', () => {
-    describe('Prospect Creation', () => {
-      it('should submit without subscription data', () => {
-        const request = {
-          name: 'Acme Corp',
-          industry: 'Technology',
-          createSubscription: false,
-        }
-        expect(request.createSubscription).toBe(false)
-      })
+			// Fill company name
+			const nameInput = screen.getByPlaceholderText(/acme corporation/i)
+			await user.type(nameInput, 'Acme Corp')
 
-      it('should call POST /api/tenant/:tenant/crm/customers', () => {
-        const submission = {
-          method: 'POST',
-          endpoint: '/api/tenant/:tenant/crm/customers',
-        }
-        expect(submission.method).toBe('POST')
-        expect(submission.endpoint).toContain('crm/customers')
-      })
-    })
+			// Enable subscription toggle
+			const checkbox = screen.getByLabelText(/create subscription now/i)
+			await user.click(checkbox)
 
-    describe('Customer Creation', () => {
-      it('should submit with subscription data', () => {
-        const request = {
-          name: 'Acme Corp',
-          createSubscription: true,
-          subscriptionData: {
-            productPlanId: 'plan-123',
-            billingCycle: 'monthly',
-            seats: 1,
-          },
-        }
-        expect(request.createSubscription).toBe(true)
-        expect(request.subscriptionData).toBeDefined()
-      })
+			// Submit button should be disabled (no plan selected)
+			const submitButton = screen.getByRole('button', { name: /create customer/i })
+			expect(submitButton).toBeDisabled()
+		})
+	})
 
-      it('should disable submit when no plan selected', () => {
-        const buttonState = {
-          createSubscription: true,
-          selectedPlanId: '',
-          disabled: true,
-        }
-        expect(buttonState.disabled).toBe(true)
-      })
-    })
+	describe('Submit Create Prospect', () => {
+		it('should submit prospect creation without subscription', async () => {
+			const user = userEvent.setup()
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
 
-    describe('Loading State', () => {
-      it('should show loading indicator while submitting', () => {
-        const loadingState = {
-          isSubmitting: true,
-          buttonText: 'Creating...',
-          showSpinner: true,
-        }
-        expect(loadingState.showSpinner).toBe(true)
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+				.mockResolvedValueOnce(
+					mockFetchSuccess({
+						success: true,
+						customer: { id: 'customer-123', name: 'Acme Corp' },
+					})
+				)
 
-      it('should disable buttons while submitting', () => {
-        const buttonState = {
-          isSubmitting: true,
-          submitDisabled: true,
-          cancelDisabled: true,
-        }
-        expect(buttonState.submitDisabled).toBe(true)
-      })
-    })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
 
-    describe('Success Handling', () => {
-      it('should reset form on success', () => {
-        const afterSuccess = {
-          formReset: true,
-          createSubscription: false,
-          selectedIndustry: '',
-          selectedPlanId: '',
-        }
-        expect(afterSuccess.formReset).toBe(true)
-      })
+			await waitFor(() => {
+				expect(screen.getByPlaceholderText(/acme corporation/i)).toBeInTheDocument()
+			})
 
-      it('should close dialog on success', () => {
-        const afterSuccess = {
-          dialogOpen: false,
-        }
-        expect(afterSuccess.dialogOpen).toBe(false)
-      })
+			// Fill form
+			const nameInput = screen.getByPlaceholderText(/acme corporation/i)
+			await user.type(nameInput, 'Acme Corp')
 
-      it('should call onCustomerCreated callback', () => {
-        const afterSuccess = {
-          onCustomerCreatedCalled: true,
-        }
-        expect(afterSuccess.onCustomerCreatedCalled).toBe(true)
-      })
-    })
+			const tagsInput = screen.getByPlaceholderText(/comma-separated/i)
+			await user.type(tagsInput, 'enterprise, high-value')
 
-    describe('Error Handling', () => {
-      it('should display error message', () => {
-        const errorState = {
-          error: 'Company name is required',
-          showErrorBanner: true,
-        }
-        expect(errorState.showErrorBanner).toBe(true)
-      })
+			// Submit
+			const submitButton = screen.getByRole('button', { name: /create prospect/i })
+			await user.click(submitButton)
 
-      it('should keep dialog open on error', () => {
-        const errorState = {
-          dialogOpen: true,
-        }
-        expect(errorState.dialogOpen).toBe(true)
-      })
+			await waitFor(() => {
+				expect(fetch).toHaveBeenCalledWith(
+					expect.stringContaining('/api/tenant/acme/crm/customers'),
+					expect.objectContaining({
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+					})
+				)
+			})
 
-      it('should not reset form on error', () => {
-        const errorState = {
-          formValues: {
-            name: 'Acme Corp',
-            industry: 'Technology',
-          },
-          formReset: false,
-        }
-        expect(errorState.formReset).toBe(false)
-      })
-    })
-  })
+			const callArgs = mockFetch().mock.calls.find(
+				(call) => call[0]?.toString().includes('/crm/customers') && call[1]?.method === 'POST'
+			)
+			const requestBody = JSON.parse(callArgs?.[1]?.body as string)
 
-  describe('Dialog Close', () => {
-    it('should reset form when closing', () => {
-      const afterClose = {
-        formReset: true,
-        createSubscription: false,
-        selectedIndustry: '',
-        selectedPlanId: '',
-        seats: 1,
-        error: null,
-      }
-      expect(afterClose.formReset).toBe(true)
-      expect(afterClose.error).toBeNull()
-    })
+			expect(requestBody.name).toBe('Acme Corp')
+			expect(requestBody.tags).toEqual(['enterprise', 'high-value'])
+			expect(requestBody.createSubscription).toBeUndefined()
 
-    it('should have Cancel button', () => {
-      const cancelButton = {
-        text: 'Cancel',
-        onClick: 'close dialog',
-      }
-      expect(cancelButton.text).toBe('Cancel')
-    })
-  })
+			expect(mockOnOpenChange).toHaveBeenCalledWith(false)
+			expect(mockOnCustomerCreated).toHaveBeenCalled()
+		})
 
-  describe('Submit Button Text', () => {
-    it('should say Create Prospect when not creating subscription', () => {
-      const buttonText = {
-        createSubscription: false,
-        text: 'Create Prospect',
-      }
-      expect(buttonText.text).toBe('Create Prospect')
-    })
+		it('should trim and parse tags correctly', async () => {
+			const user = userEvent.setup()
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
 
-    it('should say Create Customer when creating subscription', () => {
-      const buttonText = {
-        createSubscription: true,
-        text: 'Create Customer',
-      }
-      expect(buttonText.text).toBe('Create Customer')
-    })
-  })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+				.mockResolvedValueOnce(
+					mockFetchSuccess({
+						success: true,
+						customer: { id: 'customer-123', name: 'Acme Corp' },
+					})
+				)
 
-  describe('Data Fetching', () => {
-    it('should fetch plans when dialog opens', () => {
-      const fetchTrigger = {
-        when: 'open === true && tenant !== ""',
-        endpoint: '/api/tenant/:tenant/product-catalog/plans?status=active',
-      }
-      expect(fetchTrigger.when).toContain('open')
-    })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
 
-    it('should fetch team members when dialog opens', () => {
-      const fetchTrigger = {
-        when: 'open === true && tenant !== ""',
-        endpoint: '/api/tenant/:tenant/members',
-      }
-      expect(fetchTrigger.endpoint).toContain('members')
-    })
+			await waitFor(() => {
+				expect(screen.getByPlaceholderText(/acme corporation/i)).toBeInTheDocument()
+			})
 
-    it('should show loading state for plans', () => {
-      const loadingState = {
-        isLoadingData: true,
-        message: 'Loading plans...',
-      }
-      expect(loadingState.message).toContain('Loading')
-    })
+			const nameInput = screen.getByPlaceholderText(/acme corporation/i)
+			await user.type(nameInput, 'Acme Corp')
 
-    it('should handle no active plans', () => {
-      const emptyState = {
-        activePlans: [],
-        message: 'No active product plans available. Create a plan first.',
-      }
-      expect(emptyState.message).toContain('Create a plan')
-    })
-  })
+			const tagsInput = screen.getByPlaceholderText(/comma-separated/i)
+			await user.type(tagsInput, 'enterprise , high-value , vip')
 
-  describe('Tenant Context', () => {
-    it('should get tenant from route params', () => {
-      const params = {
-        from: 'useParams({ strict: false })',
-        tenant: 'acme',
-      }
-      expect(params.from).toContain('useParams')
-    })
+			const submitButton = screen.getByRole('button', { name: /create prospect/i })
+			await user.click(submitButton)
 
-    it('should use tenant in API calls', () => {
-      const apiCall = (tenant: string) =>
-        `/api/tenant/${tenant}/crm/customers`
-      expect(apiCall('acme')).toBe('/api/tenant/acme/crm/customers')
-    })
-  })
+			await waitFor(() => {
+				const callArgs = mockFetch().mock.calls.find(
+					(call) => call[0]?.toString().includes('/crm/customers') && call[1]?.method === 'POST'
+				)
+				const requestBody = JSON.parse(callArgs?.[1]?.body as string)
+				expect(requestBody.tags).toEqual(['enterprise', 'high-value', 'vip'])
+			})
+		})
+	})
 
-  describe('Accessibility', () => {
-    it('should have dialog title', () => {
-      const dialog = {
-        title: 'Add New Customer',
-        hasDescription: true,
-      }
-      expect(dialog.title).toBe('Add New Customer')
-    })
+	describe('Error Handling', () => {
+		it('should display error message and keep dialog open on error', async () => {
+			const user = userEvent.setup()
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
 
-    it('should have labels for all inputs', () => {
-      const fields = [
-        'Company Name *',
-        'Industry',
-        'Website',
-        'Billing Email',
-        'Billing Address',
-        'Assign To',
-        'Tags',
-        'Notes',
-        'Product Plan *',
-        'Billing Cycle',
-        'Seats',
-      ]
-      expect(fields.length).toBeGreaterThan(0)
-    })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+				.mockResolvedValueOnce(mockFetchError('Failed to create customer', 500))
 
-    it('should have placeholder text for inputs', () => {
-      const placeholders = {
-        name: 'e.g., Acme Corporation',
-        website: 'https://example.com',
-        billingEmail: 'billing@example.com',
-      }
-      expect(Object.values(placeholders).every(p => p.length > 0)).toBe(true)
-    })
-  })
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
+
+			await waitFor(() => {
+				expect(screen.getByPlaceholderText(/acme corporation/i)).toBeInTheDocument()
+			})
+
+			const nameInput = screen.getByPlaceholderText(/acme corporation/i)
+			await user.type(nameInput, 'Acme Corp')
+
+			const submitButton = screen.getByRole('button', { name: /create prospect/i })
+			await user.click(submitButton)
+
+			await waitFor(() => {
+				expect(screen.getByText(/failed to create customer/i)).toBeInTheDocument()
+			})
+
+			// Dialog should still be open
+			expect(screen.getByText('Add New Customer')).toBeInTheDocument()
+			expect(mockOnOpenChange).not.toHaveBeenCalled()
+		})
+	})
+
+	describe('Edit Mode', () => {
+		it('should fetch customer data when opened in edit mode', async () => {
+			const mockCustomer = {
+				id: 'customer-123',
+				name: 'Acme Corp',
+				industry: 'Technology',
+			}
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
+
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customer: mockCustomer }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+					customerId="customer-123"
+				/>
+			)
+
+			await waitFor(() => {
+				expect(fetch).toHaveBeenCalledWith(
+					expect.stringContaining('/api/tenant/acme/crm/customers/customer-123')
+				)
+			})
+		})
+
+		it('should pre-fill form fields with customer data', async () => {
+			const mockCustomer = {
+				id: 'customer-123',
+				name: 'Acme Corp',
+				industry: 'Technology',
+				website: 'https://acme.com',
+				billingEmail: 'billing@acme.com',
+				billingAddress: '123 Main St',
+				assignedToUserId: 'user-1',
+				importance: 'high',
+				tags: ['enterprise', 'high-value'],
+				notes: 'Important customer',
+			}
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
+
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customer: mockCustomer }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+					customerId="customer-123"
+				/>
+			)
+
+			await waitFor(() => {
+				expect(screen.getByDisplayValue('Acme Corp')).toBeInTheDocument()
+				expect(screen.getByDisplayValue('https://acme.com')).toBeInTheDocument()
+				expect(screen.getByDisplayValue('billing@acme.com')).toBeInTheDocument()
+				expect(screen.getByDisplayValue('123 Main St')).toBeInTheDocument()
+				expect(screen.getByDisplayValue('enterprise, high-value')).toBeInTheDocument()
+				expect(screen.getByDisplayValue('Important customer')).toBeInTheDocument()
+			})
+		})
+
+		it('should hide subscription toggle in edit mode', async () => {
+			const mockCustomer = {
+				id: 'customer-123',
+				name: 'Acme Corp',
+			}
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
+
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customer: mockCustomer }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+					customerId="customer-123"
+				/>
+			)
+
+			await waitFor(() => {
+				expect(screen.getByDisplayValue('Acme Corp')).toBeInTheDocument()
+			})
+
+			expect(screen.queryByText(/create subscription now/i)).not.toBeInTheDocument()
+		})
+
+		it('should submit PUT request for updates', async () => {
+			const user = userEvent.setup()
+			const mockCustomer = {
+				id: 'customer-123',
+				name: 'Acme Corp',
+				industry: 'Technology',
+			}
+			const mockMembers = [{ id: 'user-1', name: 'John Smith' }]
+
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customer: mockCustomer }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+				.mockResolvedValueOnce(
+					mockFetchSuccess({
+						success: true,
+						customer: { ...mockCustomer, name: 'Acme Corporation' },
+					})
+				)
+
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+					customerId="customer-123"
+				/>
+			)
+
+			await waitFor(() => {
+				expect(screen.getByDisplayValue('Acme Corp')).toBeInTheDocument()
+			})
+
+			// Update name
+			const nameInput = screen.getByDisplayValue('Acme Corp')
+			await user.clear(nameInput)
+			await user.type(nameInput, 'Acme Corporation')
+
+			// Submit
+			const submitButton = screen.getByRole('button', { name: /update customer/i })
+			await user.click(submitButton)
+
+			await waitFor(() => {
+				expect(fetch).toHaveBeenCalledWith(
+					expect.stringContaining('/api/tenant/acme/crm/customers/customer-123'),
+					expect.objectContaining({
+						method: 'PUT',
+					})
+				)
+			})
+
+			const callArgs = mockFetch().mock.calls.find(
+				(call) => call[0]?.toString().includes('/customers/customer-123') && call[1]?.method === 'PUT'
+			)
+			const requestBody = JSON.parse(callArgs?.[1]?.body as string)
+
+			expect(requestBody.name).toBe('Acme Corporation')
+
+			expect(mockOnOpenChange).toHaveBeenCalledWith(false)
+			expect(mockOnCustomerCreated).toHaveBeenCalled()
+		})
+	})
+
+	describe('Form Fields', () => {
+		it('should render all form fields', async () => {
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ members: [] }))
+
+			render(
+				<CreateCustomerDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onCustomerCreated={mockOnCustomerCreated}
+				/>
+			)
+
+			await waitFor(() => {
+				expect(screen.getByPlaceholderText(/acme corporation/i)).toBeInTheDocument()
+			})
+
+			// Check for form field labels
+			expect(screen.getByText('Industry')).toBeInTheDocument()
+			expect(screen.getByText(/Website/i)).toBeInTheDocument()
+			expect(screen.getByText(/Billing Email/i)).toBeInTheDocument()
+			expect(screen.getByText(/Billing Address/i)).toBeInTheDocument()
+			expect(screen.getByText('Assign To')).toBeInTheDocument()
+			expect(screen.getByText(/Customer Importance/i)).toBeInTheDocument()
+			expect(screen.getByText(/Tags/i)).toBeInTheDocument()
+			expect(screen.getByText(/Notes/i)).toBeInTheDocument()
+		})
+	})
 })
-
-describe('CreateCustomerDialog Integration', () => {
-  describe('CRM Page Integration', () => {
-    it('should be imported in CRM page', () => {
-      const imports = ['CreateCustomerDialog']
-      expect(imports).toContain('CreateCustomerDialog')
-    })
-
-    it('should be controlled by isCreateDialogOpen state', () => {
-      const state = {
-        isCreateDialogOpen: false,
-        setIsCreateDialogOpen: 'function',
-      }
-      expect(state.isCreateDialogOpen).toBe(false)
-    })
-
-    it('should open when Add Customer button is clicked', () => {
-      const buttonClick = {
-        onClick: 'setIsCreateDialogOpen(true)',
-      }
-      expect(buttonClick.onClick).toContain('true')
-    })
-
-    it('should refresh customer list after creation', () => {
-      const onCustomerCreated = {
-        actions: ['setIsCreateDialogOpen(false)', 'fetchCustomers()'],
-      }
-      expect(onCustomerCreated.actions).toContain('fetchCustomers()')
-    })
-  })
-
-  describe('Edit Mode', () => {
-    it('should detect edit mode when customerId is provided', () => {
-      const props = {
-        open: true,
-        customerId: 'customer-123',
-        isEditMode: true,
-      }
-      expect(props.customerId).toBeDefined()
-      expect(props.isEditMode).toBe(true)
-    })
-
-    it('should show "Edit Customer" title in edit mode', () => {
-      const dialogTitle = {
-        create: 'Add New Customer',
-        edit: 'Edit Customer',
-      }
-      expect(dialogTitle.edit).toBe('Edit Customer')
-    })
-
-    it('should fetch customer data when opened in edit mode', () => {
-      const editModeBehavior = {
-        customerId: 'customer-123',
-        fetchUrl: '/api/tenant/:tenant/crm/customers/customer-123',
-        method: 'GET',
-      }
-      expect(editModeBehavior.customerId).toBeDefined()
-      expect(editModeBehavior.fetchUrl).toContain('customer-123')
-    })
-
-    it('should pre-fill form fields with customer data', () => {
-      const customerData = {
-        name: 'Acme Corp',
-        industry: 'Technology',
-        website: 'https://acme.com',
-        billingEmail: 'billing@acme.com',
-        billingAddress: '123 Main St',
-        assignedToUserId: 'user-123',
-        tags: ['enterprise', 'high-value'],
-        notes: 'Important customer',
-      }
-      const formValues = {
-        name: customerData.name,
-        industry: customerData.industry,
-        website: customerData.website,
-        billingEmail: customerData.billingEmail,
-        billingAddress: customerData.billingAddress,
-        assignedToUserId: customerData.assignedToUserId,
-        tags: customerData.tags.join(', '),
-        notes: customerData.notes,
-      }
-      expect(formValues.name).toBe(customerData.name)
-      expect(formValues.tags).toBe('enterprise, high-value')
-    })
-
-    it('should show loading state while fetching customer data', () => {
-      const loadingState = {
-        isLoadingCustomer: true,
-        message: 'Loading customer data...',
-      }
-      expect(loadingState.isLoadingCustomer).toBe(true)
-    })
-
-    it('should hide subscription creation section in edit mode', () => {
-      const editModeUI = {
-        showSubscriptionSection: false,
-        reason: 'Subscriptions managed separately',
-      }
-      expect(editModeUI.showSubscriptionSection).toBe(false)
-    })
-
-    it('should use PUT method for updates', () => {
-      const updateRequest = {
-        method: 'PUT',
-        url: '/api/tenant/:tenant/crm/customers/:customerId',
-      }
-      expect(updateRequest.method).toBe('PUT')
-    })
-
-    it('should send only changed fields in update request', () => {
-      const _originalData = {
-        name: 'Acme Corp',
-        industry: 'Technology',
-      }
-      const updateRequest = {
-        name: 'Acme Corporation', // Only name changed
-      }
-      expect(updateRequest.name).toBe('Acme Corporation')
-      expect(updateRequest.industry).toBeUndefined()
-    })
-
-    it('should show "Update Customer" button text in edit mode', () => {
-      const buttonText = {
-        create: 'Create Customer',
-        edit: 'Update Customer',
-      }
-      expect(buttonText.edit).toBe('Update Customer')
-    })
-
-    it('should show "Updating..." loading text in edit mode', () => {
-      const loadingText = {
-        create: 'Creating...',
-        edit: 'Updating...',
-      }
-      expect(loadingText.edit).toBe('Updating...')
-    })
-
-    it('should call onCustomerCreated after successful update', () => {
-      const updateFlow = {
-        steps: [
-          'Submit form',
-          'Send PUT request',
-          'Receive success response',
-          'Call onCustomerCreated()',
-          'Close dialog',
-          'Refresh customer list',
-        ],
-      }
-      expect(updateFlow.steps).toContain('Call onCustomerCreated()')
-    })
-
-    it('should handle errors when loading customer data', () => {
-      const errorHandling = {
-        error: 'Failed to load customer data',
-        showError: true,
-      }
-      expect(errorHandling.error).toBeDefined()
-      expect(errorHandling.showError).toBe(true)
-    })
-
-    it('should reset form when closing in create mode but not edit mode', () => {
-      const resetBehavior = {
-        createMode: {
-          onClose: 'reset all fields',
-        },
-        editMode: {
-          onClose: 'preserve form state',
-        },
-      }
-      expect(resetBehavior.createMode.onClose).toContain('reset')
-      expect(resetBehavior.editMode.onClose).toContain('preserve')
-    })
-
-    it('should handle customerId prop changes', () => {
-      const propChanges = {
-        initial: null,
-        changed: 'customer-123',
-        behavior: 're-fetch customer data',
-      }
-      expect(propChanges.changed).toBeDefined()
-      expect(propChanges.behavior).toContain('re-fetch')
-    })
-  })
-})
-
-

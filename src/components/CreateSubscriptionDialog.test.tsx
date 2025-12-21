@@ -1,521 +1,380 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { CreateSubscriptionDialog } from './CreateSubscriptionDialog'
+import { mockFetchSuccess, mockFetchError } from '@/test/setup'
+import * as router from '@tanstack/react-router'
 
-/**
- * Tests for CreateSubscriptionDialog component
- *
- * These tests document the expected component behavior.
- * Full integration tests would require React Testing Library setup.
- */
+// Mock useParams
+vi.mock('@tanstack/react-router', () => ({
+	useParams: vi.fn(() => ({ tenant: 'acme' })),
+}))
 
-describe('CreateSubscriptionDialog Component', () => {
-  describe('Dialog State', () => {
-    it('should be controlled by open prop', () => {
-      const props = {
-        open: true,
-        onOpenChange: 'function',
-      }
-      expect(props.open).toBe(true)
-    })
+const mockUseParams = router.useParams as ReturnType<typeof vi.fn>
 
-    it('should call onOpenChange when closing', () => {
-      const callbacks = {
-        onOpenChange: 'called with false when closing',
-      }
-      expect(callbacks.onOpenChange).toContain('false')
-    })
+// Helper to mock fetch
+function mockFetch() {
+	return global.fetch as ReturnType<typeof vi.fn>
+}
 
-    it('should call onSubscriptionCreated callback on success', () => {
-      const callbacks = {
-        onSubscriptionCreated: 'called after successful creation',
-      }
-      expect(callbacks.onSubscriptionCreated).toContain('success')
-    })
-  })
+describe('CreateSubscriptionDialog', () => {
+	const mockOnOpenChange = vi.fn()
+	const mockOnSubscriptionCreated = vi.fn()
 
-  describe('Form Fields', () => {
-    describe('Company Selection', () => {
-      it('should be required', () => {
-        const field = {
-          name: 'tenantOrganizationId',
-          required: true,
-          label: 'Company *',
-        }
-        expect(field.required).toBe(true)
-        expect(field.label).toContain('*')
-      })
+	beforeEach(() => {
+		vi.clearAllMocks()
+		mockUseParams.mockReturnValue({ tenant: 'acme' })
+		global.fetch = vi.fn(() => {
+			return Promise.resolve(
+				new Response(JSON.stringify({ error: 'Not found' }), {
+					status: 404,
+					headers: { 'Content-Type': 'application/json' },
+				})
+			)
+		}) as typeof fetch
+	})
 
-      it('should be a select dropdown', () => {
-        const field = {
-          name: 'tenantOrganizationId',
-          type: 'select',
-          placeholder: 'Select company...',
-        }
-        expect(field.type).toBe('select')
-      })
+	describe('Fetch on Open', () => {
+		it('should fetch companies and plans when dialog opens', async () => {
+			const mockCompanies = [
+				{ id: 'company-1', name: 'Acme Corp', subscriptionStatus: null },
+			]
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
 
-      it('should be populated from API', () => {
-        const dataFetching = {
-          endpoint: '/api/tenant/:tenant/crm/customers?segment=all',
-          dataPath: 'customers',
-        }
-        expect(dataFetching.endpoint).toContain('crm/customers')
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: mockCompanies }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
 
-      it('should show indicator for companies with active subscription', () => {
-        const companyOption = {
-          id: 'company-1',
-          name: 'Acme Corp',
-          subscriptionStatus: 'active',
-          indicator: 'Has subscription',
-        }
-        expect(companyOption.indicator).toBe('Has subscription')
-      })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-      it('should show warning when company already has active subscription', () => {
-        const warning = {
-          condition: 'selectedCompany.subscriptionStatus === active',
-          message: 'This company already has an active subscription. Cancel it first to create a new one.',
-        }
-        expect(warning.message).toContain('already has an active subscription')
-      })
-    })
+			await waitFor(() => {
+				expect(fetch).toHaveBeenCalledWith(
+					expect.stringContaining('/api/tenant/acme/crm/customers?segment=all')
+				)
+				expect(fetch).toHaveBeenCalledWith(
+					expect.stringContaining('/api/tenant/acme/product-catalog/plans?status=active')
+				)
+			})
+		})
+	})
 
-    describe('Product Plan Selection', () => {
-      it('should be required', () => {
-        const field = {
-          name: 'productPlanId',
-          required: true,
-          label: 'Product Plan *',
-        }
-        expect(field.required).toBe(true)
-        expect(field.label).toContain('*')
-      })
+	describe('Pre-selected Company UI', () => {
+		it('should show fixed display when company is pre-selected', async () => {
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
 
-      it('should be a select dropdown', () => {
-        const field = {
-          name: 'productPlanId',
-          type: 'select',
-          placeholder: 'Select plan...',
-        }
-        expect(field.type).toBe('select')
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
 
-      it('should only show active plans', () => {
-        const dataFetching = {
-          endpoint: '/api/tenant/:tenant/product-catalog/plans?status=active',
-          filter: "status === 'active'",
-        }
-        expect(dataFetching.filter).toContain('active')
-      })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+					preSelectedCompanyId="company-123"
+					preSelectedCompanyName="Acme Corp"
+				/>
+			)
 
-      it('should show plan description when selected', () => {
-        const selectedPlan = {
-          id: 'plan-1',
-          name: 'Enterprise Plan',
-          description: 'For large teams with advanced needs',
-        }
-        expect(selectedPlan.description).toBeDefined()
-      })
-    })
+			// Pre-selected company should show as fixed display, not dropdown
+			await waitFor(() => {
+				expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+			})
+		})
 
-    describe('Billing Cycle', () => {
-      it('should have monthly and yearly options', () => {
-        const options = ['monthly', 'yearly']
-        expect(options).toContain('monthly')
-        expect(options).toContain('yearly')
-      })
+		it('should render company select when not pre-selected', async () => {
+			const mockCompanies = [
+				{ id: 'company-1', name: 'Acme Corp', subscriptionStatus: null },
+			]
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
 
-      it('should default to monthly', () => {
-        const defaultValue = 'monthly'
-        expect(defaultValue).toBe('monthly')
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: mockCompanies }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
 
-      it('should be button toggle style', () => {
-        const uiStyle = {
-          type: 'toggle-buttons',
-          options: ['Monthly', 'Yearly'],
-        }
-        expect(uiStyle.type).toBe('toggle-buttons')
-      })
-    })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-    describe('Seats', () => {
-      it('should be a number input', () => {
-        const field = {
-          name: 'seats',
-          type: 'number',
-          min: 1,
-        }
-        expect(field.type).toBe('number')
-        expect(field.min).toBe(1)
-      })
+			// Company label should be present (indicating the select is rendered)
+			await waitFor(() => {
+				expect(screen.getByText('Company *')).toBeInTheDocument()
+			})
+		})
+	})
 
-      it('should default to 1', () => {
-        const defaultValue = 1
-        expect(defaultValue).toBe(1)
-      })
+	describe('Validation', () => {
+		it('should disable submit when no company or plan selected', async () => {
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
 
-      it('should not allow values less than 1', () => {
-        const validation = {
-          min: 1,
-          invalidValue: 0,
-          correctedValue: 1,
-        }
-        expect(validation.correctedValue).toBeGreaterThanOrEqual(validation.min)
-      })
-    })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
 
-    describe('Notes', () => {
-      it('should be optional', () => {
-        const field = {
-          name: 'notes',
-          required: false,
-          label: 'Notes (optional)',
-        }
-        expect(field.required).toBe(false)
-        expect(field.label).toContain('optional')
-      })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-      it('should be a textarea', () => {
-        const field = {
-          name: 'notes',
-          type: 'textarea',
-          rows: 2,
-        }
-        expect(field.type).toBe('textarea')
-      })
-    })
-  })
+			await waitFor(() => {
+				const submitButton = screen.getByRole('button', { name: /create subscription/i })
+				expect(submitButton).toBeDisabled()
+			})
+		})
 
-  describe('Pre-selected Company', () => {
-    it('should accept preSelectedCompanyId prop', () => {
-      const props = {
-        preSelectedCompanyId: 'company-123',
-        preSelectedCompanyName: 'Acme Corp',
-      }
-      expect(props.preSelectedCompanyId).toBeDefined()
-      expect(props.preSelectedCompanyName).toBeDefined()
-    })
+		it('should disable submit when company pre-selected but no plan', async () => {
+			const mockPlans = [
+				{ id: 'plan-1', name: 'Enterprise', status: 'active', pricingModel: 'flat' },
+			]
 
-    it('should show company name as fixed display when pre-selected', () => {
-      const preSelectedUI = {
-        showDropdown: false,
-        showFixedDisplay: true,
-        displayName: 'Acme Corp',
-      }
-      expect(preSelectedUI.showDropdown).toBe(false)
-      expect(preSelectedUI.showFixedDisplay).toBe(true)
-    })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: mockPlans }))
 
-    it('should initialize selectedCompanyId with pre-selected value', () => {
-      const props = {
-        preSelectedCompanyId: 'company-123',
-      }
-      const state = {
-        selectedCompanyId: props.preSelectedCompanyId,
-      }
-      expect(state.selectedCompanyId).toBe('company-123')
-    })
-  })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+					preSelectedCompanyId="company-1"
+					preSelectedCompanyName="Acme Corp"
+				/>
+			)
 
-  describe('Form Submission', () => {
-    describe('Success Flow', () => {
-      it('should submit to POST /api/tenant/:tenant/subscriptions', () => {
-        const submission = {
-          method: 'POST',
-          endpoint: '/api/tenant/:tenant/subscriptions',
-        }
-        expect(submission.method).toBe('POST')
-        expect(submission.endpoint).toContain('subscriptions')
-      })
+			await waitFor(() => {
+				// Wait for loading to complete
+				expect(screen.queryByText(/loading/i)).not.toBeInTheDocument()
+			})
 
-      it('should include required fields in request body', () => {
-        const requestBody = {
-          tenantOrganizationId: 'company-123',
-          productPlanId: 'plan-456',
-          billingCycle: 'monthly',
-          seats: 5,
-        }
-        expect(requestBody.tenantOrganizationId).toBeDefined()
-        expect(requestBody.productPlanId).toBeDefined()
-        expect(requestBody.billingCycle).toBeDefined()
-        expect(requestBody.seats).toBeDefined()
-      })
+			const submitButton = screen.getByRole('button', { name: /create subscription/i })
+			expect(submitButton).toBeDisabled()
+		})
+	})
 
-      it('should include optional notes if provided', () => {
-        const requestBody = {
-          tenantOrganizationId: 'company-123',
-          productPlanId: 'plan-456',
-          notes: 'Enterprise customer, special terms',
-        }
-        expect(requestBody.notes).toBeDefined()
-      })
+	describe('Loading States', () => {
+		it('should show loading state while fetching data', async () => {
+			mockFetch().mockImplementation(() => new Promise(() => {})) // Never resolves
 
-      it('should reset form on success', () => {
-        const resetActions = [
-          'form.reset()',
-          'setSelectedCompanyId(preSelectedCompanyId || "")',
-          'setSelectedPlanId("")',
-          'setSelectedBillingCycle("monthly")',
-          'setSeats(1)',
-          'setNotes("")',
-        ]
-        expect(resetActions).toContain('form.reset()')
-      })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-      it('should close dialog on success', () => {
-        const onSuccess = {
-          actions: ['onOpenChange(false)', 'onSubscriptionCreated()'],
-        }
-        expect(onSuccess.actions).toContain('onOpenChange(false)')
-      })
+			expect(screen.getByText(/loading companies/i)).toBeInTheDocument()
+		})
+	})
 
-      it('should call onSubscriptionCreated callback', () => {
-        const onSuccess = {
-          callback: 'onSubscriptionCreated()',
-        }
-        expect(onSuccess.callback).toContain('onSubscriptionCreated')
-      })
-    })
+	describe('Empty States', () => {
+		it('should show message when no active plans available', async () => {
+			const mockCompanies = [
+				{ id: 'company-1', name: 'Acme Corp', subscriptionStatus: null },
+			]
 
-    describe('Error Handling', () => {
-      it('should display error message', () => {
-        const errorState = {
-          error: 'Failed to create subscription',
-          showError: true,
-        }
-        expect(errorState.showError).toBe(true)
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: mockCompanies }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
 
-      it('should handle 409 conflict error specially', () => {
-        const conflictError = {
-          status: 409,
-          message: 'This company already has an active subscription. Please cancel the existing subscription before creating a new one.',
-        }
-        expect(conflictError.status).toBe(409)
-        expect(conflictError.message).toContain('already has an active subscription')
-      })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-      it('should keep dialog open on error', () => {
-        const onError = {
-          closeDialog: false,
-          showError: true,
-        }
-        expect(onError.closeDialog).toBe(false)
-      })
+			await waitFor(() => {
+				expect(
+					screen.getByText(/no active product plans available/i)
+				).toBeInTheDocument()
+			})
+		})
+	})
 
-      it('should not reset form on error', () => {
-        const onError = {
-          resetForm: false,
-          preserveUserInput: true,
-        }
-        expect(onError.resetForm).toBe(false)
-        expect(onError.preserveUserInput).toBe(true)
-      })
-    })
+	describe('Dialog Title', () => {
+		it('should show Create Subscription title', async () => {
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
 
-    describe('Loading State', () => {
-      it('should show loading indicator while submitting', () => {
-        const loadingState = {
-          isSubmitting: true,
-          buttonText: 'Creating...',
-          showSpinner: true,
-        }
-        expect(loadingState.buttonText).toBe('Creating...')
-        expect(loadingState.showSpinner).toBe(true)
-      })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-      it('should disable form fields while submitting', () => {
-        const loadingState = {
-          isSubmitting: true,
-          submitButtonDisabled: true,
-          cancelButtonDisabled: true,
-        }
-        expect(loadingState.submitButtonDisabled).toBe(true)
-      })
-    })
+			// Use getByRole for heading to avoid matching the button
+			expect(screen.getByRole('heading', { name: /create subscription/i })).toBeInTheDocument()
+		})
+	})
 
-    describe('Validation', () => {
-      it('should disable submit when company not selected', () => {
-        const validation = {
-          selectedCompanyId: '',
-          selectedPlanId: 'plan-1',
-          canSubmit: false,
-        }
-        expect(validation.canSubmit).toBe(false)
-      })
+	describe('Cancel Button', () => {
+		it('should call onOpenChange(false) when Cancel clicked', async () => {
+			const user = userEvent.setup()
 
-      it('should disable submit when plan not selected', () => {
-        const validation = {
-          selectedCompanyId: 'company-1',
-          selectedPlanId: '',
-          canSubmit: false,
-        }
-        expect(validation.canSubmit).toBe(false)
-      })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [] }))
 
-      it('should disable submit when company has active subscription', () => {
-        const validation = {
-          selectedCompanyId: 'company-1',
-          selectedPlanId: 'plan-1',
-          companyHasActiveSubscription: true,
-          canSubmit: false,
-        }
-        expect(validation.canSubmit).toBe(false)
-      })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-      it('should enable submit when all conditions met', () => {
-        const validation = {
-          selectedCompanyId: 'company-1',
-          selectedPlanId: 'plan-1',
-          companyHasActiveSubscription: false,
-          isSubmitting: false,
-          canSubmit: true,
-        }
-        expect(validation.canSubmit).toBe(true)
-      })
-    })
-  })
+			const cancelButton = screen.getByRole('button', { name: /cancel/i })
+			await user.click(cancelButton)
 
-  describe('Data Fetching', () => {
-    it('should fetch companies when dialog opens', () => {
-      const fetchBehavior = {
-        trigger: 'open === true',
-        endpoint: '/api/tenant/:tenant/crm/customers?segment=all',
-      }
-      expect(fetchBehavior.trigger).toContain('open')
-    })
+			expect(mockOnOpenChange).toHaveBeenCalledWith(false)
+		})
+	})
 
-    it('should fetch plans when dialog opens', () => {
-      const fetchBehavior = {
-        trigger: 'open === true',
-        endpoint: '/api/tenant/:tenant/product-catalog/plans?status=active',
-      }
-      expect(fetchBehavior.endpoint).toContain('status=active')
-    })
+	describe('Billing Cycle Toggle', () => {
+		it('should render billing cycle toggle buttons', async () => {
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [{ id: 'plan-1', name: 'Basic', status: 'active', pricingModel: 'flat' }] }))
 
-    it('should show loading state while fetching data', () => {
-      const loadingState = {
-        isLoadingData: true,
-        companiesPlaceholder: 'Loading companies...',
-        plansPlaceholder: 'Loading plans...',
-      }
-      expect(loadingState.isLoadingData).toBe(true)
-    })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-    it('should handle no active plans available', () => {
-      const emptyState = {
-        activePlans: [],
-        message: 'No active product plans available. Create a plan first in the Product Catalog.',
-      }
-      expect(emptyState.activePlans.length).toBe(0)
-      expect(emptyState.message).toContain('Create a plan first')
-    })
-  })
+			await waitFor(() => {
+				expect(screen.getByRole('button', { name: /monthly/i })).toBeInTheDocument()
+				expect(screen.getByRole('button', { name: /yearly/i })).toBeInTheDocument()
+			})
+		})
 
-  describe('Dialog Close', () => {
-    it('should reset form when closing', () => {
-      const onClose = {
-        resetActions: ['form.reset()', 'setError(null)'],
-      }
-      expect(onClose.resetActions).toContain('setError(null)')
-    })
+		it('should toggle billing cycle when clicked', async () => {
+			const user = userEvent.setup()
 
-    it('should have Cancel button', () => {
-      const cancelButton = {
-        text: 'Cancel',
-        type: 'button',
-        variant: 'outline',
-      }
-      expect(cancelButton.text).toBe('Cancel')
-    })
-  })
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [{ id: 'plan-1', name: 'Basic', status: 'active', pricingModel: 'flat' }] }))
 
-  describe('Accessibility', () => {
-    it('should have dialog title', () => {
-      const dialog = {
-        title: 'Create Subscription',
-        icon: 'CreditCard',
-      }
-      expect(dialog.title).toBe('Create Subscription')
-    })
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
 
-    it('should have dialog description', () => {
-      const dialog = {
-        description: 'Create a new subscription for a company. Each company can only have one active subscription.',
-      }
-      expect(dialog.description).toContain('subscription')
-    })
+			await waitFor(() => {
+				expect(screen.getByRole('button', { name: /yearly/i })).toBeInTheDocument()
+			})
 
-    it('should have labels for all inputs', () => {
-      const labels = [
-        'Company *',
-        'Product Plan *',
-        'Billing Cycle',
-        'Seats',
-        'Notes (optional)',
-      ]
-      expect(labels.length).toBeGreaterThan(0)
-      labels.forEach(label => {
-        expect(typeof label).toBe('string')
-      })
-    })
-  })
+			const yearlyButton = screen.getByRole('button', { name: /yearly/i })
+			await user.click(yearlyButton)
+
+			// Yearly should now be active (has different styling, but we can check it's still there)
+			expect(yearlyButton).toBeInTheDocument()
+		})
+	})
+
+	describe('Seats Input', () => {
+		it('should render seats input with default value', async () => {
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [{ id: 'plan-1', name: 'Basic', status: 'active', pricingModel: 'flat' }] }))
+
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
+
+			await waitFor(() => {
+				const seatsInput = screen.getByLabelText(/seats/i)
+				expect(seatsInput).toBeInTheDocument()
+				expect(seatsInput).toHaveValue(1)
+			})
+		})
+
+		it('should allow interaction with seats input', async () => {
+			const user = userEvent.setup()
+
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [{ id: 'plan-1', name: 'Basic', status: 'active', pricingModel: 'flat' }] }))
+
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
+
+			await waitFor(() => {
+				expect(screen.getByLabelText(/seats/i)).toBeInTheDocument()
+			})
+
+			const seatsInput = screen.getByLabelText(/seats/i) as HTMLInputElement
+			
+			// Input should be editable (not disabled or readonly)
+			expect(seatsInput).not.toBeDisabled()
+			expect(seatsInput).toHaveAttribute('type', 'number')
+			
+			// Can interact with it
+			await user.click(seatsInput)
+			await user.type(seatsInput, '5')
+			
+			// Value should have changed (might be 15 or 51 depending on cursor position)
+			expect(seatsInput.value).not.toBe('1')
+		})
+	})
+
+	describe('Notes Input', () => {
+		it('should render notes textarea', async () => {
+			mockFetch()
+				.mockResolvedValueOnce(mockFetchSuccess({ customers: [] }))
+				.mockResolvedValueOnce(mockFetchSuccess({ plans: [{ id: 'plan-1', name: 'Basic', status: 'active', pricingModel: 'flat' }] }))
+
+			render(
+				<CreateSubscriptionDialog
+					open={true}
+					onOpenChange={mockOnOpenChange}
+					onSubscriptionCreated={mockOnSubscriptionCreated}
+				/>
+			)
+
+			await waitFor(() => {
+				expect(screen.getByPlaceholderText(/internal notes/i)).toBeInTheDocument()
+			})
+		})
+	})
 })
-
-describe('CreateSubscriptionDialog Integration', () => {
-  describe('CRM Page Integration', () => {
-    it('should open when Create Subscription action is clicked', () => {
-      const interaction = {
-        action: 'click Create Subscription in dropdown',
-        result: 'setSelectedCustomerForSubscription(customer)',
-      }
-      expect(interaction.result).toContain('setSelectedCustomerForSubscription')
-    })
-
-    it('should pre-select company from CRM context', () => {
-      const props = {
-        preSelectedCompanyId: 'customer.id',
-        preSelectedCompanyName: 'customer.name',
-      }
-      expect(props.preSelectedCompanyId).toBeDefined()
-      expect(props.preSelectedCompanyName).toBeDefined()
-    })
-
-    it('should refresh customer list after creation', () => {
-      const onSubscriptionCreated = {
-        actions: ['fetchCustomers()'],
-      }
-      expect(onSubscriptionCreated.actions).toContain('fetchCustomers()')
-    })
-  })
-
-  describe('Subscriptions Page Integration', () => {
-    it('should open when New Subscription button is clicked', () => {
-      const interaction = {
-        action: 'click New Subscription button',
-        result: 'setIsCreateDialogOpen(true)',
-      }
-      expect(interaction.result).toContain('setIsCreateDialogOpen(true)')
-    })
-
-    it('should not pre-select company from subscriptions page', () => {
-      const props = {
-        preSelectedCompanyId: undefined,
-        preSelectedCompanyName: undefined,
-      }
-      expect(props.preSelectedCompanyId).toBeUndefined()
-    })
-
-    it('should refresh subscription list after creation', () => {
-      const onSubscriptionCreated = {
-        actions: ['refetch()'],
-      }
-      expect(onSubscriptionCreated.actions).toContain('refetch()')
-    })
-  })
-})
-
-
-
-

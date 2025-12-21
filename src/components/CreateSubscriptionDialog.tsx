@@ -247,7 +247,7 @@ export function CreateSubscriptionDialog({
                 onValueChange={setSelectedCompanyId}
                 disabled={isLoadingData}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Company">
                   <SelectValue placeholder={isLoadingData ? "Loading companies..." : "Select company..."} />
                 </SelectTrigger>
                 <SelectContent>
@@ -340,8 +340,9 @@ export function CreateSubscriptionDialog({
 
           {/* Seats */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Seats</Label>
+            <Label htmlFor="seats-input" className="text-sm font-medium text-gray-700">Seats</Label>
             <Input
+              id="seats-input"
               type="number"
               min={1}
               value={seats}
