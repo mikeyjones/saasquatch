@@ -6,6 +6,8 @@ import {
 	deleteArticle,
 	fetchPlaybooks,
 	createPlaybook,
+	updatePlaybook,
+	deletePlaybook,
 	searchKnowledge,
 	categories,
 	categoryOptions,
@@ -248,8 +250,84 @@ describe('knowledge data functions', () => {
 				type: 'manual',
 			})
 
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/knowledge/playbooks'),
+				expect.objectContaining({
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+				})
+			)
+
 			expect(result.success).toBe(true)
 			expect(result.playbook).toEqual(mockPlaybook)
+		})
+
+		it('should return error on API failure', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Validation failed', 400))
+
+			const result = await createPlaybook('acme', { name: 'Test' })
+
+			expect(result.success).toBe(false)
+			expect(result.error).toBeDefined()
+		})
+	})
+
+	describe('updatePlaybook', () => {
+		it('should make PUT request with update data', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({}))
+
+			const result = await updatePlaybook('acme', {
+				id: 'playbook-1',
+				name: 'Updated Name',
+			})
+
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/knowledge/playbooks'),
+				expect.objectContaining({
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+				})
+			)
+
+			expect(result.success).toBe(true)
+		})
+
+		it('should return error on API failure', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Not found', 404))
+
+			const result = await updatePlaybook('acme', {
+				id: 'playbook-1',
+				name: 'Updated',
+			})
+
+			expect(result.success).toBe(false)
+			expect(result.error).toBeDefined()
+		})
+	})
+
+	describe('deletePlaybook', () => {
+		it('should make DELETE request with playbook ID', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({}))
+
+			const result = await deletePlaybook('acme', 'playbook-1')
+
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/knowledge/playbooks?id=playbook-1'),
+				expect.objectContaining({
+					method: 'DELETE',
+				})
+			)
+
+			expect(result.success).toBe(true)
+		})
+
+		it('should return error on API failure', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Not found', 404))
+
+			const result = await deletePlaybook('acme', 'playbook-1')
+
+			expect(result.success).toBe(false)
+			expect(result.error).toBeDefined()
 		})
 	})
 

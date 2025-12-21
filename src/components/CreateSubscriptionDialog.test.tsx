@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CreateSubscriptionDialog } from './CreateSubscriptionDialog'
-import { mockFetchSuccess, mockFetchError } from '@/test/setup'
+import { mockFetchSuccess } from '@/test/setup'
 import * as router from '@tanstack/react-router'
 
 // Mock useParams

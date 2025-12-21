@@ -1,438 +1,720 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import {
+	fetchTickets,
+	fetchTicket,
+	createTicket,
+	updateTicket,
+	postTicketMessage,
+	fetchSupportMembers,
+	addTicket,
+	ticketsStore,
+	filterOptions,
+	type Ticket,
+	type TicketDetail,
+	type CreateTicketInput,
+} from './tickets'
+import { mockFetchSuccess, mockFetchError } from '@/test/setup'
 
-/**
- * Tests for ticket data functions
- * These tests verify the client-side API interaction for ticket operations
- */
+// Helper to mock fetch
+function mockFetch() {
+	return global.fetch as ReturnType<typeof vi.fn>
+}
+
 describe('tickets data functions', () => {
-  describe('fetchSupportMembers', () => {
-    describe('API Request', () => {
-      it('should make GET request to correct endpoint', () => {
-        const expectedUrl = `/api/tenant/acme/members`
-        expect(expectedUrl).toContain('/api/tenant/')
-        expect(expectedUrl).toContain('/members')
-      })
+	beforeEach(() => {
+		vi.clearAllMocks()
+		global.fetch = vi.fn()
+		// Reset store
+		ticketsStore.setState(() => [])
+		// Mock window.location.origin for URL construction
+		Object.defineProperty(window, 'location', {
+			value: { origin: 'http://localhost:3000' },
+			writable: true,
+			configurable: true,
+		})
+	})
 
-      it('should include credentials in request', () => {
-        const requestConfig = {
-          credentials: 'include' as RequestCredentials,
-        }
-        expect(requestConfig.credentials).toBe('include')
-      })
-    })
+	describe('fetchTickets', () => {
+		it('should fetch tickets without filters', async () => {
+			const mockTickets: Ticket[] = [
+				{
+					id: 'ticket-1',
+					title: 'Test Ticket',
+					company: 'Acme Corp',
+					ticketNumber: '#1001',
+					priority: 'normal',
+					status: 'open',
+					timeAgo: '1h ago',
+					preview: 'Test preview',
+					customer: {
+						name: 'John Doe',
+						company: 'Acme Corp',
+						initials: 'JD',
+					},
+					messages: [],
+				},
+			]
 
-    describe('Success Response Handling', () => {
-      it('should return array of support members on success', () => {
-        const response = {
-          members: [
-            { id: 'user-1', name: 'Alice Admin', email: 'alice@acme.test', role: 'owner' },
-            { id: 'user-2', name: 'Bob Builder', email: 'bob@acme.test', role: 'admin' },
-          ],
-        }
-        expect(Array.isArray(response.members)).toBe(true)
-        expect(response.members).toHaveLength(2)
-      })
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: mockTickets }))
 
-      it('should include required member fields', () => {
-        const member = {
-          id: 'user-1',
-          name: 'Alice Admin',
-          email: 'alice@acme.test',
-          role: 'owner',
-          image: null,
-        }
-        expect(member.id).toBeDefined()
-        expect(member.name).toBeDefined()
-        expect(member.email).toBeDefined()
-        expect(member.role).toBeDefined()
-      })
+			const result = await fetchTickets('acme')
 
-      it('should return empty array when no members', () => {
-        const response = { members: [] }
-        expect(response.members).toHaveLength(0)
-      })
-    })
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/tickets'),
+				expect.objectContaining({
+					credentials: 'include',
+				})
+			)
+			expect(result).toEqual(mockTickets)
+		})
 
-    describe('Error Handling', () => {
-      it('should return empty array on API error', () => {
-        const fallback: { id: string; name: string; email: string; role: string }[] = []
-        expect(fallback).toHaveLength(0)
-      })
+		it('should include status filter in query params', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: [] }))
 
-      it('should handle network errors gracefully', () => {
-        const errorHandling = {
-          onNetworkError: 'return empty array',
-          consoleError: 'Error fetching support members:',
-        }
-        expect(errorHandling.onNetworkError).toBe('return empty array')
-      })
+			await fetchTickets('acme', { status: 'open' })
 
-      it('should handle non-OK HTTP responses', () => {
-        const httpError = {
-          status: 401,
-          ok: false,
-        }
-        expect(httpError.ok).toBe(false)
-      })
-    })
+			const callUrl = mockFetch().mock.calls[0][0] as string
+			expect(callUrl).toContain('status=open')
+		})
 
-    describe('Response Shape', () => {
-      it('should return SupportMember array', () => {
-        const members = [
-          { id: 'user-1', name: 'Alice Admin', email: 'alice@acme.test', role: 'owner' },
-        ]
-        expect(members[0].id).toBeDefined()
-        expect(members[0].name).toBeDefined()
-        expect(members[0].email).toBeDefined()
-        expect(members[0].role).toBeDefined()
-      })
+		it('should include priority filter in query params', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: [] }))
 
-      it('should support optional image field', () => {
-        const memberWithImage = {
-          id: 'user-1',
-          name: 'Alice Admin',
-          email: 'alice@acme.test',
-          role: 'owner',
-          image: 'https://example.com/avatar.jpg',
-        }
-        const memberWithoutImage = {
-          id: 'user-2',
-          name: 'Bob Builder',
-          email: 'bob@acme.test',
-          role: 'admin',
-          image: null,
-        }
-        expect(memberWithImage.image).toBeDefined()
-        expect(memberWithoutImage.image).toBeNull()
-      })
-    })
-  })
+			await fetchTickets('acme', { priority: 'urgent' })
 
-  describe('postTicketMessage', () => {
-    describe('API Request', () => {
-      it('should make POST request to correct endpoint', () => {
-        const expectedUrl = `/api/tenant/acme/tickets/ticket-123`
-        expect(expectedUrl).toContain('/api/tenant/')
-        expect(expectedUrl).toContain('/tickets/')
-      })
+			const callUrl = mockFetch().mock.calls[0][0] as string
+			expect(callUrl).toContain('priority=urgent')
+		})
 
-      it('should include credentials in request', () => {
-        const requestConfig = {
-          method: 'POST',
-          credentials: 'include' as RequestCredentials,
-          headers: { 'Content-Type': 'application/json' },
-        }
-        expect(requestConfig.credentials).toBe('include')
-        expect(requestConfig.headers['Content-Type']).toBe('application/json')
-      })
+		it('should include search filter in query params', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: [] }))
 
-      it('should send content in request body', () => {
-        const requestBody = {
-          content: 'Test message content',
-          isInternal: false,
-        }
-        expect(requestBody.content).toBeDefined()
-        expect(typeof requestBody.content).toBe('string')
-      })
+			await fetchTickets('acme', { search: 'test query' })
 
-      it('should send isInternal flag in request body', () => {
-        const publicRequest = {
-          content: 'Public message',
-          isInternal: false,
-        }
-        const privateRequest = {
-          content: 'Private note',
-          isInternal: true,
-        }
-        expect(publicRequest.isInternal).toBe(false)
-        expect(privateRequest.isInternal).toBe(true)
-      })
+			const callUrl = mockFetch().mock.calls[0][0] as string
+			// URL encoding can use either + or %20 for spaces, both are valid
+			expect(callUrl).toMatch(/search=test(\+|%20)query/)
+		})
 
-      it('should default isInternal to false when not provided', () => {
-        const request = {
-          content: 'Test message',
-          isInternal: false, // default value
-        }
-        expect(request.isInternal).toBe(false)
-      })
-    })
+		it('should include assignedToUserId filter in query params', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: [] }))
 
-    describe('Success Response Handling', () => {
-      it('should return success true on successful post', () => {
-        const response = {
-          success: true,
-          message: {
-            id: 'message-uuid',
-            type: 'agent',
-            author: 'Alice Admin',
-            timestamp: 'Just now',
-            content: 'Test message',
-            isInternal: false,
-          },
-        }
-        expect(response.success).toBe(true)
-        expect(response.message).toBeDefined()
-      })
+			await fetchTickets('acme', { assignedToUserId: 'user-123' })
 
-      it('should include message in response on success', () => {
-        const response = {
-          success: true,
-          message: {
-            id: 'message-uuid',
-            type: 'agent',
-            author: 'Alice Admin',
-            timestamp: 'Just now',
-            content: 'Test message',
-            isInternal: false,
-          },
-        }
-        expect(response.message.id).toBeDefined()
-        expect(response.message.type).toBe('agent')
-        expect(response.message.author).toBeDefined()
-        expect(response.message.content).toBeDefined()
-      })
+			const callUrl = mockFetch().mock.calls[0][0] as string
+			expect(callUrl).toContain('assignedToUserId=user-123')
+		})
 
-      it('should parse JSON response correctly', () => {
-        const jsonResponse = {
-          message: {
-            id: 'message-uuid',
-            type: 'agent',
-            author: 'Alice Admin',
-            timestamp: 'Just now',
-            createdAt: '2024-01-15T10:00:00Z',
-            content: 'Test message',
-            isInternal: false,
-          },
-        }
-        expect(jsonResponse.message).toBeDefined()
-        expect(jsonResponse.message.type).toBe('agent')
-      })
-    })
+		it('should include unassigned filter in query params', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: [] }))
 
-    describe('Error Handling', () => {
-      it('should return success false on API error', () => {
-        const response = {
-          success: false,
-          error: 'Failed to send message',
-        }
-        expect(response.success).toBe(false)
-        expect(response.error).toBeDefined()
-      })
+			await fetchTickets('acme', { unassigned: true })
 
-      it('should extract error message from API response', () => {
-        const apiError = {
-          error: 'Unauthorized',
-        }
-        const clientResponse = {
-          success: false,
-          error: apiError.error || 'Failed to send message',
-        }
-        expect(clientResponse.error).toBe('Unauthorized')
-      })
+			const callUrl = mockFetch().mock.calls[0][0] as string
+			expect(callUrl).toContain('unassigned=true')
+		})
 
-      it('should use default error message if API error is not parseable', () => {
-        const clientResponse = {
-          success: false,
-          error: 'Failed to send message', // default
-        }
-        expect(clientResponse.error).toBe('Failed to send message')
-      })
+		it('should combine multiple filters', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: [] }))
 
-      it('should handle network errors gracefully', () => {
-        const networkError = {
-          success: false,
-          error: 'Network error occurred',
-        }
-        expect(networkError.success).toBe(false)
-        expect(networkError.error).toBe('Network error occurred')
-      })
+			await fetchTickets('acme', {
+				status: 'open',
+				priority: 'high',
+				search: 'test',
+			})
 
-      it('should handle non-OK HTTP responses', () => {
-        const httpError = {
-          status: 401,
-          ok: false,
-        }
-        expect(httpError.ok).toBe(false)
-      })
+			const callUrl = mockFetch().mock.calls[0][0] as string
+			expect(callUrl).toContain('status=open')
+			expect(callUrl).toContain('priority=high')
+			expect(callUrl).toContain('search=test')
+		})
 
-      it('should log errors to console', () => {
-        const errorHandling = {
-          onError: 'console.error("Failed to post message:", response.statusText)',
-          onNetworkError: 'console.error("Error posting message:", error)',
-        }
-        expect(errorHandling.onError).toContain('console.error')
-        expect(errorHandling.onNetworkError).toContain('console.error')
-      })
-    })
+		it('should update ticketsStore on success', async () => {
+			const mockTickets: Ticket[] = [
+				{
+					id: 'ticket-1',
+					title: 'Test',
+					company: 'Acme',
+					ticketNumber: '#1001',
+					priority: 'normal',
+					status: 'open',
+					timeAgo: '1h',
+					preview: 'Test',
+					customer: { name: 'John', company: 'Acme', initials: 'JD' },
+					messages: [],
+				},
+			]
 
-    describe('Response Shape', () => {
-      it('should return message with correct structure', () => {
-        const message = {
-          id: 'message-uuid',
-          type: 'agent' as const,
-          author: 'Alice Admin',
-          timestamp: 'Just now',
-          content: 'Test message',
-          isInternal: false,
-        }
-        expect(message.id).toBeDefined()
-        expect(message.type).toBe('agent')
-        expect(message.author).toBeDefined()
-        expect(message.timestamp).toBeDefined()
-        expect(message.content).toBeDefined()
-        expect(typeof message.isInternal).toBe('boolean')
-      })
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ tickets: mockTickets }))
 
-      it('should include isInternal flag in message', () => {
-        const publicMessage = {
-          isInternal: false,
-        }
-        const privateMessage = {
-          isInternal: true,
-        }
-        expect(publicMessage.isInternal).toBe(false)
-        expect(privateMessage.isInternal).toBe(true)
-      })
-    })
+			await fetchTickets('acme')
 
-    describe('Function Parameters', () => {
-      it('should accept tenantSlug parameter', () => {
-        const params = {
-          tenantSlug: 'acme',
-          ticketId: 'ticket-123',
-          content: 'Test message',
-          isInternal: false,
-        }
-        expect(params.tenantSlug).toBeDefined()
-        expect(typeof params.tenantSlug).toBe('string')
-      })
+			expect(ticketsStore.state).toEqual(mockTickets)
+		})
 
-      it('should accept ticketId parameter', () => {
-        const params = {
-          tenantSlug: 'acme',
-          ticketId: 'ticket-123',
-          content: 'Test message',
-          isInternal: false,
-        }
-        expect(params.ticketId).toBeDefined()
-        expect(typeof params.ticketId).toBe('string')
-      })
+		it('should return empty array on API error', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Not found', 404))
 
-      it('should accept content parameter', () => {
-        const params = {
-          tenantSlug: 'acme',
-          ticketId: 'ticket-123',
-          content: 'Test message',
-          isInternal: false,
-        }
-        expect(params.content).toBeDefined()
-        expect(typeof params.content).toBe('string')
-      })
+			const result = await fetchTickets('acme')
 
-      it('should accept optional isInternal parameter', () => {
-        const paramsWithInternal = {
-          tenantSlug: 'acme',
-          ticketId: 'ticket-123',
-          content: 'Test message',
-          isInternal: true,
-        }
-        const paramsWithoutInternal: {
-          tenantSlug: string
-          ticketId: string
-          content: string
-          isInternal?: boolean
-        } = {
-          tenantSlug: 'acme',
-          ticketId: 'ticket-123',
-          content: 'Test message',
-          // isInternal defaults to false
-        }
-        expect(paramsWithInternal.isInternal).toBe(true)
-        expect(paramsWithoutInternal.isInternal).toBeUndefined()
-      })
-    })
-  })
+			expect(result).toEqual([])
+		})
 
-  describe('updateTicket', () => {
-    describe('Assignment Updates', () => {
-      it('should accept assignedToUserId in updates', () => {
-        const updates = {
-          assignedToUserId: 'user-123',
-        }
-        expect(updates.assignedToUserId).toBe('user-123')
-      })
+		it('should return empty array on network error', async () => {
+			mockFetch().mockRejectedValueOnce(new Error('Network error'))
 
-      it('should accept null assignedToUserId for unassignment', () => {
-        const updates = {
-          assignedToUserId: null,
-        }
-        expect(updates.assignedToUserId).toBeNull()
-      })
+			const result = await fetchTickets('acme')
 
-      it('should make PATCH request to correct endpoint', () => {
-        const expectedUrl = `/api/tenant/acme/tickets/ticket-123`
-        expect(expectedUrl).toContain('/api/tenant/')
-        expect(expectedUrl).toContain('/tickets/')
-      })
+			expect(result).toEqual([])
+		})
+	})
 
-      it('should include credentials in request', () => {
-        const requestConfig = {
-          method: 'PATCH',
-          credentials: 'include' as RequestCredentials,
-          headers: { 'Content-Type': 'application/json' },
-        }
-        expect(requestConfig.method).toBe('PATCH')
-        expect(requestConfig.credentials).toBe('include')
-      })
+	describe('fetchTicket', () => {
+		it('should fetch single ticket by ID', async () => {
+			const mockTicket: TicketDetail = {
+				id: 'ticket-1',
+				title: 'Test Ticket',
+				company: 'Acme Corp',
+				ticketNumber: '#1001',
+				priority: 'normal',
+				status: 'open',
+				timeAgo: '1h ago',
+				preview: 'Test preview',
+				customer: {
+					name: 'John Doe',
+					company: 'Acme Corp',
+					initials: 'JD',
+				},
+				messages: [],
+				createdAt: '2024-01-01',
+				updatedAt: '2024-01-01',
+				channel: 'email',
+				assignedTo: null,
+			}
 
-      it('should send assignedToUserId in request body', () => {
-        const requestBody = {
-          assignedToUserId: 'user-123',
-        }
-        expect(requestBody.assignedToUserId).toBeDefined()
-      })
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ ticket: mockTicket }))
 
-      it('should return true on success', () => {
-        const result = true
-        expect(result).toBe(true)
-      })
+			const result = await fetchTicket('acme', 'ticket-1')
 
-      it('should return false on failure', () => {
-        const result = false
-        expect(result).toBe(false)
-      })
-    })
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/tickets/ticket-1'),
+				expect.objectContaining({
+					credentials: 'include',
+				})
+			)
+			expect(result).toEqual(mockTicket)
+		})
 
-    describe('Combined Updates', () => {
-      it('should support status, priority, and assignment together', () => {
-        const updates = {
-          status: 'closed',
-          priority: 'high',
-          assignedToUserId: 'user-123',
-        }
-        expect(updates.status).toBe('closed')
-        expect(updates.priority).toBe('high')
-        expect(updates.assignedToUserId).toBe('user-123')
-      })
+		it('should return null on API error', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Not found', 404))
 
-      it('should support partial updates', () => {
-        const statusOnlyUpdate = { status: 'pending' }
-        const assignmentOnlyUpdate = { assignedToUserId: 'user-456' }
-        expect(statusOnlyUpdate.status).toBe('pending')
-        expect(assignmentOnlyUpdate.assignedToUserId).toBe('user-456')
-      })
-    })
+			const result = await fetchTicket('acme', 'ticket-1')
 
-    describe('Store Updates', () => {
-      it('should update ticket status in store optimistically', () => {
-        const storeUpdate = {
-          status: 'closed' as const,
-          priority: 'high' as const,
-        }
-        expect(storeUpdate.status).toBe('closed')
-        expect(storeUpdate.priority).toBe('high')
-      })
-    })
-  })
+			expect(result).toBeNull()
+		})
+
+		it('should return null on network error', async () => {
+			mockFetch().mockRejectedValueOnce(new Error('Network error'))
+
+			const result = await fetchTicket('acme', 'ticket-1')
+
+			expect(result).toBeNull()
+		})
+	})
+
+	describe('createTicket', () => {
+		it('should create ticket with correct data', async () => {
+			const input: CreateTicketInput = {
+				title: 'New Ticket',
+				priority: 'high',
+				message: 'Test message content',
+				customerId: 'customer-1',
+				customer: {
+					name: 'John Doe',
+					company: 'Acme Corp',
+					initials: 'JD',
+				},
+			}
+
+			const mockResponseTicket = {
+				id: 'ticket-new',
+				title: 'New Ticket',
+				company: 'Acme Corp',
+				ticketNumber: '#1002',
+			}
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ ticket: mockResponseTicket }))
+
+			const result = await createTicket('acme', input)
+
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/tickets'),
+				expect.objectContaining({
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+				})
+			)
+
+			const callBody = JSON.parse(mockFetch().mock.calls[0][1]?.body as string)
+			expect(callBody).toEqual({
+				title: 'New Ticket',
+				priority: 'high',
+				message: 'Test message content',
+				customerId: 'customer-1',
+			})
+
+			expect(result).toBeDefined()
+			expect(result?.title).toBe('New Ticket')
+			expect(result?.priority).toBe('high')
+			expect(result?.status).toBe('open')
+		})
+
+		it('should add ticket to store optimistically', async () => {
+			const input: CreateTicketInput = {
+				title: 'New Ticket',
+				priority: 'normal',
+				message: 'Short message',
+				customerId: 'customer-1',
+				customer: {
+					name: 'John Doe',
+					company: 'Acme Corp',
+					initials: 'JD',
+				},
+			}
+
+			mockFetch().mockResolvedValueOnce(
+				mockFetchSuccess({
+					ticket: {
+						id: 'ticket-new',
+						title: 'New Ticket',
+						company: 'Acme Corp',
+						ticketNumber: '#1002',
+					},
+				})
+			)
+
+			await createTicket('acme', input)
+
+			expect(ticketsStore.state.length).toBeGreaterThan(0)
+			const addedTicket = ticketsStore.state[0]
+			expect(addedTicket.title).toBe('New Ticket')
+		})
+
+		it('should truncate long message previews', async () => {
+			const longMessage = 'a'.repeat(100)
+			const input: CreateTicketInput = {
+				title: 'New Ticket',
+				priority: 'normal',
+				message: longMessage,
+				customerId: 'customer-1',
+				customer: {
+					name: 'John Doe',
+					company: 'Acme Corp',
+					initials: 'JD',
+				},
+			}
+
+			mockFetch().mockResolvedValueOnce(
+				mockFetchSuccess({
+					ticket: {
+						id: 'ticket-new',
+						title: 'New Ticket',
+						company: 'Acme Corp',
+						ticketNumber: '#1002',
+					},
+				})
+			)
+
+			const result = await createTicket('acme', input)
+
+			expect(result?.preview).toHaveLength(63) // 60 chars + "..."
+			expect(result?.preview).toContain('...')
+		})
+
+		it('should return null on API error', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Validation failed', 400))
+
+			const result = await createTicket('acme', {
+				title: 'Test',
+				priority: 'normal',
+				message: 'Test',
+				customerId: 'customer-1',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+			})
+
+			expect(result).toBeNull()
+		})
+
+		it('should return null on network error', async () => {
+			mockFetch().mockRejectedValueOnce(new Error('Network error'))
+
+			const result = await createTicket('acme', {
+				title: 'Test',
+				priority: 'normal',
+				message: 'Test',
+				customerId: 'customer-1',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+			})
+
+			expect(result).toBeNull()
+		})
+	})
+
+	describe('updateTicket', () => {
+		it('should update ticket status', async () => {
+			// Add ticket to store first
+			const existingTicket: Ticket = {
+				id: 'ticket-1',
+				title: 'Test',
+				company: 'Acme',
+				ticketNumber: '#1001',
+				priority: 'normal',
+				status: 'open',
+				timeAgo: '1h',
+				preview: 'Test',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+				messages: [],
+			}
+			ticketsStore.setState(() => [existingTicket])
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({}))
+
+			const result = await updateTicket('acme', 'ticket-1', { status: 'closed' })
+
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/tickets/ticket-1'),
+				expect.objectContaining({
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+				})
+			)
+
+			const callBody = JSON.parse(mockFetch().mock.calls[0][1]?.body as string)
+			expect(callBody).toEqual({ status: 'closed' })
+
+			expect(result).toBe(true)
+			expect(ticketsStore.state[0].status).toBe('closed')
+		})
+
+		it('should update ticket priority', async () => {
+			const existingTicket: Ticket = {
+				id: 'ticket-1',
+				title: 'Test',
+				company: 'Acme',
+				ticketNumber: '#1001',
+				priority: 'normal',
+				status: 'open',
+				timeAgo: '1h',
+				preview: 'Test',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+				messages: [],
+			}
+			ticketsStore.setState(() => [existingTicket])
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({}))
+
+			const result = await updateTicket('acme', 'ticket-1', { priority: 'urgent' })
+
+			expect(result).toBe(true)
+			expect(ticketsStore.state[0].priority).toBe('urgent')
+		})
+
+		it('should assign ticket to user', async () => {
+			const existingTicket: Ticket = {
+				id: 'ticket-1',
+				title: 'Test',
+				company: 'Acme',
+				ticketNumber: '#1001',
+				priority: 'normal',
+				status: 'open',
+				timeAgo: '1h',
+				preview: 'Test',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+				messages: [],
+			}
+			ticketsStore.setState(() => [existingTicket])
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({}))
+
+			const result = await updateTicket('acme', 'ticket-1', {
+				assignedToUserId: 'user-123',
+			})
+
+			expect(result).toBe(true)
+			expect(ticketsStore.state[0].assignedToUserId).toBe('user-123')
+		})
+
+		it('should unassign ticket when assignedToUserId is null', async () => {
+			const existingTicket: Ticket = {
+				id: 'ticket-1',
+				title: 'Test',
+				company: 'Acme',
+				ticketNumber: '#1001',
+				priority: 'normal',
+				status: 'open',
+				timeAgo: '1h',
+				preview: 'Test',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+				messages: [],
+				assignedToUserId: 'user-123',
+			}
+			ticketsStore.setState(() => [existingTicket])
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({}))
+
+			const result = await updateTicket('acme', 'ticket-1', {
+				assignedToUserId: null,
+			})
+
+			expect(result).toBe(true)
+			expect(ticketsStore.state[0].assignedToUserId).toBeNull()
+		})
+
+		it('should update multiple fields at once', async () => {
+			const existingTicket: Ticket = {
+				id: 'ticket-1',
+				title: 'Test',
+				company: 'Acme',
+				ticketNumber: '#1001',
+				priority: 'normal',
+				status: 'open',
+				timeAgo: '1h',
+				preview: 'Test',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+				messages: [],
+			}
+			ticketsStore.setState(() => [existingTicket])
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({}))
+
+			const result = await updateTicket('acme', 'ticket-1', {
+				status: 'closed',
+				priority: 'high',
+				assignedToUserId: 'user-123',
+			})
+
+			expect(result).toBe(true)
+			expect(ticketsStore.state[0].status).toBe('closed')
+			expect(ticketsStore.state[0].priority).toBe('high')
+			expect(ticketsStore.state[0].assignedToUserId).toBe('user-123')
+		})
+
+		it('should return false on API error', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Not found', 404))
+
+			const result = await updateTicket('acme', 'ticket-1', { status: 'closed' })
+
+			expect(result).toBe(false)
+		})
+
+		it('should return false on network error', async () => {
+			mockFetch().mockRejectedValueOnce(new Error('Network error'))
+
+			const result = await updateTicket('acme', 'ticket-1', { status: 'closed' })
+
+			expect(result).toBe(false)
+		})
+	})
+
+	describe('postTicketMessage', () => {
+		it('should post public message', async () => {
+			const mockMessage = {
+				id: 'message-1',
+				type: 'agent' as const,
+				author: 'Alice Admin',
+				timestamp: 'Just now',
+				content: 'Test message',
+				isInternal: false,
+			}
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ message: mockMessage }))
+
+			const result = await postTicketMessage('acme', 'ticket-1', 'Test message', false)
+
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/tickets/ticket-1'),
+				expect.objectContaining({
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+				})
+			)
+
+			const callBody = JSON.parse(mockFetch().mock.calls[0][1]?.body as string)
+			expect(callBody).toEqual({
+				content: 'Test message',
+				isInternal: false,
+			})
+
+			expect(result.success).toBe(true)
+			expect(result.message).toEqual(mockMessage)
+		})
+
+		it('should post internal note when isInternal is true', async () => {
+			const mockMessage = {
+				id: 'message-1',
+				type: 'agent' as const,
+				author: 'Alice Admin',
+				timestamp: 'Just now',
+				content: 'Internal note',
+				isInternal: true,
+			}
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ message: mockMessage }))
+
+			const result = await postTicketMessage('acme', 'ticket-1', 'Internal note', true)
+
+			const callBody = JSON.parse(mockFetch().mock.calls[0][1]?.body as string)
+			expect(callBody.isInternal).toBe(true)
+			expect(result.success).toBe(true)
+		})
+
+		it('should default isInternal to false', async () => {
+			const mockMessage = {
+				id: 'message-1',
+				type: 'agent' as const,
+				author: 'Alice Admin',
+				timestamp: 'Just now',
+				content: 'Test message',
+				isInternal: false,
+			}
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ message: mockMessage }))
+
+			await postTicketMessage('acme', 'ticket-1', 'Test message')
+
+			const callBody = JSON.parse(mockFetch().mock.calls[0][1]?.body as string)
+			expect(callBody.isInternal).toBe(false)
+		})
+
+		it('should return error on API failure', async () => {
+			mockFetch().mockResolvedValueOnce(
+				mockFetchError('Unauthorized', 401)
+			)
+
+			const result = await postTicketMessage('acme', 'ticket-1', 'Test message')
+
+			expect(result.success).toBe(false)
+			expect(result.error).toBeDefined()
+		})
+
+		it('should handle network errors', async () => {
+			mockFetch().mockRejectedValueOnce(new Error('Network error'))
+
+			const result = await postTicketMessage('acme', 'ticket-1', 'Test message')
+
+			expect(result.success).toBe(false)
+			expect(result.error).toBe('Network error occurred')
+		})
+	})
+
+	describe('fetchSupportMembers', () => {
+		it('should fetch support members', async () => {
+			const mockMembers = [
+				{
+					id: 'user-1',
+					name: 'Alice Admin',
+					email: 'alice@acme.test',
+					role: 'owner',
+					image: null,
+				},
+				{
+					id: 'user-2',
+					name: 'Bob Builder',
+					email: 'bob@acme.test',
+					role: 'admin',
+				},
+			]
+
+			mockFetch().mockResolvedValueOnce(mockFetchSuccess({ members: mockMembers }))
+
+			const result = await fetchSupportMembers('acme')
+
+			expect(fetch).toHaveBeenCalledWith(
+				expect.stringContaining('/api/tenant/acme/members'),
+				expect.objectContaining({
+					credentials: 'include',
+				})
+			)
+			expect(result).toEqual(mockMembers)
+		})
+
+		it('should return empty array on API error', async () => {
+			mockFetch().mockResolvedValueOnce(mockFetchError('Not found', 404))
+
+			const result = await fetchSupportMembers('acme')
+
+			expect(result).toEqual([])
+		})
+
+		it('should return empty array on network error', async () => {
+			mockFetch().mockRejectedValueOnce(new Error('Network error'))
+
+			const result = await fetchSupportMembers('acme')
+
+			expect(result).toEqual([])
+		})
+	})
+
+	describe('addTicket', () => {
+		it('should add ticket to store', () => {
+			const input: Omit<CreateTicketInput, 'customerId'> = {
+				title: 'Legacy Ticket',
+				priority: 'normal',
+				message: 'Test message',
+				customer: {
+					name: 'John Doe',
+					company: 'Acme Corp',
+					initials: 'JD',
+				},
+			}
+
+			const result = addTicket(input)
+
+			expect(result.title).toBe('Legacy Ticket')
+			expect(result.status).toBe('open')
+			expect(result.priority).toBe('normal')
+			expect(ticketsStore.state.length).toBeGreaterThan(0)
+			expect(ticketsStore.state[0].id).toBe(result.id)
+		})
+
+		it('should generate ticket number', () => {
+			const input: Omit<CreateTicketInput, 'customerId'> = {
+				title: 'Test',
+				priority: 'normal',
+				message: 'Test',
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+			}
+
+			const result = addTicket(input)
+
+			expect(result.ticketNumber).toMatch(/^#\d{4}$/)
+		})
+
+		it('should truncate long message previews', () => {
+			const longMessage = 'a'.repeat(100)
+			const input: Omit<CreateTicketInput, 'customerId'> = {
+				title: 'Test',
+				priority: 'normal',
+				message: longMessage,
+				customer: { name: 'John', company: 'Acme', initials: 'JD' },
+			}
+
+			const result = addTicket(input)
+
+			expect(result.preview).toHaveLength(63)
+			expect(result.preview).toContain('...')
+		})
+	})
+
+	describe('filterOptions', () => {
+		it('should export filter options array', () => {
+			expect(Array.isArray(filterOptions)).toBe(true)
+			expect(filterOptions.length).toBeGreaterThan(0)
+		})
+
+		it('should have correct filter structure', () => {
+			expect(filterOptions[0]).toHaveProperty('id')
+			expect(filterOptions[0]).toHaveProperty('label')
+		})
+	})
 })
-
