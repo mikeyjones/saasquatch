@@ -378,10 +378,11 @@ bun run test             # Run all tests
 bun run test --watch     # Watch mode
 bun run test:coverage    # Coverage report (generates HTML in ./coverage/)
 
-# Code Quality
+# Code Quality (run regularly!)
 bun run check            # Biome check (lint + format)
-bun run format           # Format code
-bun run lint             # Lint code
+bun run format           # Format code (auto-fixes many issues)
+bun run lint             # Lint code (must pass with zero errors)
+bun run test:coverage    # Test coverage (must meet thresholds)
 
 # Database
 bun run db:generate      # Generate migrations
@@ -514,14 +515,38 @@ When code is pushed to the `main` branch, GitHub Actions will:
 
 The workflow is defined in `.github/workflows/coverage.yml`.
 
+## Code Quality Checks
+
+**Always run coverage and linting tools before completing work** to ensure code quality standards are maintained:
+
+```bash
+# Run linting checks
+bun run lint
+
+# Run tests with coverage
+bun run test:coverage
+```
+
+### Regular Verification
+
+- **After making changes**: Run `bun run lint` to catch any code quality issues
+- **Before committing**: Run `bun run test:coverage` to ensure:
+  - All tests pass
+  - Coverage thresholds are met (75% lines/statements, 70% functions, 60% branches)
+- **If linting fails**: Fix issues before proceeding (most can be auto-fixed with `bun run format`)
+- **If coverage fails**: Add tests or adjust exclusions in `vite.config.ts` as needed
+
+Both tools must pass with zero errors before considering work complete.
+
 ## When Adding New Features
 
 1. **Start with tests** that describe the expected behavior
 2. **Check schema** — add database columns/tables if needed
 3. **Update API** — add or modify route handlers
 4. **Build components** — create UI with tests
-5. **Run full test suite** — ensure no regressions
-6. **Check coverage** — maintain thresholds
+5. **Run full test suite** — ensure no regressions (`bun run test`)
+6. **Check coverage** — maintain thresholds (`bun run test:coverage`)
+7. **Run linting** — fix any code quality issues (`bun run lint`)
 
 ---
 
