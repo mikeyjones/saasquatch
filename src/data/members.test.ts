@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { members } from './members'
+import { members, getInitials } from './members'
 
 describe('members data', () => {
   it('should have 4 members', () => {
@@ -21,6 +21,32 @@ describe('members data', () => {
     expect(john).toBeDefined()
     expect(john?.organization).toBe('Acme Corp')
     expect(john?.role).toBe('Admin')
+  })
+})
+
+describe('getInitials', () => {
+  it('should generate initials from full name', () => {
+    expect(getInitials('John Doe')).toBe('JD')
+  })
+
+  it('should handle single name', () => {
+    expect(getInitials('John')).toBe('J')
+  })
+
+  it('should handle multiple words', () => {
+    expect(getInitials('John Michael Doe')).toBe('JM')
+  })
+
+  it('should uppercase initials', () => {
+    expect(getInitials('john doe')).toBe('JD')
+  })
+
+  it('should handle empty string', () => {
+    expect(getInitials('')).toBe('')
+  })
+
+  it('should limit to 2 characters', () => {
+    expect(getInitials('John Michael David Smith')).toBe('JM')
   })
 })
 
