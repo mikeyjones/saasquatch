@@ -4,7 +4,7 @@ import { OrganizationMetrics } from "./OrganizationMetrics";
 
 const mockMetrics = {
 	totalMRR: 49900, // $499.00 in cents
-	totalDealValue: 150000, // $1,500.00 in cents
+	lifetimeIncome: 150000, // $1,500.00 in cents
 	contactCount: 25,
 	dealCount: 8,
 	invoiceCount: 12,
@@ -16,7 +16,7 @@ describe("OrganizationMetrics", () => {
 			render(<OrganizationMetrics metrics={mockMetrics} />);
 
 			expect(screen.getByText("Monthly Recurring Revenue")).toBeInTheDocument();
-			expect(screen.getByText("Total Deal Value")).toBeInTheDocument();
+			expect(screen.getByText("Lifetime Income")).toBeInTheDocument();
 			expect(screen.getByText("Contacts")).toBeInTheDocument();
 			expect(screen.getByText("Deals")).toBeInTheDocument();
 			expect(screen.getByText("Invoices")).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("OrganizationMetrics", () => {
 			expect(screen.getByText("$499.00")).toBeInTheDocument();
 		});
 
-		it("should format total deal value as currency", () => {
+		it("should format lifetime income as currency", () => {
 			render(<OrganizationMetrics metrics={mockMetrics} />);
 
 			expect(screen.getByText("$1500.00")).toBeInTheDocument();

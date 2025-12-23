@@ -7,7 +7,7 @@ import { OrganizationMetrics } from '@/components/OrganizationMetrics'
 import { OrganizationInvoiceHistory } from '@/components/OrganizationInvoiceHistory'
 import { OrganizationCustomProperties } from '@/components/OrganizationCustomProperties'
 import { CRMContactsList } from '@/components/CRMContactsList'
-import { CRMActivityTimeline } from '@/components/CRMActivityTimeline'
+import { CRMActivityTimeline, type Activity as CRMActivity } from '@/components/CRMActivityTimeline'
 import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
 import { CreateContactDialog } from '@/components/CreateContactDialog'
 import { CreateStandaloneInvoiceDialog } from '@/components/CreateStandaloneInvoiceDialog'
@@ -114,7 +114,7 @@ interface OrganizationData {
   activities: Activity[]
   metrics: {
     totalMRR: number
-    totalDealValue: number
+    lifetimeIncome: number
     contactCount: number
     dealCount: number
     invoiceCount: number
@@ -235,6 +235,28 @@ function OrganizationDetailPage() {
   }
 
   const { customer, subscriptions, contacts, invoices, deals, activities, metrics } = data
+
+  // Transform activities to match CRMActivityTimeline component format
+  function mapActivityType(
+    activityType: string
+  ): 'deal_created' | 'deal_won' | 'deal_lost' | 'contact_added' | 'note' | 'meeting' {
+    if (activityType === 'deal_created') return 'deal_created'
+    if (activityType === 'stage_change') return 'deal_created'
+    if (activityType === 'deal_won' || activityType.includes('won')) return 'deal_won'
+    if (activityType === 'deal_lost' || activityType.includes('lost')) return 'deal_lost'
+    if (activityType === 'contact_added') return 'contact_added'
+    if (activityType === 'meeting') return 'meeting'
+    return 'note'
+  }
+
+  const transformedActivities: CRMActivity[] = activities.map((a) => ({
+    id: a.id,
+    type: mapActivityType(a.activityType),
+    description: a.description,
+    timestamp: a.createdAt,
+    userId: a.userId || undefined,
+    userName: undefined, // Could be fetched if needed
+  }))
 
   // Get active subscription
   const activeSubscription = subscriptions.find(s => s.status === 'active')
@@ -383,7 +405,7 @@ function OrganizationDetailPage() {
               {/* Recent Activity */}
               <div className="bg-card rounded-lg border p-6">
                 <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-                <CRMActivityTimeline activities={activities.slice(0, 10)} />
+                <CRMActivityTimeline activities={transformedActivities.slice(0, 10)} />
               </div>
             </div>
 
@@ -525,7 +547,7 @@ function OrganizationDetailPage() {
               <h2 className="text-lg font-semibold">Activity Timeline</h2>
             </div>
             <div className="p-6">
-              <CRMActivityTimeline activities={activities} />
+              <CRMActivityTimeline activities={transformedActivities} />
             </div>
           </div>
         )}

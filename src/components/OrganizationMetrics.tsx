@@ -2,7 +2,7 @@ import { DollarSign, TrendingUp, Users, Briefcase, FileText } from 'lucide-react
 
 interface Metrics {
   totalMRR: number
-  totalDealValue: number
+  lifetimeIncome: number
   contactCount: number
   dealCount: number
   invoiceCount: number
@@ -22,8 +22,8 @@ export function OrganizationMetrics({ metrics }: OrganizationMetricsProps) {
       bgColor: 'bg-green-50',
     },
     {
-      title: 'Total Deal Value',
-      value: `$${(metrics.totalDealValue / 100).toFixed(2)}`,
+      title: 'Lifetime Income',
+      value: `$${(metrics.lifetimeIncome / 100).toFixed(2)}`,
       icon: TrendingUp,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',

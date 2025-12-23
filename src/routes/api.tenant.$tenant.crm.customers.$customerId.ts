@@ -272,7 +272,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             .filter(s => s.status === 'active')
             .reduce((sum, s) => sum + s.mrr, 0)
 
-          const totalDealValue = dealsData.reduce((sum, d) => sum + d.value, 0)
+          const lifetimeIncome = invoicesData
+            .filter(inv => inv.status === 'paid')
+            .reduce((sum, inv) => sum + inv.total, 0)
 
           return new Response(
             JSON.stringify({
@@ -301,7 +303,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
               activities: activitiesData,
               metrics: {
                 totalMRR,
-                totalDealValue,
+                lifetimeIncome,
                 contactCount: contactsData.length,
                 dealCount: dealsData.length,
                 invoiceCount: invoicesData.length,
