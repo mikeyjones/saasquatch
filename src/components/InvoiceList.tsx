@@ -12,7 +12,7 @@ export interface InvoiceLineItem {
 export interface Invoice {
   id: string
   invoiceNumber: string
-  status: 'draft' | 'paid' | 'overdue' | 'canceled'
+  status: 'draft' | 'final' | 'paid' | 'overdue' | 'canceled'
   subtotal: number
   tax: number
   total: number

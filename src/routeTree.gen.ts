@@ -83,6 +83,7 @@ import { Route as ApiTenantTenantProductCatalogPlansPlanIdRouteImport } from './
 import { Route as ApiTenantTenantMembersMemberIdAuditLogsRouteImport } from './routes/api.tenant.$tenant.members.$memberId.audit-logs'
 import { Route as ApiTenantTenantInvoicesInvoiceIdPdfRouteImport } from './routes/api.tenant.$tenant.invoices.$invoiceId.pdf'
 import { Route as ApiTenantTenantInvoicesInvoiceIdPayRouteImport } from './routes/api.tenant.$tenant.invoices.$invoiceId.pay'
+import { Route as ApiTenantTenantInvoicesInvoiceIdFinalizeRouteImport } from './routes/api.tenant.$tenant.invoices.$invoiceId.finalize'
 import { Route as ApiTenantTenantCrmCustomersCustomerIdRouteImport } from './routes/api.tenant.$tenant.crm.customers.$customerId'
 import { Route as ApiTenantTenantCrmContactsContactIdRouteImport } from './routes/api.tenant.$tenant.crm.contacts.$contactId'
 import { Route as ApiTenantTenantCrmCustomersCustomerIdContactsRouteImport } from './routes/api.tenant.$tenant.crm.customers.$customerId.contacts'
@@ -496,6 +497,12 @@ const ApiTenantTenantInvoicesInvoiceIdPayRoute =
     path: '/pay',
     getParentRoute: () => ApiTenantTenantInvoicesInvoiceIdRoute,
   } as any)
+const ApiTenantTenantInvoicesInvoiceIdFinalizeRoute =
+  ApiTenantTenantInvoicesInvoiceIdFinalizeRouteImport.update({
+    id: '/finalize',
+    path: '/finalize',
+    getParentRoute: () => ApiTenantTenantInvoicesInvoiceIdRoute,
+  } as any)
 const ApiTenantTenantCrmCustomersCustomerIdRoute =
   ApiTenantTenantCrmCustomersCustomerIdRouteImport.update({
     id: '/$customerId',
@@ -586,6 +593,7 @@ export interface FileRoutesByFullPath {
   '/$tenant/app/support/members/': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
   '/api/tenant/$tenant/crm/customers/$customerId': typeof ApiTenantTenantCrmCustomersCustomerIdRouteWithChildren
+  '/api/tenant/$tenant/invoices/$invoiceId/finalize': typeof ApiTenantTenantInvoicesInvoiceIdFinalizeRoute
   '/api/tenant/$tenant/invoices/$invoiceId/pay': typeof ApiTenantTenantInvoicesInvoiceIdPayRoute
   '/api/tenant/$tenant/invoices/$invoiceId/pdf': typeof ApiTenantTenantInvoicesInvoiceIdPdfRoute
   '/api/tenant/$tenant/members/$memberId/audit-logs': typeof ApiTenantTenantMembersMemberIdAuditLogsRoute
@@ -659,6 +667,7 @@ export interface FileRoutesByTo {
   '/$tenant/app/support/members': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
   '/api/tenant/$tenant/crm/customers/$customerId': typeof ApiTenantTenantCrmCustomersCustomerIdRouteWithChildren
+  '/api/tenant/$tenant/invoices/$invoiceId/finalize': typeof ApiTenantTenantInvoicesInvoiceIdFinalizeRoute
   '/api/tenant/$tenant/invoices/$invoiceId/pay': typeof ApiTenantTenantInvoicesInvoiceIdPayRoute
   '/api/tenant/$tenant/invoices/$invoiceId/pdf': typeof ApiTenantTenantInvoicesInvoiceIdPdfRoute
   '/api/tenant/$tenant/members/$memberId/audit-logs': typeof ApiTenantTenantMembersMemberIdAuditLogsRoute
@@ -739,6 +748,7 @@ export interface FileRoutesById {
   '/$tenant/app/support/members/': typeof TenantAppSupportMembersIndexRoute
   '/api/tenant/$tenant/crm/contacts/$contactId': typeof ApiTenantTenantCrmContactsContactIdRoute
   '/api/tenant/$tenant/crm/customers/$customerId': typeof ApiTenantTenantCrmCustomersCustomerIdRouteWithChildren
+  '/api/tenant/$tenant/invoices/$invoiceId/finalize': typeof ApiTenantTenantInvoicesInvoiceIdFinalizeRoute
   '/api/tenant/$tenant/invoices/$invoiceId/pay': typeof ApiTenantTenantInvoicesInvoiceIdPayRoute
   '/api/tenant/$tenant/invoices/$invoiceId/pdf': typeof ApiTenantTenantInvoicesInvoiceIdPdfRoute
   '/api/tenant/$tenant/members/$memberId/audit-logs': typeof ApiTenantTenantMembersMemberIdAuditLogsRoute
@@ -820,6 +830,7 @@ export interface FileRouteTypes {
     | '/$tenant/app/support/members/'
     | '/api/tenant/$tenant/crm/contacts/$contactId'
     | '/api/tenant/$tenant/crm/customers/$customerId'
+    | '/api/tenant/$tenant/invoices/$invoiceId/finalize'
     | '/api/tenant/$tenant/invoices/$invoiceId/pay'
     | '/api/tenant/$tenant/invoices/$invoiceId/pdf'
     | '/api/tenant/$tenant/members/$memberId/audit-logs'
@@ -893,6 +904,7 @@ export interface FileRouteTypes {
     | '/$tenant/app/support/members'
     | '/api/tenant/$tenant/crm/contacts/$contactId'
     | '/api/tenant/$tenant/crm/customers/$customerId'
+    | '/api/tenant/$tenant/invoices/$invoiceId/finalize'
     | '/api/tenant/$tenant/invoices/$invoiceId/pay'
     | '/api/tenant/$tenant/invoices/$invoiceId/pdf'
     | '/api/tenant/$tenant/members/$memberId/audit-logs'
@@ -972,6 +984,7 @@ export interface FileRouteTypes {
     | '/$tenant/app/support/members/'
     | '/api/tenant/$tenant/crm/contacts/$contactId'
     | '/api/tenant/$tenant/crm/customers/$customerId'
+    | '/api/tenant/$tenant/invoices/$invoiceId/finalize'
     | '/api/tenant/$tenant/invoices/$invoiceId/pay'
     | '/api/tenant/$tenant/invoices/$invoiceId/pdf'
     | '/api/tenant/$tenant/members/$memberId/audit-logs'
@@ -1533,6 +1546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTenantTenantInvoicesInvoiceIdPayRouteImport
       parentRoute: typeof ApiTenantTenantInvoicesInvoiceIdRoute
     }
+    '/api/tenant/$tenant/invoices/$invoiceId/finalize': {
+      id: '/api/tenant/$tenant/invoices/$invoiceId/finalize'
+      path: '/finalize'
+      fullPath: '/api/tenant/$tenant/invoices/$invoiceId/finalize'
+      preLoaderRoute: typeof ApiTenantTenantInvoicesInvoiceIdFinalizeRouteImport
+      parentRoute: typeof ApiTenantTenantInvoicesInvoiceIdRoute
+    }
     '/api/tenant/$tenant/crm/customers/$customerId': {
       id: '/api/tenant/$tenant/crm/customers/$customerId'
       path: '/$customerId'
@@ -1740,12 +1760,15 @@ const ApiTenantTenantDealsRouteWithChildren =
   ApiTenantTenantDealsRoute._addFileChildren(ApiTenantTenantDealsRouteChildren)
 
 interface ApiTenantTenantInvoicesInvoiceIdRouteChildren {
+  ApiTenantTenantInvoicesInvoiceIdFinalizeRoute: typeof ApiTenantTenantInvoicesInvoiceIdFinalizeRoute
   ApiTenantTenantInvoicesInvoiceIdPayRoute: typeof ApiTenantTenantInvoicesInvoiceIdPayRoute
   ApiTenantTenantInvoicesInvoiceIdPdfRoute: typeof ApiTenantTenantInvoicesInvoiceIdPdfRoute
 }
 
 const ApiTenantTenantInvoicesInvoiceIdRouteChildren: ApiTenantTenantInvoicesInvoiceIdRouteChildren =
   {
+    ApiTenantTenantInvoicesInvoiceIdFinalizeRoute:
+      ApiTenantTenantInvoicesInvoiceIdFinalizeRoute,
     ApiTenantTenantInvoicesInvoiceIdPayRoute:
       ApiTenantTenantInvoicesInvoiceIdPayRoute,
     ApiTenantTenantInvoicesInvoiceIdPdfRoute:

@@ -1,4 +1,4 @@
-import { FileText, Download, CheckCircle, Clock, AlertTriangle, XCircle, DollarSign, Building, CreditCard, Calendar, Mail } from 'lucide-react'
+import { FileText, Download, CheckCircle, Clock, AlertTriangle, XCircle, DollarSign, Building, CreditCard, Calendar, Mail, FileCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -15,8 +15,10 @@ interface InvoiceDetailDialogProps {
   onOpenChange: (open: boolean) => void
   invoice: Invoice | null
   onMarkAsPaid?: (invoice: Invoice) => void
+  onFinalize?: (invoice: Invoice) => void
   onDownloadPDF?: (invoice: Invoice) => void
   isMarkingPaid?: boolean
+  isFinalizing?: boolean
 }
 
 const statusConfig = {
@@ -25,6 +27,12 @@ const statusConfig = {
     description: 'Awaiting payment',
     icon: Clock,
     className: 'bg-amber-50 text-amber-700 border border-amber-200',
+  },
+  final: {
+    label: 'Final',
+    description: 'Ready for payment',
+    icon: FileCheck,
+    className: 'bg-blue-50 text-blue-700 border border-blue-200',
   },
   paid: {
     label: 'Paid',
@@ -67,25 +75,27 @@ export function InvoiceDetailDialog({
   onOpenChange,
   invoice,
   onMarkAsPaid,
+  onFinalize,
   onDownloadPDF,
   isMarkingPaid,
+  isFinalizing,
 }: InvoiceDetailDialogProps) {
   if (!invoice) return null
 
-  const status = statusConfig[invoice.status]
+  const status = statusConfig[invoice.status as keyof typeof statusConfig] || statusConfig.draft
   const StatusIcon = status.icon
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pr-8">
             <DialogTitle className="text-xl flex items-center gap-2">
               <FileText className="w-5 h-5 text-indigo-500" />
               Invoice {invoice.invoiceNumber}
             </DialogTitle>
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full ${status.className}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full mr-2 ${status.className}`}
             >
               <StatusIcon size={14} />
               {status.label}
@@ -221,10 +231,20 @@ export function InvoiceDetailDialog({
               Download PDF
             </Button>
           )}
-          {invoice.status === 'draft' && (
+          {invoice.status === 'draft' && onFinalize && (
+            <Button
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => onFinalize(invoice)}
+              disabled={isFinalizing}
+            >
+              <FileCheck size={16} className="mr-2" />
+              {isFinalizing ? 'Finalizing...' : 'Finalize'}
+            </Button>
+          )}
+          {invoice.status === 'final' && onMarkAsPaid && (
             <Button
               className="bg-emerald-500 hover:bg-emerald-600 text-white"
-              onClick={() => onMarkAsPaid?.(invoice)}
+              onClick={() => onMarkAsPaid(invoice)}
               disabled={isMarkingPaid}
             >
               <DollarSign size={16} className="mr-2" />

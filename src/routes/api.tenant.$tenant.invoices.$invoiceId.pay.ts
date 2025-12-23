@@ -97,48 +97,12 @@ export const Route = createFileRoute('/api/tenant/$tenant/invoices/$invoiceId/pa
 
           const now = new Date()
 
-          // Get subscription details for activity log
-          const subscriptionData = await db
-            .select({
-              subscriptionNumber: subscription.subscriptionNumber,
-              billingCycle: subscription.billingCycle,
-              productPlanId: subscription.productPlanId,
-            })
-            .from(subscription)
-            .where(eq(subscription.id, inv.subscriptionId))
-            .limit(1)
-
-          if (subscriptionData.length === 0) {
-            return new Response(
-              JSON.stringify({ error: 'Subscription not found' }),
-              { status: 404, headers: { 'Content-Type': 'application/json' } }
-            )
-          }
-
-          const sub = subscriptionData[0]
-
-          // Get plan name for activity log
-          const planData = await db
-            .select({ name: productPlan.name })
-            .from(productPlan)
-            .where(eq(productPlan.id, sub.productPlanId))
-            .limit(1)
-
           // Get tenant org name for activity log
           const tenantOrgData = await db
             .select({ name: tenantOrganization.name })
             .from(tenantOrganization)
             .where(eq(tenantOrganization.id, inv.tenantOrganizationId))
             .limit(1)
-
-          // Calculate new billing period start from payment date
-          const periodStart = now
-          const periodEnd = new Date(now)
-          if (sub.billingCycle === 'yearly') {
-            periodEnd.setFullYear(periodEnd.getFullYear() + 1)
-          } else {
-            periodEnd.setMonth(periodEnd.getMonth() + 1)
-          }
 
           // Update invoice status to paid
           await db
@@ -150,75 +114,150 @@ export const Route = createFileRoute('/api/tenant/$tenant/invoices/$invoiceId/pa
             })
             .where(eq(invoice.id, inv.id))
 
-          // Update subscription to active and set billing period
-          await db
-            .update(subscription)
-            .set({
-              status: 'active',
-              currentPeriodStart: periodStart,
-              currentPeriodEnd: periodEnd,
-              updatedAt: now,
-            })
-            .where(eq(subscription.id, inv.subscriptionId))
+          // If invoice is linked to a subscription, activate it
+          if (inv.subscriptionId) {
+            // Get subscription details
+            const subscriptionData = await db
+              .select({
+                subscriptionNumber: subscription.subscriptionNumber,
+                billingCycle: subscription.billingCycle,
+                productPlanId: subscription.productPlanId,
+              })
+              .from(subscription)
+              .where(eq(subscription.id, inv.subscriptionId))
+              .limit(1)
 
-          // Update tenant organization subscription status
-          await db
-            .update(tenantOrganization)
-            .set({
-              subscriptionStatus: 'active',
-              updatedAt: now,
-            })
-            .where(eq(tenantOrganization.id, inv.tenantOrganizationId))
+            if (subscriptionData.length > 0) {
+              const sub = subscriptionData[0]
 
-          // Create activity entry for invoice payment
-          await db.insert(subscriptionActivity).values({
-            id: generateId(),
-            subscriptionId: inv.subscriptionId,
-            activityType: 'invoice_paid',
-            description: `Invoice ${inv.invoiceNumber} paid - $${(inv.total / 100).toFixed(2)} USD`,
-            userId: session.user.id,
-            metadata: JSON.stringify({
-              invoiceId: inv.id,
+              // Get plan name for activity log
+              const planData = await db
+                .select({ name: productPlan.name })
+                .from(productPlan)
+                .where(eq(productPlan.id, sub.productPlanId))
+                .limit(1)
+
+              // Calculate new billing period start from payment date
+              const periodStart = now
+              const periodEnd = new Date(now)
+              if (sub.billingCycle === 'yearly') {
+                periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+              } else {
+                periodEnd.setMonth(periodEnd.getMonth() + 1)
+              }
+
+              // Update subscription to active and set billing period
+              await db
+                .update(subscription)
+                .set({
+                  status: 'active',
+                  currentPeriodStart: periodStart,
+                  currentPeriodEnd: periodEnd,
+                  updatedAt: now,
+                })
+                .where(eq(subscription.id, inv.subscriptionId))
+
+              // Update tenant organization subscription status
+              await db
+                .update(tenantOrganization)
+                .set({
+                  subscriptionStatus: 'active',
+                  updatedAt: now,
+                })
+                .where(eq(tenantOrganization.id, inv.tenantOrganizationId))
+
+              // Create activity entry for invoice payment
+              await db.insert(subscriptionActivity).values({
+                id: generateId(),
+                subscriptionId: inv.subscriptionId,
+                activityType: 'invoice_paid',
+                description: `Invoice ${inv.invoiceNumber} paid - $${(inv.total / 100).toFixed(2)} USD`,
+                userId: session.user.id,
+                metadata: JSON.stringify({
+                  invoiceId: inv.id,
+                  invoiceNumber: inv.invoiceNumber,
+                  total: inv.total,
+                  paidAt: now.toISOString(),
+                }),
+                createdAt: now,
+              })
+
+              // Create activity entry for subscription activation
+              await db.insert(subscriptionActivity).values({
+                id: generateId(),
+                subscriptionId: inv.subscriptionId,
+                activityType: 'activated',
+                description: `Subscription ${sub.subscriptionNumber} activated for ${tenantOrgData[0]?.name || 'customer'}`,
+                userId: session.user.id,
+                metadata: JSON.stringify({
+                  plan: planData[0]?.name,
+                  billingCycle: sub.billingCycle,
+                  periodStart: periodStart.toISOString(),
+                  periodEnd: periodEnd.toISOString(),
+                }),
+                createdAt: now,
+              })
+            }
+          }
+
+          const responseData: {
+            success: boolean
+            invoice: {
+              id: string
+              invoiceNumber: string
+              status: string
+              paidAt: string
+            }
+            subscription?: {
+              id: string
+              subscriptionNumber: string
+              status: string
+              currentPeriodStart: string
+              currentPeriodEnd: string
+            }
+          } = {
+            success: true,
+            invoice: {
+              id: inv.id,
               invoiceNumber: inv.invoiceNumber,
-              total: inv.total,
+              status: 'paid',
               paidAt: now.toISOString(),
-            }),
-            createdAt: now,
-          })
+            },
+          }
 
-          // Create activity entry for subscription activation
-          await db.insert(subscriptionActivity).values({
-            id: generateId(),
-            subscriptionId: inv.subscriptionId,
-            activityType: 'activated',
-            description: `Subscription ${sub.subscriptionNumber} activated for ${tenantOrgData[0]?.name || 'customer'}`,
-            userId: session.user.id,
-            metadata: JSON.stringify({
-              plan: planData[0]?.name,
-              billingCycle: sub.billingCycle,
-              periodStart: periodStart.toISOString(),
-              periodEnd: periodEnd.toISOString(),
-            }),
-            createdAt: now,
-          })
+          // Include subscription data if invoice is linked to a subscription
+          if (inv.subscriptionId) {
+            const subscriptionData = await db
+              .select({
+                subscriptionNumber: subscription.subscriptionNumber,
+                billingCycle: subscription.billingCycle,
+              })
+              .from(subscription)
+              .where(eq(subscription.id, inv.subscriptionId))
+              .limit(1)
 
-          return new Response(
-            JSON.stringify({
-              success: true,
-              invoice: {
-                id: inv.id,
-                invoiceNumber: inv.invoiceNumber,
-                status: 'paid',
-                paidAt: now.toISOString(),
-              },
-              subscription: {
+            if (subscriptionData.length > 0) {
+              const sub = subscriptionData[0]
+              const periodStart = now
+              const periodEnd = new Date(now)
+              if (sub.billingCycle === 'yearly') {
+                periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+              } else {
+                periodEnd.setMonth(periodEnd.getMonth() + 1)
+              }
+
+              responseData.subscription = {
                 id: inv.subscriptionId,
                 subscriptionNumber: sub.subscriptionNumber,
                 status: 'active',
                 currentPeriodStart: periodStart.toISOString(),
                 currentPeriodEnd: periodEnd.toISOString(),
-              },
-            }),
+              }
+            }
+          }
+
+          return new Response(
+            JSON.stringify(responseData),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
           )
         } catch (error) {

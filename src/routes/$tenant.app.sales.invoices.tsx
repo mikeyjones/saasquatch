@@ -52,6 +52,32 @@ function InvoicesPage() {
     },
   })
 
+  const finalizeMutation = useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const response = await fetch(`/api/tenant/${tenant}/invoices/${invoiceId}/finalize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!response.ok) {
+        let data
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json()
+        } else {
+          const text = await response.text()
+          throw new Error(text || 'Failed to finalize invoice')
+        }
+        throw new Error(data.error || 'Failed to finalize invoice')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices', tenant] })
+      setIsDetailDialogOpen(false)
+      setSelectedInvoice(null)
+    },
+  })
+
   const markAsPaidMutation = useMutation({
     mutationFn: async (invoiceId: string) => {
       const response = await fetch(`/api/tenant/${tenant}/invoices/${invoiceId}/pay`, {
@@ -59,7 +85,14 @@ function InvoicesPage() {
         headers: { 'Content-Type': 'application/json' },
       })
       if (!response.ok) {
-        const data = await response.json()
+        let data
+        const contentType = response.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json()
+        } else {
+          const text = await response.text()
+          throw new Error(text || 'Failed to mark invoice as paid')
+        }
         throw new Error(data.error || 'Failed to mark invoice as paid')
       }
       return response.json()
@@ -78,6 +111,10 @@ function InvoicesPage() {
   const handleViewInvoice = (invoice: Invoice) => {
     setSelectedInvoice(invoice)
     setIsDetailDialogOpen(true)
+  }
+
+  const handleFinalize = (invoice: Invoice) => {
+    finalizeMutation.mutate(invoice.id)
   }
 
   const handleMarkAsPaid = (invoice: Invoice) => {
@@ -146,8 +183,10 @@ function InvoicesPage() {
         open={isDetailDialogOpen}
         onOpenChange={setIsDetailDialogOpen}
         invoice={selectedInvoice}
+        onFinalize={handleFinalize}
         onMarkAsPaid={handleMarkAsPaid}
         onDownloadPDF={handleDownloadPDF}
+        isFinalizing={finalizeMutation.isPending}
         isMarkingPaid={markAsPaidMutation.isPending}
       />
 

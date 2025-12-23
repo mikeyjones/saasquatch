@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams } from '@tanstack/react-router'
-import { FileText, Download, Eye, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react'
+import { FileText, Download, Eye, CheckCircle, Clock, XCircle, AlertCircle, FileCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { InvoiceDetailDialog } from '@/components/InvoiceDetailDialog'
 import type { Invoice as InvoiceType } from '@/components/InvoiceList'
@@ -29,14 +29,17 @@ interface Invoice {
 
 interface OrganizationInvoiceHistoryProps {
   invoices: Invoice[]
+  onInvoiceUpdated?: () => void
 }
 
-export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHistoryProps) {
+export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: OrganizationInvoiceHistoryProps) {
   const params = useParams({ strict: false }) as { tenant?: string }
   const tenant = params.tenant || ''
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceType | null>(null)
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
+  const [isFinalizing, setIsFinalizing] = useState<string | null>(null)
+  const [isMarkingPaid, setIsMarkingPaid] = useState<string | null>(null)
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -44,6 +47,8 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
         return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'draft':
         return <Clock className="h-4 w-4 text-gray-600" />
+      case 'final':
+        return <FileCheck className="h-4 w-4 text-blue-600" />
       case 'overdue':
         return <AlertCircle className="h-4 w-4 text-red-600" />
       case 'canceled':
@@ -59,6 +64,8 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
         return 'bg-green-100 text-green-800'
       case 'draft':
         return 'bg-gray-100 text-gray-800'
+      case 'final':
+        return 'bg-blue-100 text-blue-800'
       case 'overdue':
         return 'bg-red-100 text-red-800'
       case 'canceled':
@@ -83,6 +90,7 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
     all: invoices.length,
     paid: invoices.filter(inv => inv.status.toLowerCase() === 'paid').length,
     draft: invoices.filter(inv => inv.status.toLowerCase() === 'draft').length,
+    final: invoices.filter(inv => inv.status.toLowerCase() === 'final').length,
     overdue: invoices.filter(inv => inv.status.toLowerCase() === 'overdue').length,
   }
 
@@ -91,7 +99,7 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
     const invoiceDetail: InvoiceType = {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
-      status: invoice.status as 'draft' | 'paid' | 'overdue' | 'canceled',
+      status: invoice.status as 'draft' | 'final' | 'paid' | 'overdue' | 'canceled',
       subtotal: invoice.subtotal,
       tax: invoice.tax,
       total: invoice.total,
@@ -158,6 +166,80 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
     }
   }
 
+  const handleFinalizeInvoice = async (invoiceId: string) => {
+    if (!tenant) {
+      alert('Tenant information is missing')
+      return
+    }
+
+    setIsFinalizing(invoiceId)
+    try {
+      const response = await fetch(`/api/tenant/${tenant}/invoices/${invoiceId}/finalize`, {
+        method: 'POST',
+      })
+
+      let result
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json()
+      } else {
+        const text = await response.text()
+        throw new Error(text || 'Failed to finalize invoice')
+      }
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to finalize invoice')
+      }
+
+      // Refresh invoice list
+      if (onInvoiceUpdated) {
+        onInvoiceUpdated()
+      }
+    } catch (error) {
+      console.error('Error finalizing invoice:', error)
+      alert(error instanceof Error ? error.message : 'Failed to finalize invoice. Please try again.')
+    } finally {
+      setIsFinalizing(null)
+    }
+  }
+
+  const handleMarkAsPaid = async (invoice: Invoice) => {
+    if (!tenant) {
+      alert('Tenant information is missing')
+      return
+    }
+
+    setIsMarkingPaid(invoice.id)
+    try {
+      const response = await fetch(`/api/tenant/${tenant}/invoices/${invoice.id}/pay`, {
+        method: 'POST',
+      })
+
+      let result
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json()
+      } else {
+        const text = await response.text()
+        throw new Error(text || 'Failed to mark invoice as paid')
+      }
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to mark invoice as paid')
+      }
+
+      // Refresh invoice list
+      if (onInvoiceUpdated) {
+        onInvoiceUpdated()
+      }
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error)
+      alert(error instanceof Error ? error.message : 'Failed to mark invoice as paid. Please try again.')
+    } finally {
+      setIsMarkingPaid(null)
+    }
+  }
+
   return (
     <div>
       {/* Filter Tabs */}
@@ -195,6 +277,17 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
             }`}
           >
             Draft ({statusCounts.draft})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterStatus('final')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              filterStatus === 'final'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+            }`}
+          >
+            Final ({statusCounts.final})
           </button>
           <button
             type="button"
@@ -256,6 +349,28 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {invoice.status.toLowerCase() === 'draft' && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleFinalizeInvoice(invoice.id)}
+                          disabled={isFinalizing === invoice.id}
+                          title="Finalize invoice"
+                        >
+                          {isFinalizing === invoice.id ? 'Finalizing...' : 'Finalize'}
+                        </Button>
+                      )}
+                      {invoice.status.toLowerCase() === 'final' && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleMarkAsPaid(invoice)}
+                          disabled={isMarkingPaid === invoice.id}
+                          title="Mark invoice as paid"
+                        >
+                          {isMarkingPaid === invoice.id ? 'Marking...' : 'Mark as Paid'}
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -303,6 +418,14 @@ export function OrganizationInvoiceHistory({ invoices }: OrganizationInvoiceHist
         open={isDetailDialogOpen}
         onOpenChange={setIsDetailDialogOpen}
         invoice={selectedInvoice}
+        onFinalize={async (inv) => {
+          await handleFinalizeInvoice(inv.id)
+        }}
+        onMarkAsPaid={async (inv) => {
+          await handleMarkAsPaid(inv)
+        }}
+        isFinalizing={selectedInvoice ? isFinalizing === selectedInvoice.id : false}
+        isMarkingPaid={selectedInvoice ? isMarkingPaid === selectedInvoice.id : false}
         onDownloadPDF={async (inv) => {
           if (!tenant) {
             alert('Tenant information is missing')

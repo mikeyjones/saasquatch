@@ -70,6 +70,20 @@ const mockInvoices = [
 		subscriptionId: "sub-2",
 		createdAt: "2024-01-01",
 	},
+	{
+		id: "inv-4",
+		invoiceNumber: "INV-004",
+		status: "final",
+		subtotal: 15000,
+		tax: 1500,
+		total: 16500,
+		currency: "USD",
+		issueDate: "2024-02-10",
+		dueDate: "2024-03-10",
+		paidAt: null,
+		subscriptionId: "sub-1",
+		createdAt: "2024-02-10",
+	},
 ];
 
 describe("OrganizationInvoiceHistory", () => {
@@ -136,9 +150,10 @@ describe("OrganizationInvoiceHistory", () => {
 		it("should render filter tabs with counts", () => {
 			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
 
-			expect(screen.getByText(/All \(3\)/)).toBeInTheDocument();
+			expect(screen.getByText(/All \(4\)/)).toBeInTheDocument();
 			expect(screen.getByText(/Paid \(1\)/)).toBeInTheDocument();
 			expect(screen.getByText(/Draft \(1\)/)).toBeInTheDocument();
+			expect(screen.getByText(/Final \(1\)/)).toBeInTheDocument();
 			expect(screen.getByText(/Overdue \(1\)/)).toBeInTheDocument();
 		});
 
@@ -177,6 +192,18 @@ describe("OrganizationInvoiceHistory", () => {
 			expect(screen.getByText("INV-003")).toBeInTheDocument();
 		});
 
+		it("should filter to final invoices", async () => {
+			const user = userEvent.setup();
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			await user.click(screen.getByText(/Final \(1\)/));
+
+			expect(screen.queryByText("INV-001")).not.toBeInTheDocument();
+			expect(screen.queryByText("INV-002")).not.toBeInTheDocument();
+			expect(screen.queryByText("INV-003")).not.toBeInTheDocument();
+			expect(screen.getByText("INV-004")).toBeInTheDocument();
+		});
+
 		it("should show all invoices when All tab is clicked", async () => {
 			const user = userEvent.setup();
 			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
@@ -184,11 +211,12 @@ describe("OrganizationInvoiceHistory", () => {
 			// First filter to Paid
 			await user.click(screen.getByText(/Paid \(1\)/));
 			// Then back to All
-			await user.click(screen.getByText(/All \(3\)/));
+			await user.click(screen.getByText(/All \(4\)/));
 
 			expect(screen.getByText("INV-001")).toBeInTheDocument();
 			expect(screen.getByText("INV-002")).toBeInTheDocument();
 			expect(screen.getByText("INV-003")).toBeInTheDocument();
+			expect(screen.getByText("INV-004")).toBeInTheDocument();
 		});
 	});
 
@@ -196,14 +224,14 @@ describe("OrganizationInvoiceHistory", () => {
 		it("should display invoice count summary", () => {
 			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
 
-			expect(screen.getByText(/Showing 3 of 3 invoices/i)).toBeInTheDocument();
+			expect(screen.getByText(/Showing 4 of 4 invoices/i)).toBeInTheDocument();
 		});
 
 		it("should display total amount", () => {
 			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
 
-			// Total: 11000 + 5500 + 22000 = 38500 cents = $385.00
-			expect(screen.getByText(/Total:.*\$385\.00/)).toBeInTheDocument();
+			// Total: 11000 + 5500 + 22000 + 16500 = 55000 cents = $550.00
+			expect(screen.getByText(/Total:.*\$550\.00/)).toBeInTheDocument();
 		});
 
 		it("should update summary when filter changes", async () => {
@@ -212,7 +240,7 @@ describe("OrganizationInvoiceHistory", () => {
 
 			await user.click(screen.getByText(/Paid \(1\)/));
 
-			expect(screen.getByText(/Showing 1 of 3 invoices/i)).toBeInTheDocument();
+			expect(screen.getByText(/Showing 1 of 4 invoices/i)).toBeInTheDocument();
 			expect(screen.getByText(/Total:.*\$110\.00/)).toBeInTheDocument();
 		});
 
@@ -320,6 +348,172 @@ describe("OrganizationInvoiceHistory", () => {
 
 			const overdueRow = screen.getByText("INV-003").closest("tr");
 			expect(overdueRow).toBeInTheDocument();
+		});
+
+		it("should render FileCheck icon for final status", () => {
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			const finalRow = screen.getByText("INV-004").closest("tr");
+			expect(finalRow).toBeInTheDocument();
+			expect(screen.getByText("final")).toBeInTheDocument();
+		});
+	});
+
+	describe("Finalize Invoice Action", () => {
+		it("should show Finalize button only for draft invoices", () => {
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			// Draft invoice should have Finalize button
+			const draftRow = screen.getByText("INV-002").closest("tr");
+			expect(draftRow).toBeInTheDocument();
+			expect(screen.getByText("Finalize")).toBeInTheDocument();
+
+			// Paid invoice should not have Finalize button
+			expect(screen.queryAllByText("Finalize")).toHaveLength(1);
+		});
+
+		it("should call finalize API when Finalize button is clicked", async () => {
+			const user = userEvent.setup();
+			const onInvoiceUpdated = vi.fn();
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+				ok: true,
+				headers: new Headers({ 'content-type': 'application/json' }),
+				json: async () => ({ success: true, invoice: { id: "inv-2", status: "final" } }),
+			});
+
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} onInvoiceUpdated={onInvoiceUpdated} />);
+
+			const finalizeButton = screen.getByText("Finalize");
+			await user.click(finalizeButton);
+
+			await waitFor(() => {
+				expect(fetch).toHaveBeenCalledWith(
+					"/api/tenant/acme/invoices/inv-2/finalize",
+					{ method: "POST" },
+				);
+			});
+
+			await waitFor(() => {
+				expect(onInvoiceUpdated).toHaveBeenCalled();
+			});
+		});
+
+		it("should show loading state while finalizing", async () => {
+			const user = userEvent.setup();
+			(global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+				() => new Promise((resolve) => setTimeout(() => resolve({
+					ok: true,
+					headers: new Headers({ 'content-type': 'application/json' }),
+					json: async () => ({ success: true }),
+				}), 100)),
+			);
+
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			const finalizeButton = screen.getByText("Finalize");
+			await user.click(finalizeButton);
+
+			expect(screen.getByText("Finalizing...")).toBeInTheDocument();
+		});
+
+		it("should show error alert when finalize fails", async () => {
+			const user = userEvent.setup();
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+				ok: false,
+				headers: new Headers({ 'content-type': 'application/json' }),
+				json: async () => ({ error: "Invoice not found" }),
+			});
+
+			const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			const finalizeButton = screen.getByText("Finalize");
+			await user.click(finalizeButton);
+
+			await waitFor(() => {
+				expect(alertSpy).toHaveBeenCalled();
+			});
+
+			alertSpy.mockRestore();
+		});
+	});
+
+	describe("Mark as Paid Action", () => {
+		it("should show Mark as Paid button only for final invoices", () => {
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			// Final invoice should have Mark as Paid button
+			expect(screen.getByText("Mark as Paid")).toBeInTheDocument();
+
+			// Draft invoice should not have Mark as Paid button
+			expect(screen.queryAllByText("Mark as Paid")).toHaveLength(1);
+		});
+
+		it("should call pay API when Mark as Paid button is clicked", async () => {
+			const user = userEvent.setup();
+			const onInvoiceUpdated = vi.fn();
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+				ok: true,
+				headers: new Headers({ 'content-type': 'application/json' }),
+				json: async () => ({ success: true, invoice: { id: "inv-4", status: "paid" } }),
+			});
+
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} onInvoiceUpdated={onInvoiceUpdated} />);
+
+			const markAsPaidButton = screen.getByText("Mark as Paid");
+			await user.click(markAsPaidButton);
+
+			await waitFor(() => {
+				expect(fetch).toHaveBeenCalledWith(
+					"/api/tenant/acme/invoices/inv-4/pay",
+					{ method: "POST" },
+				);
+			});
+
+			await waitFor(() => {
+				expect(onInvoiceUpdated).toHaveBeenCalled();
+			});
+		});
+
+		it("should show loading state while marking as paid", async () => {
+			const user = userEvent.setup();
+			(global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+				() => new Promise((resolve) => setTimeout(() => resolve({
+					ok: true,
+					headers: new Headers({ 'content-type': 'application/json' }),
+					json: async () => ({ success: true }),
+				}), 100)),
+			);
+
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			const markAsPaidButton = screen.getByText("Mark as Paid");
+			await user.click(markAsPaidButton);
+
+			expect(screen.getByText("Marking...")).toBeInTheDocument();
+		});
+
+		it("should show error alert when mark as paid fails", async () => {
+			const user = userEvent.setup();
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+				ok: false,
+				headers: new Headers({ 'content-type': 'application/json' }),
+				json: async () => ({ error: "Invoice not found" }),
+			});
+
+			const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+
+			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
+
+			const markAsPaidButton = screen.getByText("Mark as Paid");
+			await user.click(markAsPaidButton);
+
+			await waitFor(() => {
+				expect(alertSpy).toHaveBeenCalled();
+			});
+
+			alertSpy.mockRestore();
 		});
 	});
 });

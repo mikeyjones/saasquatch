@@ -491,7 +491,7 @@ function OrganizationDetailPage() {
             <div className="p-6 border-b">
               <h2 className="text-lg font-semibold">Invoice History</h2>
             </div>
-            <OrganizationInvoiceHistory invoices={invoices} />
+            <OrganizationInvoiceHistory invoices={invoices} onInvoiceUpdated={fetchOrganization} />
           </div>
         )}
 

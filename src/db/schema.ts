@@ -1133,7 +1133,7 @@ export const invoice = pgTable(
       .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
     // Human-readable invoice number (e.g., "INV-ACME-1001")
     invoiceNumber: text('invoiceNumber').notNull(),
-    // Invoice status: draft, paid, overdue, canceled
+    // Invoice status: draft, final, paid, overdue, canceled
     status: text('status').notNull().default('draft'),
     // Billing amounts (in cents)
     subtotal: integer('subtotal').notNull().default(0),
