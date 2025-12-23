@@ -59,9 +59,9 @@ function InvoicesPage() {
         headers: { 'Content-Type': 'application/json' },
       })
       if (!response.ok) {
-        let data
+        let data: { error?: string }
         const contentType = response.headers.get('content-type')
-        if (contentType && contentType.includes('application/json')) {
+        if (contentType?.includes('application/json')) {
           data = await response.json()
         } else {
           const text = await response.text()
@@ -85,9 +85,9 @@ function InvoicesPage() {
         headers: { 'Content-Type': 'application/json' },
       })
       if (!response.ok) {
-        let data
+        let data: { error?: string }
         const contentType = response.headers.get('content-type')
-        if (contentType && contentType.includes('application/json')) {
+        if (contentType?.includes('application/json')) {
           data = await response.json()
         } else {
           const text = await response.text()

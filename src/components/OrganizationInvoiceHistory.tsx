@@ -178,9 +178,9 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
         method: 'POST',
       })
 
-      let result
+      let result: { error?: string; success?: boolean; invoice?: { id: string; status: string } }
       const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType?.includes('application/json')) {
         result = await response.json()
       } else {
         const text = await response.text()
@@ -203,7 +203,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
     }
   }
 
-  const handleMarkAsPaid = async (invoice: Invoice) => {
+  const handleMarkAsPaid = async (invoice: Invoice | InvoiceType) => {
     if (!tenant) {
       alert('Tenant information is missing')
       return
@@ -215,9 +215,9 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
         method: 'POST',
       })
 
-      let result
+      let result: { error?: string; success?: boolean; invoice?: { id: string; status: string } }
       const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType?.includes('application/json')) {
         result = await response.json()
       } else {
         const text = await response.text()
