@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.33% </span>
+                <span class="strong">89.72% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>327/362</span>
+                <span class='fraction'>332/370</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>24/27</span>
+                <span class='fraction'>24/28</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">90.33% </span>
+                <span class="strong">89.72% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>327/362</span>
+                <span class='fraction'>332/370</span>
             </div>
         
             
@@ -531,7 +531,17 @@
 <a name='L466'></a><a href='#L466'>466</a>
 <a name='L467'></a><a href='#L467'>467</a>
 <a name='L468'></a><a href='#L468'>468</a>
-<a name='L469'></a><a href='#L469'>469</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L469'></a><a href='#L469'>469</a>
+<a name='L470'></a><a href='#L470'>470</a>
+<a name='L471'></a><a href='#L471'>471</a>
+<a name='L472'></a><a href='#L472'>472</a>
+<a name='L473'></a><a href='#L473'>473</a>
+<a name='L474'></a><a href='#L474'>474</a>
+<a name='L475'></a><a href='#L475'>475</a>
+<a name='L476'></a><a href='#L476'>476</a>
+<a name='L477'></a><a href='#L477'>477</a>
+<a name='L478'></a><a href='#L478'>478</a>
+<a name='L479'></a><a href='#L479'>479</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -542,6 +552,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -923,6 +935,14 @@
 <span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28x</span>
+<span class="cline-any cline-yes">28x</span>
+<span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-yes">28x</span>
 <span class="cline-any cline-yes">28x</span>
@@ -1009,7 +1029,9 @@ import {
   flexRender,
   type ColumnDef,
   type SortingState,
+  type FilterFn,
 } from '@tanstack/react-table'
+import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   ChevronDown,
   ChevronUp,
@@ -1201,7 +1223,7 @@ export function CRMCustomerTable({
               )}
             &lt;/div&gt;
             &lt;div&gt;
-              &lt;Link to={`/${tenant}/app/sales/crm/${row.original.id}`}&gt;
+              &lt;Link to="/$tenant/app/sales/crm/$customerId" params={{ tenant, customerId: row.original.id }}&gt;
                 &lt;div className="font-medium text-gray-900 hover:text-indigo-600 cursor-pointer"&gt;
                   {row.original.name}
                 &lt;/div&gt;
@@ -1351,7 +1373,7 @@ export function CRMCustomerTable({
             &lt;/DropdownMenuTrigger&gt;
             &lt;DropdownMenuContent align="end"&gt;
               &lt;DropdownMenuItem asChild&gt;
-                &lt;Link to={`/${tenant}/app/sales/crm/${row.original.id}`}&gt;
+                &lt;Link to="/$tenant/app/sales/crm/$customerId" params={{ tenant, customerId: row.original.id }}&gt;
                   View Details
                 &lt;/Link&gt;
               &lt;/DropdownMenuItem&gt;
@@ -1391,6 +1413,11 @@ export function CRMCustomerTable({
     [selectedIds, customers.length, expandedRows, toggleRowExpanded, toggleRowSelection, toggleAllSelection, tenant, onEdit, onCreateSubscription, onAddContact]
   )
 &nbsp;
+  const fuzzyFilter: FilterFn&lt;CRMCustomer&gt; = <span class="fstat-no" title="function not covered" >(row, columnId, value) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    const itemRank = rankItem(row.getValue(columnId), value as string)</span>
+<span class="cstat-no" title="statement not covered" >    return itemRank.passed</span>
+<span class="cstat-no" title="statement not covered" >  }</span>
+&nbsp;
   const table = useReactTable({
     data: customers,
     columns,
@@ -1401,6 +1428,9 @@ export function CRMCustomerTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
   })
 &nbsp;
   return (
@@ -1474,7 +1504,7 @@ export function CRMCustomerTable({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-23T20:12:56.710Z
+                at 2025-12-29T18:16:50.619Z
             </div>
         <script src="../prettify.js"></script>
         <script>
