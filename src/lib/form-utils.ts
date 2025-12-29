@@ -54,6 +54,8 @@ interface StandardSchemaV1<Input = unknown, Output = Input> {
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// @ts-expect-error - Zod v4's ZodType requires any for generic inference
+// biome-ignore lint/suspicious/noExplicitAny: Zod v4's ZodType requires any for generic inference
 export function zodFormValidator<T extends z.ZodType<any>>(
   schema: T
 ): StandardSchemaV1<z.infer<T>, z.infer<T>> {

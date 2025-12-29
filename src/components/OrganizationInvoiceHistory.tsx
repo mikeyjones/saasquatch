@@ -180,7 +180,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
 
       let result: { error?: string; invoice?: Invoice }
       const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType?.includes('application/json')) {
         result = await response.json()
       } else {
         const text = await response.text()
@@ -217,7 +217,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
 
       let result: { error?: string; invoice?: Invoice }
       const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType?.includes('application/json')) {
         result = await response.json()
       } else {
         const text = await response.text()
