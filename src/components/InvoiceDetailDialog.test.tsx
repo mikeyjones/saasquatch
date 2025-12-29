@@ -44,7 +44,6 @@ const mockInvoice: Invoice = {
 describe("InvoiceDetailDialog", () => {
 	const mockOnOpenChange = vi.fn();
 	const mockOnMarkAsPaid = vi.fn();
-	const mockOnFinalize = vi.fn();
 	const mockOnDownloadPDF = vi.fn();
 
 	beforeEach(() => {
@@ -168,19 +167,6 @@ describe("InvoiceDetailDialog", () => {
 			);
 
 			expect(screen.getByText("Canceled")).toBeInTheDocument();
-		});
-
-		it("should render Final status badge", () => {
-			const finalInvoice: Invoice = { ...mockInvoice, status: "final" };
-			render(
-				<InvoiceDetailDialog
-					open={true}
-					onOpenChange={mockOnOpenChange}
-					invoice={finalInvoice}
-				/>,
-			);
-
-			expect(screen.getByText("Final")).toBeInTheDocument();
 		});
 	});
 
@@ -373,23 +359,11 @@ describe("InvoiceDetailDialog", () => {
 			expect(mockOnDownloadPDF).toHaveBeenCalledWith(mockInvoice);
 		});
 
-		it("should render Finalize button for draft invoices", () => {
-			render(
-				<InvoiceDetailDialog
-					open={true}
-					onOpenChange={mockOnOpenChange}
-					invoice={mockInvoice}
-					onFinalize={mockOnFinalize}
-				/>,
-			);
-
-			expect(
-				screen.getByRole("button", { name: /finalize/i }),
-			).toBeInTheDocument();
-		});
-
 		it("should render Mark as Paid button for final invoices", () => {
-			const finalInvoice: Invoice = { ...mockInvoice, status: "final" };
+			const finalInvoice: Invoice = {
+				...mockInvoice,
+				status: "final",
+			};
 			render(
 				<InvoiceDetailDialog
 					open={true}
@@ -402,22 +376,6 @@ describe("InvoiceDetailDialog", () => {
 			expect(
 				screen.getByRole("button", { name: /mark as paid/i }),
 			).toBeInTheDocument();
-		});
-
-		it("should not render Finalize button for final invoices", () => {
-			const finalInvoice: Invoice = { ...mockInvoice, status: "final" };
-			render(
-				<InvoiceDetailDialog
-					open={true}
-					onOpenChange={mockOnOpenChange}
-					invoice={finalInvoice}
-					onFinalize={mockOnFinalize}
-				/>,
-			);
-
-			expect(
-				screen.queryByRole("button", { name: /finalize/i }),
-			).not.toBeInTheDocument();
 		});
 
 		it("should not render Mark as Paid button for paid invoices", () => {
@@ -439,45 +397,12 @@ describe("InvoiceDetailDialog", () => {
 			).not.toBeInTheDocument();
 		});
 
-		it("should not render Finalize button for paid invoices", () => {
-			const paidInvoice: Invoice = {
-				...mockInvoice,
-				status: "paid",
-				paidAt: "2024-01-20",
-			};
-			render(
-				<InvoiceDetailDialog
-					open={true}
-					onOpenChange={mockOnOpenChange}
-					invoice={paidInvoice}
-					onFinalize={mockOnFinalize}
-				/>,
-			);
-
-			expect(
-				screen.queryByRole("button", { name: /finalize/i }),
-			).not.toBeInTheDocument();
-		});
-
-		it("should call onFinalize when Finalize is clicked", async () => {
-			const user = userEvent.setup();
-			render(
-				<InvoiceDetailDialog
-					open={true}
-					onOpenChange={mockOnOpenChange}
-					invoice={mockInvoice}
-					onFinalize={mockOnFinalize}
-				/>,
-			);
-
-			await user.click(screen.getByRole("button", { name: /finalize/i }));
-
-			expect(mockOnFinalize).toHaveBeenCalledWith(mockInvoice);
-		});
-
 		it("should call onMarkAsPaid when Mark as Paid is clicked", async () => {
 			const user = userEvent.setup();
-			const finalInvoice: Invoice = { ...mockInvoice, status: "final" };
+			const finalInvoice: Invoice = {
+				...mockInvoice,
+				status: "final",
+			};
 			render(
 				<InvoiceDetailDialog
 					open={true}
@@ -492,22 +417,11 @@ describe("InvoiceDetailDialog", () => {
 			expect(mockOnMarkAsPaid).toHaveBeenCalledWith(finalInvoice);
 		});
 
-		it("should show Finalizing... when isFinalizing is true", () => {
-			render(
-				<InvoiceDetailDialog
-					open={true}
-					onOpenChange={mockOnOpenChange}
-					invoice={mockInvoice}
-					onFinalize={mockOnFinalize}
-					isFinalizing={true}
-				/>,
-			);
-
-			expect(screen.getByText("Finalizing...")).toBeInTheDocument();
-		});
-
 		it("should show Processing... when isMarkingPaid is true", () => {
-			const finalInvoice: Invoice = { ...mockInvoice, status: "final" };
+			const finalInvoice: Invoice = {
+				...mockInvoice,
+				status: "final",
+			};
 			render(
 				<InvoiceDetailDialog
 					open={true}

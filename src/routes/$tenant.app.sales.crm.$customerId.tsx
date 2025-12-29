@@ -202,7 +202,7 @@ function OrganizationDetailPage() {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center gap-2 mb-6">
-          <Link to={`/${tenant}/app/sales/crm`}>
+          <Link to="/$tenant/app/sales/crm" params={{ tenant }}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to CRM
@@ -220,7 +220,7 @@ function OrganizationDetailPage() {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center gap-2 mb-6">
-          <Link to={`/${tenant}/app/sales/crm`}>
+          <Link to="/$tenant/app/sales/crm" params={{ tenant }}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to CRM
@@ -265,7 +265,7 @@ function OrganizationDetailPage() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2">
-        <Link to={`/${tenant}/app/sales/crm`}>
+        <Link to="/$tenant/app/sales/crm" params={{ tenant }}>
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to CRM

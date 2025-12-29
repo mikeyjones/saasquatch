@@ -186,7 +186,8 @@ export function OrganizationTicketHistory({
 								>
 									<td className="px-4 py-3">
 										<Link
-											to={`/${tenant}/app/support/tickets`}
+											to="/$tenant/app/support/tickets"
+											params={{ tenant }}
 											className="text-blue-600 hover:underline font-medium text-sm"
 										>
 											{ticket.ticketNumber}
@@ -225,7 +226,8 @@ export function OrganizationTicketHistory({
 									</td>
 									<td className="px-4 py-3">
 										<Link
-											to={`/${tenant}/app/support/members/${ticket.tenantUserId}`}
+											to="/$tenant/app/support/members/$memberId"
+											params={{ tenant, memberId: ticket.tenantUserId }}
 											className="text-sm text-gray-900 hover:text-blue-600 hover:underline"
 										>
 											{ticket.customerName}

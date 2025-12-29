@@ -178,9 +178,9 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
         method: 'POST',
       })
 
-      let result: { error?: string; success?: boolean; invoice?: { id: string; status: string } }
+      let result: { error?: string; invoice?: Invoice }
       const contentType = response.headers.get('content-type')
-      if (contentType?.includes('application/json')) {
+      if (contentType && contentType.includes('application/json')) {
         result = await response.json()
       } else {
         const text = await response.text()
@@ -203,7 +203,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
     }
   }
 
-  const handleMarkAsPaid = async (invoice: Invoice | InvoiceType) => {
+  const handleMarkAsPaid = async (invoice: Invoice) => {
     if (!tenant) {
       alert('Tenant information is missing')
       return
@@ -215,9 +215,9 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
         method: 'POST',
       })
 
-      let result: { error?: string; success?: boolean; invoice?: { id: string; status: string } }
+      let result: { error?: string; invoice?: Invoice }
       const contentType = response.headers.get('content-type')
-      if (contentType?.includes('application/json')) {
+      if (contentType && contentType.includes('application/json')) {
         result = await response.json()
       } else {
         const text = await response.text()
@@ -422,7 +422,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
           await handleFinalizeInvoice(inv.id)
         }}
         onMarkAsPaid={async (inv) => {
-          await handleMarkAsPaid(inv)
+          await handleMarkAsPaid(inv as unknown as Invoice)
         }}
         isFinalizing={selectedInvoice ? isFinalizing === selectedInvoice.id : false}
         isMarkingPaid={selectedInvoice ? isMarkingPaid === selectedInvoice.id : false}

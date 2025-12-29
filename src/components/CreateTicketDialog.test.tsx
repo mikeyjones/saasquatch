@@ -22,10 +22,10 @@ vi.mock("@/data/tickets", () => ({
 	createTicket: vi.fn(),
 }));
 
-// Helper to mock fetch
-function _mockFetch() {
-	return global.fetch as ReturnType<typeof vi.fn>;
-}
+// Helper to mock fetch (kept for reference but not currently used)
+// function mockFetch() {
+// 	return global.fetch as ReturnType<typeof vi.fn>;
+// }
 
 describe("CreateTicketDialog", () => {
 	const mockOnOpenChange = vi.fn();

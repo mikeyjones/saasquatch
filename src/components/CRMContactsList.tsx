@@ -6,7 +6,9 @@ import {
   flexRender,
   type ColumnDef,
   type SortingState,
+  type FilterFn,
 } from '@tanstack/react-table'
+import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   ChevronDown,
   ChevronUp,
@@ -253,7 +255,7 @@ export function CRMContactsList({
                 row.original.customer ? (
                   <button
                     type="button"
-                    onClick={() => onViewCustomer?.(row.original.customer?.id)}
+                    onClick={() => row.original.customer?.id && onViewCustomer?.(row.original.customer.id)}
                     className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600"
                   >
                     <Building2 size={14} />
@@ -292,7 +294,7 @@ export function CRMContactsList({
               </DropdownMenuItem>
               {row.original.customer && (
                 <DropdownMenuItem
-                  onClick={() => onViewCustomer?.(row.original.customer?.id)}
+                  onClick={() => row.original.customer?.id && onViewCustomer?.(row.original.customer.id)}
                 >
                   View Company
                 </DropdownMenuItem>
@@ -313,6 +315,11 @@ export function CRMContactsList({
     [selectedIds, contacts.length, showCustomer, toggleRowSelection, toggleAllSelection, onEdit, onViewCustomer, onDelete]
   )
 
+  const fuzzyFilter: FilterFn<Contact> = (row, columnId, value) => {
+    const itemRank = rankItem(row.getValue(columnId), value as string)
+    return itemRank.passed
+  }
+
   const table = useReactTable({
     data: contacts,
     columns,
@@ -322,6 +329,9 @@ export function CRMContactsList({
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
   })
 
   return (

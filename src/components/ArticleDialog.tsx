@@ -3,6 +3,7 @@ import { useParams } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { useAppForm } from '@/hooks/demo.form'
+import { zodFormValidator } from '@/lib/form-utils'
 import {
   createArticle,
   updateArticle,
@@ -26,9 +27,9 @@ import {
 
 const articleSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  content: z.string().optional(),
-  category: z.string().optional(),
-  tags: z.string().optional(), // Comma-separated tags
+  content: z.string().default(''),
+  category: z.string().default(''),
+  tags: z.string().default(''), // Comma-separated tags
   status: z.enum(['draft', 'published', 'archived']),
 })
 
@@ -61,7 +62,7 @@ export function ArticleDialog({
       status: (article?.status || 'draft') as 'draft' | 'published' | 'archived',
     },
     validators: {
-      onBlur: articleSchema,
+      onBlur: zodFormValidator(articleSchema),
     },
     onSubmit: async ({ value }) => {
       if (!tenant) return

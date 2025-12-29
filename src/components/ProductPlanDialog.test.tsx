@@ -322,7 +322,6 @@ describe("ProductPlanDialog", () => {
 
 			vi.mocked(productsData.updatePlan).mockResolvedValueOnce({
 				success: true,
-				plan: mockPlan,
 			});
 
 			render(
@@ -456,6 +455,8 @@ describe("ProductPlanDialog", () => {
 					id: "addon-1",
 					name: "Extra Storage",
 					basePrice: { amount: 10, currency: "USD", interval: "monthly" },
+					pricingModel: "flat" as const,
+					status: "active" as const,
 				},
 			]);
 

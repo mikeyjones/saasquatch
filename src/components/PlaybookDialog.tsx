@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
+import { zodFormValidator } from '@/lib/form-utils'
 import {
   createPlaybook,
   updatePlaybook,
@@ -30,10 +31,10 @@ import {
 
 const playbookSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
+  description: z.string().default(''),
   type: z.enum(['manual', 'automated']),
-  category: z.string().optional(),
-  tags: z.string().optional(),
+  category: z.string().default(''),
+  tags: z.string().default(''),
   status: z.enum(['draft', 'active', 'inactive']),
 })
 
@@ -68,7 +69,7 @@ export function PlaybookDialog({
       status: (playbook?.status || 'draft') as 'draft' | 'active' | 'inactive',
     },
     validators: {
-      onBlur: playbookSchema,
+      onBlur: zodFormValidator(playbookSchema),
     },
     onSubmit: async ({ value }) => {
       if (!tenant) return

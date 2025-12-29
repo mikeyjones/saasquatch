@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Plus, X, Package, Zap, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
+import { zodFormValidator } from '@/lib/form-utils'
 import {
   createPlan,
   updatePlan,
@@ -28,7 +29,7 @@ import {
 
 const planSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
+  description: z.string().default(''),
   status: z.enum(['active', 'draft', 'archived']),
   pricingModel: z.enum(['flat', 'seat', 'usage', 'hybrid']),
   baseAmount: z.string().min(1, 'Price is required'),
@@ -125,7 +126,7 @@ export function ProductPlanDialog({
       baseInterval: (plan?.basePrice?.interval || 'monthly') as 'monthly' | 'yearly',
     },
     validators: {
-      onBlur: planSchema,
+      onBlur: zodFormValidator(planSchema),
     },
     onSubmit: async ({ value }) => {
       if (!tenant) return
@@ -424,18 +425,12 @@ export function ProductPlanDialog({
               </div>
               <form.AppField name="baseCurrency">
                 {(field) => (
-                  <div>
-                    <Label className="text-xs text-gray-500">Currency</Label>
-                    <field.Select values={currencyOptions} placeholder="Currency" />
-                  </div>
+                  <field.Select label="Currency" values={currencyOptions} placeholder="Currency" />
                 )}
               </form.AppField>
               <form.AppField name="baseInterval">
                 {(field) => (
-                  <div>
-                    <Label className="text-xs text-gray-500">Interval</Label>
-                    <field.Select values={intervalOptions} placeholder="Interval" />
-                  </div>
+                  <field.Select label="Interval" values={intervalOptions} placeholder="Interval" />
                 )}
               </form.AppField>
             </div>

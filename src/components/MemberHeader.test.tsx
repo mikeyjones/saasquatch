@@ -4,9 +4,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemberHeader } from "./MemberHeader";
 
 vi.mock("@tanstack/react-router", () => ({
-	Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-		<a href={to}>{children}</a>
-	),
+	Link: ({
+		children,
+		to,
+		params,
+	}: {
+		children: React.ReactNode;
+		to: string;
+		params?: Record<string, string>;
+	}) => {
+		// Resolve params in the route template
+		let href = to;
+		if (params) {
+			for (const [key, value] of Object.entries(params)) {
+				href = href.replace(`$${key}`, value);
+			}
+		}
+		return <a href={href}>{children}</a>;
+	},
 }));
 
 const mockMember = {

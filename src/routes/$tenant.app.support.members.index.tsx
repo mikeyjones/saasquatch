@@ -377,7 +377,7 @@ function MemberRow({
 						</span>
 					</div>
 					<div>
-						<Link to={`/${tenant}/app/support/members/${member.id}`}>
+						<Link to="/$tenant/app/support/members/$memberId" params={{ tenant, memberId: member.id }}>
 							<p className="font-medium text-gray-900 text-sm hover:text-indigo-600 cursor-pointer">
 								<HighlightedText text={member.name} query={searchQuery} />
 							</p>
@@ -395,7 +395,8 @@ function MemberRow({
 					<Building size={16} className="text-gray-400" />
 					{member.organizationId ? (
 						<Link
-							to={`/${tenant}/app/support/organizations/${member.organizationId}`}
+							to="/$tenant/app/support/organizations/$organizationId"
+							params={{ tenant, organizationId: member.organizationId }}
 							className="text-gray-700 text-sm hover:text-blue-600 hover:underline"
 						>
 							<HighlightedText text={member.organization} query={searchQuery} />
@@ -448,7 +449,7 @@ function MemberRow({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuItem asChild>
-							<Link to={`/${tenant}/app/support/members/${member.id}`}>
+							<Link to="/$tenant/app/support/members/$memberId" params={{ tenant, memberId: member.id }}>
 								View Details
 							</Link>
 						</DropdownMenuItem>

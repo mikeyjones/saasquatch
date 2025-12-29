@@ -606,11 +606,12 @@ describe('CRM Customer Creation API', () => {
 
     describe('Customer Creation (with subscription)', () => {
       it('should require productPlanId when creating subscription', () => {
-        const _request = {
+        // Request body structure for reference
+        void ({
           name: 'Acme Corp',
           createSubscription: true,
           subscriptionData: {}, // missing productPlanId
-        }
+        })
         const expectedError = 'Product plan is required when creating subscription'
         expect(expectedError).toContain('Product plan')
       })
@@ -933,9 +934,10 @@ describe('CRM Members API', () => {
       })
 
       it('should validate assignedToUserId exists if provided', () => {
-        const _requestBody = {
+        // Request body structure for reference
+        void ({
           assignedToUserId: 'non-existent-user-id',
-        }
+        })
         const expectedError = {
           error: 'Assigned user not found',
         }

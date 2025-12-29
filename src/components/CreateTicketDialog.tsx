@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Search, User, Building, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
+import { zodFormValidator } from '@/lib/form-utils'
 import { fetchMembers, type Member } from '@/data/members'
 import { createTicket, type CreateTicketInput } from '@/data/tickets'
 import { Button } from '@/components/ui/button'
@@ -171,11 +172,11 @@ export function CreateTicketDialog({
     defaultValues: {
       customerId: '',
       title: '',
-      priority: 'normal' as const,
+      priority: 'normal' as 'urgent' | 'high' | 'normal' | 'low',
       message: '',
     },
     validators: {
-      onBlur: ticketSchema,
+      onBlur: zodFormValidator(ticketSchema),
     },
     onSubmit: async ({ value }) => {
       if (!selectedCustomer || !tenant) return

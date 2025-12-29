@@ -5,8 +5,10 @@ import {
   getSortedRowModel,
   type ColumnDef,
   type SortingState,
+  type FilterFn,
   flexRender,
 } from '@tanstack/react-table'
+import { rankItem } from '@tanstack/match-sorter-utils'
 import { ChevronUp, ChevronDown, Edit, Trash2, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -239,6 +241,11 @@ export function CouponTable({ coupons, onEdit, onDelete }: CouponTableProps) {
     [onEdit, onDelete, copyToClipboard, formatDate, formatDiscount]
   )
 
+  const fuzzyFilter: FilterFn<Coupon> = (row, columnId, value) => {
+    const itemRank = rankItem(row.getValue(columnId), value as string)
+    return itemRank.passed
+  }
+
   const table = useReactTable({
     data: coupons,
     columns,
@@ -248,6 +255,9 @@ export function CouponTable({ coupons, onEdit, onDelete }: CouponTableProps) {
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
   })
 
   return (

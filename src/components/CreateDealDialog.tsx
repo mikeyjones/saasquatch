@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Search, Building, DollarSign, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
+import { zodFormValidator } from '@/lib/form-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,8 +23,8 @@ const dealSchema = z.object({
   tenantOrganizationId: z.string().min(1, 'Organization is required'),
   pipelineId: z.string().min(1, 'Pipeline is required'),
   stageId: z.string().min(1, 'Stage is required'),
-  assignedToUserId: z.string().optional(),
-  notes: z.string().optional(),
+  assignedToUserId: z.string().default(''),
+  notes: z.string().default(''),
 })
 
 interface TenantOrg {
@@ -44,6 +45,7 @@ interface Pipeline {
   name: string
   tenantOrganization: TenantOrg | null
   stages: PipelineStage[]
+  isDefault?: boolean
 }
 
 interface CreateDealDialogProps {
@@ -235,7 +237,7 @@ export function CreateDealDialog({
       notes: '',
     },
     validators: {
-      onBlur: dealSchema,
+      onBlur: zodFormValidator(dealSchema),
     },
     onSubmit: async ({ value }) => {
       if (!selectedOrg || !selectedPipeline || !selectedStage || !tenant) return

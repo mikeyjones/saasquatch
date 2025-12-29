@@ -183,7 +183,7 @@ export function NumberField({
           
           if (inputValue === '' || inputValue === null || inputValue === undefined) {
             // Set to undefined when cleared so validation can catch it
-            field.handleChange(undefined as number)
+            field.handleChange(undefined as unknown as number)
           } else {
             const numValue = Number.parseFloat(inputValue)
             console.log('NumberField parsed value:', numValue, 'isNaN:', Number.isNaN(numValue))

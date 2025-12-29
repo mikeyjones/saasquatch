@@ -82,7 +82,7 @@ export function InvoiceDetailDialog({
 }: InvoiceDetailDialogProps) {
   if (!invoice) return null
 
-  const status = statusConfig[invoice.status as keyof typeof statusConfig] || statusConfig.draft
+  const status = statusConfig[invoice.status]
   const StatusIcon = status.icon
 
   return (

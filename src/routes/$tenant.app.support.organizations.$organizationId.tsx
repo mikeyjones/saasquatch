@@ -162,7 +162,7 @@ function OrganizationSupportPage() {
 			<main className="flex-1 overflow-auto p-6">
 				<div className="container mx-auto">
 					<div className="mb-6">
-						<Link to={`/${tenant}/app/support/members`}>
+						<Link to="/$tenant/app/support/members" params={{ tenant }}>
 							<Button variant="ghost" size="sm">
 								<ArrowLeft className="h-4 w-4 mr-2" />
 								Back to Members
@@ -194,7 +194,7 @@ function OrganizationSupportPage() {
 			<div className="container mx-auto space-y-6">
 				{/* Breadcrumb */}
 				<div className="flex items-center gap-2">
-					<Link to={`/${tenant}/app/support/members`}>
+					<Link to="/$tenant/app/support/members" params={{ tenant }}>
 						<Button variant="ghost" size="sm">
 							<ArrowLeft className="h-4 w-4 mr-2" />
 							Back to Members
@@ -424,7 +424,8 @@ function OrganizationSupportPage() {
 													</div>
 													<div className="flex-1 min-w-0">
 														<Link
-															to={`/${tenant}/app/support/members/${contact.id}`}
+															to="/$tenant/app/support/members/$memberId"
+															params={{ tenant, memberId: contact.id }}
 															className="font-medium text-sm hover:text-blue-600 hover:underline"
 														>
 															{contact.name}
@@ -496,7 +497,8 @@ function OrganizationSupportPage() {
 											>
 												<td className="px-6 py-4">
 													<Link
-														to={`/${tenant}/app/support/members/${contact.id}`}
+														to="/$tenant/app/support/members/$memberId"
+														params={{ tenant, memberId: contact.id }}
 														className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
 													>
 														{contact.name}

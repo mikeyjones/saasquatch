@@ -8,7 +8,9 @@ import {
   flexRender,
   type ColumnDef,
   type SortingState,
+  type FilterFn,
 } from '@tanstack/react-table'
+import { rankItem } from '@tanstack/match-sorter-utils'
 import {
   ChevronDown,
   ChevronUp,
@@ -200,7 +202,7 @@ export function CRMCustomerTable({
               )}
             </div>
             <div>
-              <Link to={`/${tenant}/app/sales/crm/${row.original.id}`}>
+              <Link to="/$tenant/app/sales/crm/$customerId" params={{ tenant, customerId: row.original.id }}>
                 <div className="font-medium text-gray-900 hover:text-indigo-600 cursor-pointer">
                   {row.original.name}
                 </div>
@@ -350,7 +352,7 @@ export function CRMCustomerTable({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link to={`/${tenant}/app/sales/crm/${row.original.id}`}>
+                <Link to="/$tenant/app/sales/crm/$customerId" params={{ tenant, customerId: row.original.id }}>
                   View Details
                 </Link>
               </DropdownMenuItem>
@@ -390,6 +392,11 @@ export function CRMCustomerTable({
     [selectedIds, customers.length, expandedRows, toggleRowExpanded, toggleRowSelection, toggleAllSelection, tenant, onEdit, onCreateSubscription, onAddContact]
   )
 
+  const fuzzyFilter: FilterFn<CRMCustomer> = (row, columnId, value) => {
+    const itemRank = rankItem(row.getValue(columnId), value as string)
+    return itemRank.passed
+  }
+
   const table = useReactTable({
     data: customers,
     columns,
@@ -400,6 +407,9 @@ export function CRMCustomerTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
   })
 
   return (

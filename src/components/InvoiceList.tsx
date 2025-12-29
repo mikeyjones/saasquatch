@@ -53,6 +53,11 @@ const statusConfig = {
     icon: Clock,
     className: 'bg-amber-50 text-amber-700 border border-amber-200',
   },
+  final: {
+    label: 'Final',
+    icon: FileText,
+    className: 'bg-blue-50 text-blue-700 border border-blue-200',
+  },
   paid: {
     label: 'Paid',
     icon: CheckCircle,

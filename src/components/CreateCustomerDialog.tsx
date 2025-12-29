@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Building, RefreshCw, User, CreditCard } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
+import { zodFormValidator } from '@/lib/form-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,18 +27,18 @@ import {
 
 const customerSchema = z.object({
   name: z.string().min(1, 'Company name is required'),
-  industry: z.string().optional(),
-  website: z.string().optional(),
-  billingEmail: z.string().optional(),
-  billingAddress: z.string().optional(),
-  assignedToUserId: z.string().optional(),
+  industry: z.string().default(''),
+  website: z.string().default(''),
+  billingEmail: z.string().default(''),
+  billingAddress: z.string().default(''),
+  assignedToUserId: z.string().default(''),
   importance: z.enum(['low', 'normal', 'high', 'vip']).optional(),
-  tags: z.string().optional(),
-  notes: z.string().optional(),
+  tags: z.string().default(''),
+  notes: z.string().default(''),
   createSubscription: z.boolean().default(false),
-  productPlanId: z.string().optional(),
-  billingCycle: z.enum(['monthly', 'yearly']).optional(),
-  seats: z.number().min(1).optional(),
+  productPlanId: z.string().default(''),
+  billingCycle: z.enum(['monthly', 'yearly']).default('monthly'),
+  seats: z.number().min(1).default(1),
 })
 
 interface ProductPlan {
@@ -204,11 +205,11 @@ export function CreateCustomerDialog({
       notes: customerData?.notes || '',
       createSubscription: false,
       productPlanId: '',
-      billingCycle: 'monthly' as const,
+      billingCycle: 'monthly' as 'monthly' | 'yearly',
       seats: 1,
     },
     validators: {
-      onBlur: customerSchema,
+      onBlur: zodFormValidator(customerSchema),
     },
     onSubmit: async ({ value }) => {
       if (!tenant) return
@@ -405,7 +406,6 @@ export function CreateCustomerDialog({
               <field.TextArea
                 label="Billing Address"
                 rows={2}
-                placeholder="123 Main St, City, State, ZIP"
               />
             )}
           </form.AppField>
@@ -465,7 +465,6 @@ export function CreateCustomerDialog({
               <field.TextArea
                 label="Notes"
                 rows={2}
-                placeholder="Internal notes about this customer..."
               />
             )}
           </form.AppField>

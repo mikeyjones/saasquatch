@@ -68,7 +68,7 @@ function TenantLoginPage() {
     const checkExistingSession = async () => {
       try {
         const session = await authClient.getSession()
-        if (session?.session) {
+        if (session && 'session' in session && session.session) {
           // User is logged in, check if they're a member of this tenant
           const membershipResult = await checkTenantMembership(tenantSlug)
           if (membershipResult.isMember) {

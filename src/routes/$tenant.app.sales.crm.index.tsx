@@ -181,7 +181,7 @@ function CRMPage() {
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
-					<Link to={`/${tenant}/app/sales/crm/contacts`}>
+					<Link to="/$tenant/app/sales/crm/contacts" params={{ tenant }}>
 						<Button variant="outline">
 							<Users size={18} className="mr-1" />
 							View Contacts

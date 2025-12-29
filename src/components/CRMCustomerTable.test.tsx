@@ -6,9 +6,24 @@ import { type CRMCustomer, CRMCustomerTable } from "./CRMCustomerTable";
 
 vi.mock("@tanstack/react-router", () => ({
 	useParams: vi.fn(() => ({ tenant: "acme" })),
-	Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-		<a href={to}>{children}</a>
-	),
+	Link: ({
+		children,
+		to,
+		params,
+	}: {
+		children: React.ReactNode;
+		to: string;
+		params?: Record<string, string>;
+	}) => {
+		// Resolve params in the route template
+		let href = to;
+		if (params) {
+			for (const [key, value] of Object.entries(params)) {
+				href = href.replace(`$${key}`, value);
+			}
+		}
+		return <a href={href}>{children}</a>;
+	},
 }));
 
 const mockUseParams = router.useParams as ReturnType<typeof vi.fn>;
@@ -291,11 +306,10 @@ describe("CRMCustomerTable", () => {
 					activities: [
 						{
 							id: "act-1",
-							type: "call",
-							title: "Sales call",
-							description: "Discussed pricing",
+							type: "meeting" as const,
+							description: "Sales call - Discussed pricing",
 							timestamp: new Date().toISOString(),
-							user: { id: "user-1", name: "John" },
+							userName: "John",
 						},
 					],
 				},

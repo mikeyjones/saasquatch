@@ -275,7 +275,7 @@ function MemberDetailPage() {
       <main className="flex-1 overflow-auto p-6">
         <div className="container mx-auto">
           <div className="flex items-center gap-2 mb-6">
-            <Link to={`/${tenant}/app/support/members`}>
+            <Link to="/$tenant/app/support/members" params={{ tenant }}>
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Members
@@ -295,7 +295,7 @@ function MemberDetailPage() {
       <main className="flex-1 overflow-auto p-6">
         <div className="container mx-auto">
           <div className="flex items-center gap-2 mb-6">
-            <Link to={`/${tenant}/app/support/members`}>
+            <Link to="/$tenant/app/support/members" params={{ tenant }}>
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Members
@@ -317,7 +317,7 @@ function MemberDetailPage() {
       <div className="container mx-auto space-y-6">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2">
-          <Link to={`/${tenant}/app/support/members`}>
+          <Link to="/$tenant/app/support/members" params={{ tenant }}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Members
@@ -512,7 +512,8 @@ function MemberDetailPage() {
                     <div>
                       <div className="text-sm text-muted-foreground">Name</div>
                       <Link
-                        to={`/${tenant}/app/support/organizations/${organization.id}`}
+                        to="/$tenant/app/support/organizations/$organizationId"
+                        params={{ tenant, organizationId: organization.id }}
                         className="font-medium text-primary hover:underline"
                       >
                         {organization.name}

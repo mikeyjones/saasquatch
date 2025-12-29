@@ -213,7 +213,7 @@ export const Route = createFileRoute(
 					// Calculate MRR from active subscriptions
 					const activeSubs = subscriptions.filter((s) => s.status === "active");
 					const totalMRR = activeSubs.reduce((sum, s) => {
-						const mrr = s.mrr ? Number.parseFloat(s.mrr) : 0;
+						const mrr = s.mrr ? Number.parseFloat(String(s.mrr)) : 0;
 						return sum + mrr;
 					}, 0);
 

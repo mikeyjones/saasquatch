@@ -8,9 +8,17 @@ import { db } from '@/db'
 import { member, organization } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
+// Extend globalThis for server-side request access
+declare global {
+  // eslint-disable-next-line no-var
+  var request: Request | undefined
+}
+
 export const getUserOrganizations = createServerFn({
   method: 'GET',
-}).handler(async ({ request }) => {
+}).handler(async () => {
+  // Get request from global context if available (SSR context)
+  const request = typeof window === 'undefined' ? globalThis.request : undefined
   if (!request) {
     return { organizations: [] }
   }

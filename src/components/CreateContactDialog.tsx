@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { UserPlus, RefreshCw, User } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
+import { zodFormValidator } from '@/lib/form-utils'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -25,11 +26,11 @@ import { Label } from '@/components/ui/label'
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address').min(1, 'Email is required'),
-  phone: z.string().optional(),
-  title: z.string().optional(),
-  role: z.enum(['owner', 'admin', 'user', 'viewer']).optional(),
-  avatarUrl: z.string().optional(),
-  notes: z.string().optional(),
+  phone: z.string().default(''),
+  title: z.string().default(''),
+  role: z.enum(['owner', 'admin', 'user', 'viewer']).default('user'),
+  avatarUrl: z.string().default(''),
+  notes: z.string().default(''),
 })
 
 export interface Contact {
@@ -144,7 +145,7 @@ export function CreateContactDialog({
       notes: contactData?.notes || '',
     },
     validators: {
-      onBlur: contactSchema,
+      onBlur: zodFormValidator(contactSchema),
     },
     onSubmit: async ({ value }) => {
       if (!tenant) return

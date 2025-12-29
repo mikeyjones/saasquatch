@@ -431,7 +431,9 @@ describe('Bolt-On Pricing Calculations', () => {
       ],
     }
 
-    const _calculateUsagePrice = (usage: number): number => {
+    // Helper function for calculating usage price (not used in test but kept for reference)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const calculateUsagePrice = (usage: number): number => {
       let remaining = usage
       let total = 0
 
@@ -452,6 +454,7 @@ describe('Bolt-On Pricing Calculations', () => {
 
       return total
     }
+    void calculateUsagePrice // Mark as intentionally unused
 
     // Test with 3000 units of usage
     // 1000 free + 2000 at $0.10 = $200

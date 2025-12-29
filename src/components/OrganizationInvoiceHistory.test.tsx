@@ -240,7 +240,9 @@ describe("OrganizationInvoiceHistory", () => {
 
 			await user.click(screen.getByText(/Paid \(1\)/));
 
-			expect(screen.getByText(/Showing 1 of 4 invoices/i)).toBeInTheDocument();
+			await waitFor(() => {
+				expect(screen.getByText(/Showing 1 of 4 invoices/i)).toBeInTheDocument();
+			});
 			expect(screen.getByText(/Total:.*\$110\.00/)).toBeInTheDocument();
 		});
 
@@ -375,11 +377,12 @@ describe("OrganizationInvoiceHistory", () => {
 		it("should call finalize API when Finalize button is clicked", async () => {
 			const user = userEvent.setup();
 			const onInvoiceUpdated = vi.fn();
-			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-				ok: true,
-				headers: new Headers({ 'content-type': 'application/json' }),
-				json: async () => ({ success: true, invoice: { id: "inv-2", status: "final" } }),
-			});
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+				new Response(JSON.stringify({ success: true, invoice: { id: "inv-2", status: "final" } }), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' },
+				})
+			);
 
 			render(<OrganizationInvoiceHistory invoices={mockInvoices} onInvoiceUpdated={onInvoiceUpdated} />);
 
@@ -403,7 +406,6 @@ describe("OrganizationInvoiceHistory", () => {
 			(global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
 				() => new Promise((resolve) => setTimeout(() => resolve({
 					ok: true,
-					headers: new Headers({ 'content-type': 'application/json' }),
 					json: async () => ({ success: true }),
 				}), 100)),
 			);
@@ -418,11 +420,12 @@ describe("OrganizationInvoiceHistory", () => {
 
 		it("should show error alert when finalize fails", async () => {
 			const user = userEvent.setup();
-			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-				ok: false,
-				headers: new Headers({ 'content-type': 'application/json' }),
-				json: async () => ({ error: "Invoice not found" }),
-			});
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+				new Response(JSON.stringify({ error: "Invoice not found" }), {
+					status: 404,
+					headers: { 'Content-Type': 'application/json' },
+				})
+			);
 
 			const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
 
@@ -453,11 +456,12 @@ describe("OrganizationInvoiceHistory", () => {
 		it("should call pay API when Mark as Paid button is clicked", async () => {
 			const user = userEvent.setup();
 			const onInvoiceUpdated = vi.fn();
-			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-				ok: true,
-				headers: new Headers({ 'content-type': 'application/json' }),
-				json: async () => ({ success: true, invoice: { id: "inv-4", status: "paid" } }),
-			});
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+				new Response(JSON.stringify({ success: true, invoice: { id: "inv-4", status: "paid" } }), {
+					status: 200,
+					headers: { 'Content-Type': 'application/json' },
+				})
+			);
 
 			render(<OrganizationInvoiceHistory invoices={mockInvoices} onInvoiceUpdated={onInvoiceUpdated} />);
 
@@ -479,11 +483,12 @@ describe("OrganizationInvoiceHistory", () => {
 		it("should show loading state while marking as paid", async () => {
 			const user = userEvent.setup();
 			(global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-				() => new Promise((resolve) => setTimeout(() => resolve({
-					ok: true,
-					headers: new Headers({ 'content-type': 'application/json' }),
-					json: async () => ({ success: true }),
-				}), 100)),
+				() => new Promise((resolve) => setTimeout(() => resolve(
+					new Response(JSON.stringify({ success: true }), {
+						status: 200,
+						headers: { 'Content-Type': 'application/json' },
+					})
+				), 100)),
 			);
 
 			render(<OrganizationInvoiceHistory invoices={mockInvoices} />);
@@ -496,11 +501,12 @@ describe("OrganizationInvoiceHistory", () => {
 
 		it("should show error alert when mark as paid fails", async () => {
 			const user = userEvent.setup();
-			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-				ok: false,
-				headers: new Headers({ 'content-type': 'application/json' }),
-				json: async () => ({ error: "Invoice not found" }),
-			});
+			(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+				new Response(JSON.stringify({ error: "Invoice not found" }), {
+					status: 404,
+					headers: { 'Content-Type': 'application/json' },
+				})
+			);
 
 			const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
 

@@ -188,7 +188,8 @@ export function MemberHeader({
               <div className="flex items-center gap-2 text-gray-600">
                 <Building2 className="h-4 w-4" />
                 <Link
-                  to={`/${tenant}/app/sales/crm/${organization.id}`}
+                  to="/$tenant/app/sales/crm/$customerId"
+                  params={{ tenant, customerId: organization.id }}
                   className="text-sm hover:text-primary font-medium"
                 >
                   {organization.name}

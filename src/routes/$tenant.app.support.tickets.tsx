@@ -314,9 +314,10 @@ function TicketCard({
 			</div>
 
 			<div className="flex items-center gap-2 mb-2">
-				{ticket.organizationId || ticket.customer?.organizationId ? (
+				{(ticket.organizationId || ticket.customer?.organizationId) ? (
 					<Link
-						to={`/${tenant}/app/support/organizations/${ticket.organizationId || ticket.customer.organizationId}`}
+						to="/$tenant/app/support/organizations/$organizationId"
+						params={{ tenant, organizationId: (ticket.organizationId || ticket.customer?.organizationId) ?? '' }}
 						className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
 						onClick={(e) => e.stopPropagation()}
 					>
@@ -737,7 +738,8 @@ function TicketDetail({
 									<div className="flex items-center gap-2 mb-1">
 										{message.type === "customer" && message.authorTenantUserId ? (
 											<Link
-												to={`/${tenant}/app/support/members/${message.authorTenantUserId}`}
+												to="/$tenant/app/support/members/$memberId"
+												params={{ tenant, memberId: message.authorTenantUserId }}
 												className="font-medium text-gray-900 hover:underline"
 											>
 												{message.author}
@@ -750,7 +752,8 @@ function TicketDetail({
 										{message.type === "customer" && (
 											detail.customer?.organizationId ? (
 												<Link
-													to={`/${tenant}/app/support/organizations/${detail.customer.organizationId}`}
+													to="/$tenant/app/support/organizations/$organizationId"
+													params={{ tenant, organizationId: detail.customer.organizationId }}
 													className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
 												>
 													{detail.customer.company || ""}

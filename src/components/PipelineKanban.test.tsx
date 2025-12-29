@@ -99,7 +99,6 @@ function mockFetch() {
 
 describe("PipelineKanban", () => {
 	const mockOnPipelineChange = vi.fn();
-	const _mockOnDealsChange = vi.fn();
 
 	beforeEach(() => {
 		vi.clearAllMocks();

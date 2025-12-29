@@ -77,7 +77,8 @@ describe('Ticket Messages API endpoint', () => {
           content: 'Test message',
           // isInternal not provided
         }
-        const defaultValue = requestBody.isInternal ?? false
+        const requestBodyTyped = requestBody as { isInternal?: boolean }
+        const defaultValue = requestBodyTyped.isInternal ?? false
         expect(defaultValue).toBe(false)
       })
     })

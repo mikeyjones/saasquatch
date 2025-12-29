@@ -12,11 +12,14 @@
  */
 
 import { config } from 'dotenv'
-import { drizzle } from 'drizzle-orm/node-postgres'
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import * as schema from './schema'
 import { hashPassword } from 'better-auth/crypto'
+
+// Type for the database with schema
+type Database = NodePgDatabase<typeof schema>
 
 // ============================================================================
 // Configuration
@@ -1403,7 +1406,7 @@ const tenantOrgsPerStaff: Record<string, TenantOrgData[]> = {
  * Create or get a support staff organization
  */
 async function ensureOrganization(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   name: string,
   slug: string
 ): Promise<string> {
@@ -1431,7 +1434,7 @@ async function ensureOrganization(
  * Create a support staff user WITH Better Auth account (can log in)
  */
 async function ensureSupportStaffUser(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   orgId: string,
   userData: SupportStaffOrg['users'][0]
 ): Promise<string> {
@@ -1447,11 +1450,10 @@ async function ensureSupportStaffUser(
 
     // Update password if account exists
     const existingAccount = await db.query.account.findFirst({
-      where: (account, { and, eq: eqFn }) =>
-        and(
-          eqFn(account.userId, userId),
-          eqFn(account.providerId, 'credential')
-        ),
+      where: and(
+        eq(schema.account.userId, userId),
+        eq(schema.account.providerId, 'credential')
+      ),
     })
 
     if (existingAccount) {
@@ -1496,14 +1498,16 @@ async function ensureSupportStaffUser(
  * Ensure a membership record exists
  */
 async function ensureMembership(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   orgId: string,
   userId: string,
   role: string
 ): Promise<void> {
   const existing = await db.query.member.findFirst({
-    where: (member, { and, eq: eqFn }) =>
-      and(eqFn(member.organizationId, orgId), eqFn(member.userId, userId)),
+    where: and(
+      eq(schema.member.organizationId, orgId),
+      eq(schema.member.userId, userId)
+    ),
   })
 
   if (!existing) {
@@ -1520,7 +1524,7 @@ async function ensureMembership(
  * Create sample todos for an organization
  */
 async function ensureSampleTodos(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   orgId: string,
   orgName: string
 ): Promise<void> {
@@ -1552,16 +1556,15 @@ async function ensureSampleTodos(
  * Create or get a tenant organization (customer company)
  */
 async function ensureTenantOrganization(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   staffOrgId: string,
   tenantData: TenantOrgData
 ): Promise<string> {
   const existing = await db.query.tenantOrganization.findFirst({
-    where: (to, { and, eq: eqFn }) =>
-      and(
-        eqFn(to.organizationId, staffOrgId),
-        eqFn(to.slug, tenantData.slug)
-      ),
+    where: and(
+      eq(schema.tenantOrganization.organizationId, staffOrgId),
+      eq(schema.tenantOrganization.slug, tenantData.slug)
+    ),
   })
 
   if (existing) {
@@ -1589,15 +1592,14 @@ async function ensureTenantOrganization(
  * Create a tenant user (customer - NO login)
  */
 async function ensureTenantUser(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   tenantOrgId: string,
   userData: TenantOrgData['users'][0]
 ): Promise<string> {
   const existing = await db.query.tenantUser.findFirst({
-    where: (tu, { and, eq: eqFn }) =>
-      and(
-        eqFn(tu.tenantOrganizationId, tenantOrgId),
-        eqFn(tu.email, userData.email)
+    where: and(
+      eq(schema.tenantUser.tenantOrganizationId, tenantOrgId),
+      eq(schema.tenantUser.email, userData.email)
       ),
   })
 
@@ -1625,7 +1627,7 @@ async function ensureTenantUser(
  * Get the next ticket number for an organization
  */
 async function getNextTicketNumber(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   orgId: string
 ): Promise<number> {
   const result = await db.query.ticket.findFirst({
@@ -1639,7 +1641,7 @@ async function getNextTicketNumber(
  * Create a ticket with messages and AI triage
  */
 async function ensureTicket(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   staffOrgId: string,
   ticketData: TicketSeedData,
   tenantUserMap: Map<string, { id: string; name: string; tenantOrgName: string }>,
@@ -1656,12 +1658,11 @@ async function ensureTicket(
 
   // Check if ticket already exists (by title and tenant user)
   const existing = await db.query.ticket.findFirst({
-    where: (t, { and, eq: eqFn }) =>
-      and(
-        eqFn(t.organizationId, staffOrgId),
-        eqFn(t.title, ticketData.title),
-        eqFn(t.tenantUserId, tenantUser.id)
-      ),
+    where: and(
+      eq(schema.ticket.organizationId, staffOrgId),
+      eq(schema.ticket.title, ticketData.title),
+      eq(schema.ticket.tenantUserId, tenantUser.id)
+    ),
   })
 
   if (existing) {
@@ -1767,7 +1768,7 @@ function generateSlug(title: string): string {
  * Create a knowledge article
  */
 async function ensureKnowledgeArticle(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   staffOrgId: string,
   articleData: KnowledgeArticleSeedData,
   createdByUserId: string
@@ -1776,11 +1777,10 @@ async function ensureKnowledgeArticle(
 
   // Check if article already exists
   const existing = await db.query.knowledgeArticle.findFirst({
-    where: (ka, { and, eq: eqFn }) =>
-      and(
-        eqFn(ka.organizationId, staffOrgId),
-        eqFn(ka.slug, slug)
-      ),
+    where: and(
+      eq(schema.knowledgeArticle.organizationId, staffOrgId),
+      eq(schema.knowledgeArticle.slug, slug)
+    ),
   })
 
   if (existing) {
@@ -1815,18 +1815,17 @@ async function ensureKnowledgeArticle(
  * Create a playbook
  */
 async function ensurePlaybook(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   staffOrgId: string,
   playbookData: PlaybookSeedData,
   createdByUserId: string
 ): Promise<void> {
   // Check if playbook already exists
   const existing = await db.query.playbook.findFirst({
-    where: (pb, { and, eq: eqFn }) =>
-      and(
-        eqFn(pb.organizationId, staffOrgId),
-        eqFn(pb.name, playbookData.name)
-      ),
+    where: and(
+      eq(schema.playbook.organizationId, staffOrgId),
+      eq(schema.playbook.name, playbookData.name)
+    ),
   })
 
   if (existing) {
@@ -1863,17 +1862,16 @@ async function ensurePlaybook(
  * Create a pipeline with its stages
  */
 async function ensurePipeline(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   tenantOrgId: string,
   pipelineData: PipelineSeedData
 ): Promise<{ pipelineId: string; stageMap: Map<string, string> }> {
   // Check if pipeline already exists
   const existing = await db.query.pipeline.findFirst({
-    where: (p, { and, eq: eqFn }) =>
-      and(
-        eqFn(p.tenantOrganizationId, tenantOrgId),
-        eqFn(p.name, pipelineData.name)
-      ),
+    where: and(
+      eq(schema.pipeline.tenantOrganizationId, tenantOrgId),
+      eq(schema.pipeline.name, pipelineData.name)
+    ),
   })
 
   const stageMap = new Map<string, string>()
@@ -1926,17 +1924,16 @@ async function ensurePipeline(
  * Create a product plan with pricing and features
  */
 async function ensureProductPlan(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   staffOrgId: string,
   planData: ProductPlanSeedData
 ): Promise<string> {
   // Check if plan already exists
   const existing = await db.query.productPlan.findFirst({
-    where: (p, { and, eq: eqFn }) =>
-      and(
-        eqFn(p.organizationId, staffOrgId),
-        eqFn(p.name, planData.name)
-      ),
+    where: and(
+      eq(schema.productPlan.organizationId, staffOrgId),
+      eq(schema.productPlan.name, planData.name)
+    ),
   })
 
   if (existing) {
@@ -2005,7 +2002,7 @@ async function ensureProductPlan(
  * Create a subscription with invoice
  */
 async function ensureSubscription(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   staffOrgId: string,
   staffOrgSlug: string,
   subData: SubscriptionSeedData,
@@ -2026,11 +2023,10 @@ async function ensureSubscription(
 
   // Check if subscription already exists
   const existing = await db.query.subscription.findFirst({
-    where: (s, { and, eq: eqFn }) =>
-      and(
-        eqFn(s.organizationId, staffOrgId),
-        eqFn(s.tenantOrganizationId, tenantOrgInfo.id)
-      ),
+    where: and(
+      eq(schema.subscription.organizationId, staffOrgId),
+      eq(schema.subscription.tenantOrganizationId, tenantOrgInfo.id)
+    ),
   })
 
   if (existing) {
@@ -2213,7 +2209,7 @@ async function ensureSubscription(
  * Create a deal
  */
 async function ensureDeal(
-  db: ReturnType<typeof drizzle>,
+  db: Database,
   staffOrgId: string,
   tenantOrgId: string,
   pipelineId: string,
@@ -2223,11 +2219,10 @@ async function ensureDeal(
 ): Promise<void> {
   // Check if deal already exists
   const existing = await db.query.deal.findFirst({
-    where: (d, { and, eq: eqFn }) =>
-      and(
-        eqFn(d.organizationId, staffOrgId),
-        eqFn(d.name, dealData.name)
-      ),
+    where: and(
+      eq(schema.deal.organizationId, staffOrgId),
+      eq(schema.deal.name, dealData.name)
+    ),
   })
 
   if (existing) {
