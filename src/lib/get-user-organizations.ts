@@ -4,22 +4,21 @@
  */
 
 import { createServerFn } from '@tanstack/react-start'
+import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
 import { member, organization } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
-// Extend globalThis for server-side request access
-declare global {
-  // eslint-disable-next-line no-var
-  var request: Request | undefined
-}
-
 export const getUserOrganizations = createServerFn({
   method: 'GET',
 }).handler(async () => {
-  // Get request from global context if available (SSR context)
-  const request = typeof window === 'undefined' ? globalThis.request : undefined
-  if (!request) {
+  // Get request headers from TanStack Start's server context
+  // This is the proper way to access request headers in server functions
+  let headers: Headers
+  try {
+    headers = getRequestHeaders()
+  } catch {
+    // Not in a server context (e.g., during build or client-side)
     return { organizations: [] }
   }
 
@@ -27,7 +26,7 @@ export const getUserOrganizations = createServerFn({
     // Get session from Better Auth
     const { auth } = await import('./auth')
     const session = await auth.api.getSession({
-      headers: request.headers,
+      headers,
     })
 
     if (!session?.user) {
