@@ -59,10 +59,12 @@ export interface ProductTier {
   description: string
   status?: 'active' | 'draft' | 'archived'
   pricingModel?: 'flat' | 'seat' | 'usage' | 'hybrid'
+  productId?: string | null // Reference to parent product (productFamilyId in DB)
   basePrice: {
     amount: number
     currency: string
     interval: 'monthly' | 'yearly'
+    perSeatAmount?: number
   }
   regionalPricing: Array<{
     region: string
@@ -106,6 +108,7 @@ export interface CreatePlanInput {
   description?: string
   status?: 'active' | 'draft' | 'archived'
   pricingModel?: 'flat' | 'seat' | 'usage' | 'hybrid'
+  productId?: string // Reference to parent product (productFamilyId in DB)
   basePrice?: {
     amount: number
     currency: string
@@ -121,6 +124,39 @@ export interface CreatePlanInput {
 }
 
 export interface UpdatePlanInput extends Partial<CreatePlanInput> {
+  id: string
+}
+
+// ============================================================================
+// Product Types (Product groups multiple Plans)
+// ============================================================================
+
+/**
+ * Product represents a top-level product entity that contains multiple pricing plans
+ */
+export interface Product {
+  id: string
+  name: string
+  description: string
+  status: 'active' | 'draft' | 'archived'
+  plans: ProductTier[]
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+/**
+ * Input for creating a new product
+ */
+export interface CreateProductInput {
+  name: string
+  description?: string
+  status?: 'active' | 'draft' | 'archived'
+}
+
+/**
+ * Input for updating an existing product
+ */
+export interface UpdateProductInput extends Partial<CreateProductInput> {
   id: string
 }
 
@@ -313,6 +349,137 @@ export async function fetchAddOns(
   } catch (error) {
     console.error('Error fetching add-ons:', error)
     return []
+  }
+}
+
+// ============================================================================
+// Product API Functions
+// ============================================================================
+
+/**
+ * Fetch all products for a tenant organization with their plans
+ */
+export async function fetchProducts(
+  tenantSlug: string,
+  filters?: { status?: string }
+): Promise<Product[]> {
+  try {
+    const url = new URL(
+      `/api/tenant/${tenantSlug}/product-catalog/products`,
+      window.location.origin
+    )
+
+    if (filters?.status) url.searchParams.set('status', filters.status)
+
+    const response = await fetch(url.toString(), {
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      console.error('Failed to fetch products:', response.statusText)
+      return []
+    }
+
+    const data = await response.json()
+    return data.products || []
+  } catch (error) {
+    console.error('Error fetching products:', error)
+    return []
+  }
+}
+
+/**
+ * Create a new product
+ */
+export async function createProduct(
+  tenantSlug: string,
+  productData: CreateProductInput
+): Promise<{ success: boolean; product?: Product; error?: string }> {
+  try {
+    const response = await fetch(
+      `/api/tenant/${tenantSlug}/product-catalog/products`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Failed to create product' }
+    }
+
+    return { success: true, product: data.product }
+  } catch (error) {
+    console.error('Error creating product:', error)
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Update an existing product
+ */
+export async function updateProduct(
+  tenantSlug: string,
+  productData: UpdateProductInput
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(
+      `/api/tenant/${tenantSlug}/product-catalog/products`,
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Failed to update product' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error updating product:', error)
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Delete a product
+ */
+export async function deleteProduct(
+  tenantSlug: string,
+  productId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(
+      `/api/tenant/${tenantSlug}/product-catalog/products?id=${productId}`,
+      {
+        method: 'DELETE',
+        credentials: 'include',
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Failed to delete product' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting product:', error)
+    return { success: false, error: 'Network error' }
   }
 }
 

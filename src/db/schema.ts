@@ -638,26 +638,30 @@ export const dealActivity = pgTable(
 // ============================================================================
 
 /**
- * Product Family - Optional grouping of products
- * Scoped to a support staff organization
+ * Product (productFamily table) - Top-level product entity
+ * Contains multiple pricing plans. Scoped to a support staff organization.
+ * Note: Table is named 'product_family' for backwards compatibility but represents a Product.
  */
 export const productFamily = pgTable(
   'product_family',
   {
     id: text('id').primaryKey(),
-    // The support staff organization this family belongs to
+    // The support staff organization this product belongs to
     organizationId: text('organizationId')
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
-    // Family info
+    // Product info
     name: text('name').notNull(),
     description: text('description'),
+    // Status: active, draft, archived
+    status: text('status').notNull().default('draft'),
     // Metadata
     createdAt: timestamp('createdAt').notNull().defaultNow(),
     updatedAt: timestamp('updatedAt').notNull().defaultNow(),
   },
   (table) => ({
     orgIdx: index('product_family_organization_idx').on(table.organizationId),
+    statusIdx: index('product_family_status_idx').on(table.organizationId, table.status),
   })
 )
 

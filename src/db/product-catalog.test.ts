@@ -16,7 +16,7 @@ import {
  * Validates the product catalog schema structure for subscription management
  */
 describe('Product Catalog Schema', () => {
-  describe('productFamily table', () => {
+  describe('productFamily table (Product)', () => {
     it('should have organizationId for tenant scoping', () => {
       const columns = Object.keys(productFamily)
       expect(columns).toContain('organizationId')
@@ -27,8 +27,14 @@ describe('Product Catalog Schema', () => {
       expect(columns).toContain('id')
       expect(columns).toContain('name')
       expect(columns).toContain('description')
+      expect(columns).toContain('status')
       expect(columns).toContain('createdAt')
       expect(columns).toContain('updatedAt')
+    })
+
+    it('should have status column for workflow', () => {
+      const columns = Object.keys(productFamily)
+      expect(columns).toContain('status')
     })
   })
 
