@@ -41,6 +41,8 @@ interface ProductPlanDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   plan?: ProductTier | null // If provided, edit mode
+  productId?: string // Required when creating a new plan (parent product)
+  productName?: string // For display in the dialog header
   onSaved?: () => void
 }
 
@@ -90,6 +92,8 @@ export function ProductPlanDialog({
   open,
   onOpenChange,
   plan,
+  productId,
+  productName,
   onSaved,
 }: ProductPlanDialogProps) {
   const params = useParams({ strict: false }) as { tenant?: string }
@@ -179,6 +183,7 @@ export function ProductPlanDialog({
             description: value.description || undefined,
             status: value.status,
             pricingModel: value.pricingModel,
+            productId: productId, // Link to parent product
             basePrice,
             regionalPricing: formattedRegionalPricing,
             features: features.filter(Boolean),
@@ -349,11 +354,16 @@ export function ProductPlanDialog({
         <DialogHeader>
           <DialogTitle className="text-xl">
             {isEditMode ? 'Edit Plan' : 'Create New Plan'}
+            {productName && !isEditMode && (
+              <span className="text-sm font-normal text-gray-500 ml-2">
+                for {productName}
+              </span>
+            )}
           </DialogTitle>
           <DialogDescription>
             {isEditMode
               ? 'Update the plan details below.'
-              : 'Create a new subscription plan. Fill in the details below.'}
+              : 'Create a new pricing plan for this product. Fill in the details below.'}
           </DialogDescription>
         </DialogHeader>
 

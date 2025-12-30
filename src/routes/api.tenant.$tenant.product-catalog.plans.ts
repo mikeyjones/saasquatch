@@ -347,6 +347,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             description,
             status,
             pricingModel,
+            productId,
             basePrice,
             regionalPricing,
             features,
@@ -356,6 +357,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             description?: string
             status?: 'active' | 'draft' | 'archived'
             pricingModel?: 'flat' | 'seat' | 'usage' | 'hybrid'
+            productId?: string
             basePrice?: {
               amount: number
               currency: string
@@ -388,6 +390,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
           await db.insert(productPlan).values({
             id: planId,
             organizationId: orgId,
+            productFamilyId: productId || null,
             name,
             description: description || null,
             status: status || 'draft',
@@ -532,6 +535,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             description,
             status,
             pricingModel,
+            productId,
             basePrice,
             regionalPricing,
             features,
@@ -542,6 +546,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
             description?: string
             status?: 'active' | 'draft' | 'archived'
             pricingModel?: 'flat' | 'seat' | 'usage' | 'hybrid'
+            productId?: string
             basePrice?: {
               amount: number
               currency: string
@@ -594,6 +599,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
           if (description !== undefined) updateData.description = description
           if (status !== undefined) updateData.status = status
           if (pricingModel !== undefined) updateData.pricingModel = pricingModel
+          if (productId !== undefined) updateData.productFamilyId = productId
 
           await db
             .update(productPlan)

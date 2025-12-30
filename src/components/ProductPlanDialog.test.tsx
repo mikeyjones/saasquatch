@@ -96,7 +96,7 @@ describe("ProductPlanDialog", () => {
 			);
 
 			expect(
-				screen.getByText(/create a new subscription plan/i),
+				screen.getByText(/create a new pricing plan/i),
 			).toBeInTheDocument();
 		});
 	});

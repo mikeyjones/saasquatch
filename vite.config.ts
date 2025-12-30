@@ -5,11 +5,13 @@ import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
+import tidewave from 'tidewave/vite-plugin';
 
 const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST
 
 const config = defineConfig({
   plugins: [
+    tidewave(),
     ...(isTest ? [] : [devtools()]),
     ...(isTest ? [] : [nitro()]),
     // this is the plugin that enables path aliases
@@ -19,6 +21,7 @@ const config = defineConfig({
     tailwindcss(),
     ...(isTest ? [] : [tanstackStart()]),
     viteReact(),
+    
   ],
   ssr: {
     noExternal: [],

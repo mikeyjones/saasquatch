@@ -171,6 +171,13 @@ interface DealSeedData {
   notes?: string
 }
 
+interface ProductSeedData {
+  name: string
+  description: string
+  status: 'active' | 'draft' | 'archived'
+  plans: ProductPlanSeedData[]
+}
+
 interface ProductPlanSeedData {
   name: string
   description: string
@@ -1153,59 +1160,73 @@ const dealsPerTenantOrg: Record<string, DealSeedData[]> = {
 }
 
 /**
- * Product Plans per support staff organization
+ * Products with their plans per support staff organization
  * Key: support staff org slug
  */
-const productPlansPerStaff: Record<string, ProductPlanSeedData[]> = {
+const productsPerStaff: Record<string, ProductSeedData[]> = {
   acme: [
     {
-      name: 'Starter',
-      description: 'Perfect for small teams getting started',
+      name: 'Acme CRM Platform',
+      description: 'Complete customer relationship management solution',
       status: 'active',
-      pricingModel: 'flat',
-      monthlyPrice: 2900, // $29/month
-      yearlyPrice: 29000, // $290/year (2 months free)
-      features: ['Up to 5 users', 'Basic support', '1GB storage', 'Email integration'],
-    },
-    {
-      name: 'Professional',
-      description: 'For growing teams that need more power',
-      status: 'active',
-      pricingModel: 'seat',
-      monthlyPrice: 4900, // $49/month base
-      yearlyPrice: 49000, // $490/year base
-      perSeatAmount: 1500, // $15/seat/month
-      features: ['Unlimited users', 'Priority support', '10GB storage', 'API access', 'SSO integration'],
-    },
-    {
-      name: 'Enterprise',
-      description: 'For large organizations with custom needs',
-      status: 'active',
-      pricingModel: 'flat',
-      monthlyPrice: 29900, // $299/month
-      yearlyPrice: 299000, // $2,990/year
-      features: ['Unlimited everything', 'Dedicated support', 'Custom integrations', 'SLA guarantee', 'Advanced analytics'],
+      plans: [
+        {
+          name: 'Starter',
+          description: 'Perfect for small teams getting started',
+          status: 'active',
+          pricingModel: 'flat',
+          monthlyPrice: 2900, // $29/month
+          yearlyPrice: 29000, // $290/year (2 months free)
+          features: ['Up to 5 users', 'Basic support', '1GB storage', 'Email integration'],
+        },
+        {
+          name: 'Professional',
+          description: 'For growing teams that need more power',
+          status: 'active',
+          pricingModel: 'seat',
+          monthlyPrice: 4900, // $49/month base
+          yearlyPrice: 49000, // $490/year base
+          perSeatAmount: 1500, // $15/seat/month
+          features: ['Unlimited users', 'Priority support', '10GB storage', 'API access', 'SSO integration'],
+        },
+        {
+          name: 'Enterprise',
+          description: 'For large organizations with custom needs',
+          status: 'active',
+          pricingModel: 'flat',
+          monthlyPrice: 29900, // $299/month
+          yearlyPrice: 299000, // $2,990/year
+          features: ['Unlimited everything', 'Dedicated support', 'Custom integrations', 'SLA guarantee', 'Advanced analytics'],
+        },
+      ],
     },
   ],
   globex: [
     {
-      name: 'Basic',
-      description: 'Essential features for small businesses',
+      name: 'Globex Business Suite',
+      description: 'All-in-one business management platform',
       status: 'active',
-      pricingModel: 'flat',
-      monthlyPrice: 1900, // $19/month
-      yearlyPrice: 19000, // $190/year
-      features: ['Up to 3 users', 'Email support', '500MB storage'],
-    },
-    {
-      name: 'Business',
-      description: 'Full-featured plan for growing businesses',
-      status: 'active',
-      pricingModel: 'seat',
-      monthlyPrice: 3900, // $39/month base
-      yearlyPrice: 39000, // $390/year base
-      perSeatAmount: 1000, // $10/seat/month
-      features: ['Unlimited users', 'Phone support', '5GB storage', 'Integrations'],
+      plans: [
+        {
+          name: 'Basic',
+          description: 'Essential features for small businesses',
+          status: 'active',
+          pricingModel: 'flat',
+          monthlyPrice: 1900, // $19/month
+          yearlyPrice: 19000, // $190/year
+          features: ['Up to 3 users', 'Email support', '500MB storage'],
+        },
+        {
+          name: 'Business',
+          description: 'Full-featured plan for growing businesses',
+          status: 'active',
+          pricingModel: 'seat',
+          monthlyPrice: 3900, // $39/month base
+          yearlyPrice: 39000, // $390/year base
+          perSeatAmount: 1000, // $10/seat/month
+          features: ['Unlimited users', 'Phone support', '5GB storage', 'Integrations'],
+        },
+      ],
     },
   ],
 }
@@ -1921,11 +1942,51 @@ async function ensurePipeline(
 }
 
 /**
+ * Create a product (productFamily) entity
+ */
+async function ensureProduct(
+  db: Database,
+  staffOrgId: string,
+  productData: ProductSeedData
+): Promise<string> {
+  // Check if product already exists
+  const existing = await db.query.productFamily.findFirst({
+    where: and(
+      eq(schema.productFamily.organizationId, staffOrgId),
+      eq(schema.productFamily.name, productData.name)
+    ),
+  })
+
+  if (existing) {
+    logInfo(`Product already exists: ${productData.name}`)
+    return existing.id
+  }
+
+  const productId = generateId()
+  const now = new Date()
+
+  // Create the product
+  await db.insert(schema.productFamily).values({
+    id: productId,
+    organizationId: staffOrgId,
+    name: productData.name,
+    description: productData.description,
+    status: productData.status,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  logSuccess(`Product created: ${productData.name}`)
+  return productId
+}
+
+/**
  * Create a product plan with pricing and features
  */
 async function ensureProductPlan(
   db: Database,
   staffOrgId: string,
+  productId: string,
   planData: ProductPlanSeedData
 ): Promise<string> {
   // Check if plan already exists
@@ -1936,65 +1997,98 @@ async function ensureProductPlan(
     ),
   })
 
-  if (existing) {
-    logInfo(`Product plan already exists: ${planData.name}`)
-    return existing.id
-  }
-
-  const planId = generateId()
+  const planId = existing ? existing.id : generateId()
   const now = new Date()
 
-  // Create the plan
-  await db.insert(schema.productPlan).values({
-    id: planId,
-    organizationId: staffOrgId,
-    name: planData.name,
-    description: planData.description,
-    status: planData.status,
-    pricingModel: planData.pricingModel,
-    createdAt: now,
-    updatedAt: now,
-  })
-
-  // Create monthly pricing
-  await db.insert(schema.productPricing).values({
-    id: generateId(),
-    productPlanId: planId,
-    pricingType: 'base',
-    currency: 'USD',
-    amount: planData.monthlyPrice,
-    interval: 'monthly',
-    perSeatAmount: planData.perSeatAmount || null,
-    createdAt: now,
-    updatedAt: now,
-  })
-
-  // Create yearly pricing
-  await db.insert(schema.productPricing).values({
-    id: generateId(),
-    productPlanId: planId,
-    pricingType: 'base',
-    currency: 'USD',
-    amount: planData.yearlyPrice,
-    interval: 'yearly',
-    perSeatAmount: planData.perSeatAmount ? planData.perSeatAmount * 10 : null, // 10 months worth for yearly
-    createdAt: now,
-    updatedAt: now,
-  })
-
-  // Create features
-  for (let i = 0; i < planData.features.length; i++) {
-    await db.insert(schema.productFeature).values({
-      id: generateId(),
-      productPlanId: planId,
-      name: planData.features[i],
-      order: i + 1,
+  if (existing) {
+    logInfo(`Product plan already exists: ${planData.name}`)
+    
+    // Update productFamilyId if it's null (for plans created before products)
+    if (!existing.productFamilyId) {
+      await db
+        .update(schema.productPlan)
+        .set({ productFamilyId: productId, updatedAt: now })
+        .where(eq(schema.productPlan.id, planId))
+    }
+  } else {
+    // Create the plan linked to the product
+    await db.insert(schema.productPlan).values({
+      id: planId,
+      organizationId: staffOrgId,
+      productFamilyId: productId,
+      name: planData.name,
+      description: planData.description,
+      status: planData.status,
+      pricingModel: planData.pricingModel,
       createdAt: now,
       updatedAt: now,
     })
   }
 
-  logSuccess(`Product plan created: ${planData.name} ($${planData.monthlyPrice / 100}/mo)`)
+  // Check if pricing already exists using direct query
+  const existingPricing = await db
+    .select()
+    .from(schema.productPricing)
+    .where(eq(schema.productPricing.productPlanId, planId))
+
+  const hasMonthlyPricing = existingPricing.some((p) => p.interval === 'monthly' && p.pricingType === 'base')
+  const hasYearlyPricing = existingPricing.some((p) => p.interval === 'yearly' && p.pricingType === 'base')
+
+  // Create monthly pricing if it doesn't exist
+  if (!hasMonthlyPricing) {
+    await db.insert(schema.productPricing).values({
+      id: generateId(),
+      productPlanId: planId,
+      pricingType: 'base',
+      currency: 'USD',
+      amount: planData.monthlyPrice,
+      interval: 'monthly',
+      perSeatAmount: planData.perSeatAmount || null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    logInfo(`Created monthly pricing for plan: ${planData.name}`)
+  }
+
+  // Create yearly pricing if it doesn't exist
+  if (!hasYearlyPricing) {
+    await db.insert(schema.productPricing).values({
+      id: generateId(),
+      productPlanId: planId,
+      pricingType: 'base',
+      currency: 'USD',
+      amount: planData.yearlyPrice,
+      interval: 'yearly',
+      perSeatAmount: planData.perSeatAmount ? planData.perSeatAmount * 10 : null, // 10 months worth for yearly
+      createdAt: now,
+      updatedAt: now,
+    })
+    logInfo(`Created yearly pricing for plan: ${planData.name}`)
+  }
+
+  // Check if features exist using direct query
+  const existingFeatures = await db
+    .select()
+    .from(schema.productFeature)
+    .where(eq(schema.productFeature.productPlanId, planId))
+
+  // Create features if they don't exist
+  if (existingFeatures.length === 0) {
+    for (let i = 0; i < planData.features.length; i++) {
+      await db.insert(schema.productFeature).values({
+        id: generateId(),
+        productPlanId: planId,
+        name: planData.features[i],
+        order: i + 1,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+  }
+
+  if (!existing) {
+    logSuccess(`Product plan created: ${planData.name} ($${planData.monthlyPrice / 100}/mo)`)
+  }
   return planId
 }
 
@@ -2439,18 +2533,18 @@ async function seed(): Promise<void> {
     }
 
     // ========================================================================
-    // Seed Product Plans
+    // Seed Products and Plans
     // ========================================================================
-    console.log('\n\n📋 PRODUCT PLANS')
+    console.log('\n\n📦 PRODUCTS & PLANS')
     console.log('─'.repeat(60))
 
     // Store plan info for subscriptions
     const planMaps: Record<string, Map<string, { id: string; name: string; monthlyPrice: number; yearlyPrice: number; perSeatAmount?: number }>> = {}
 
-    for (const staffOrgSlug of Object.keys(productPlansPerStaff)) {
+    for (const staffOrgSlug of Object.keys(productsPerStaff)) {
       const staffOrgId = staffOrgIds[staffOrgSlug]
       if (!staffOrgId) {
-        console.error(`   ⚠ Staff org not found for plans: ${staffOrgSlug}`)
+        console.error(`   ⚠ Staff org not found for products: ${staffOrgSlug}`)
         continue
       }
 
@@ -2459,15 +2553,21 @@ async function seed(): Promise<void> {
 
       planMaps[staffOrgSlug] = new Map()
 
-      for (const planData of productPlansPerStaff[staffOrgSlug]) {
-        const planId = await ensureProductPlan(db, staffOrgId, planData)
-        planMaps[staffOrgSlug].set(planData.name, {
-          id: planId,
-          name: planData.name,
-          monthlyPrice: planData.monthlyPrice,
-          yearlyPrice: planData.yearlyPrice,
-          perSeatAmount: planData.perSeatAmount,
-        })
+      for (const productData of productsPerStaff[staffOrgSlug]) {
+        // Create the product first
+        const productId = await ensureProduct(db, staffOrgId, productData)
+        
+        // Then create plans for this product
+        for (const planData of productData.plans) {
+          const planId = await ensureProductPlan(db, staffOrgId, productId, planData)
+          planMaps[staffOrgSlug].set(planData.name, {
+            id: planId,
+            name: planData.name,
+            monthlyPrice: planData.monthlyPrice,
+            yearlyPrice: planData.yearlyPrice,
+            perSeatAmount: planData.perSeatAmount,
+          })
+        }
       }
     }
 
@@ -2589,12 +2689,15 @@ async function seed(): Promise<void> {
       }
     }
 
-    console.log('\n\n📋 PRODUCT PLANS')
+    console.log('\n\n📦 PRODUCTS & PLANS')
     console.log('─'.repeat(60))
-    for (const staffOrgSlug of Object.keys(productPlansPerStaff)) {
+    for (const staffOrgSlug of Object.keys(productsPerStaff)) {
       console.log(`\n   Support Staff: ${staffOrgSlug}`)
-      for (const plan of productPlansPerStaff[staffOrgSlug]) {
-        console.log(`   📦 ${plan.name} - $${plan.monthlyPrice / 100}/mo (${plan.pricingModel})`)
+      for (const product of productsPerStaff[staffOrgSlug]) {
+        console.log(`   📦 ${product.name} (${product.status})`)
+        for (const plan of product.plans) {
+          console.log(`      └─ ${plan.name} - $${plan.monthlyPrice / 100}/mo (${plan.pricingModel})`)
+        }
       }
     }
 
