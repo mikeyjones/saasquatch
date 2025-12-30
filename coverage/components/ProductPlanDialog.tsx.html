@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">80.14% </span>
+                <span class="strong">79.85% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>444/554</span>
+                <span class='fraction'>448/561</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">87.27% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>96/108</span>
+                <span class='fraction'>96/110</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">80.14% </span>
+                <span class="strong">79.85% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>444/554</span>
+                <span class='fraction'>448/561</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -770,7 +770,17 @@
 <a name='L705'></a><a href='#L705'>705</a>
 <a name='L706'></a><a href='#L706'>706</a>
 <a name='L707'></a><a href='#L707'>707</a>
-<a name='L708'></a><a href='#L708'>708</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L708'></a><a href='#L708'>708</a>
+<a name='L709'></a><a href='#L709'>709</a>
+<a name='L710'></a><a href='#L710'>710</a>
+<a name='L711'></a><a href='#L711'>711</a>
+<a name='L712'></a><a href='#L712'>712</a>
+<a name='L713'></a><a href='#L713'>713</a>
+<a name='L714'></a><a href='#L714'>714</a>
+<a name='L715'></a><a href='#L715'>715</a>
+<a name='L716'></a><a href='#L716'>716</a>
+<a name='L717'></a><a href='#L717'>717</a>
+<a name='L718'></a><a href='#L718'>718</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -817,6 +827,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -859,6 +871,8 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">110x</span>
+<span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
@@ -946,6 +960,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -1121,6 +1136,11 @@
 <span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
+<span class="cline-any cline-yes">110x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
 <span class="cline-any cline-yes">110x</span>
@@ -1520,6 +1540,8 @@ interface ProductPlanDialogProps {
   open: boolean
   onOpenChange: (open: boolean) =&gt; void
   plan?: ProductTier | null // If provided, edit mode
+  productId?: string // Required when creating a new plan (parent product)
+  productName?: string // For display in the dialog header
   onSaved?: () =&gt; void
 }
 &nbsp;
@@ -1569,6 +1591,8 @@ export function ProductPlanDialog({
   open,
   onOpenChange,
   plan,
+  productId,
+  productName,
   onSaved,
 }: ProductPlanDialogProps) {
   const params = useParams({ strict: false }) as { tenant?: string }
@@ -1658,6 +1682,7 @@ export function ProductPlanDialog({
             description: value.description || undefined,
             status: value.status,
             pricingModel: value.pricingModel,
+            productId: productId, // Link to parent product
             basePrice,
             regionalPricing: formattedRegionalPricing,
             features: features.filter(Boolean),
@@ -1828,11 +1853,16 @@ export function ProductPlanDialog({
         &lt;DialogHeader&gt;
           &lt;DialogTitle className="text-xl"&gt;
             {isEditMode ? 'Edit Plan' : 'Create New Plan'}
+            {<span class="branch-0 cbranch-no" title="branch not covered" >productName &amp;&amp; !<span class="branch-0 cbranch-no" title="branch not covered" >isEditMode &amp;&amp; (</span></span>
+<span class="cstat-no" title="statement not covered" >              &lt;span className="text-sm font-normal text-gray-500 ml-2"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                for {productName}</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/span&gt;</span>
+            )}
           &lt;/DialogTitle&gt;
           &lt;DialogDescription&gt;
             {isEditMode
               ? 'Update the plan details below.'
-              : 'Create a new subscription plan. Fill in the details below.'}
+              : 'Create a new pricing plan for this product. Fill in the details below.'}
           &lt;/DialogDescription&gt;
         &lt;/DialogHeader&gt;
 &nbsp;
@@ -2191,7 +2221,7 @@ export function ProductPlanDialog({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-29T18:16:50.619Z
+                at 2025-12-30T15:34:19.905Z
             </div>
         <script src="../prettify.js"></script>
         <script>
