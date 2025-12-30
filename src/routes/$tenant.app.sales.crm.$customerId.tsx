@@ -8,6 +8,7 @@ import { OrganizationInvoiceHistory } from '@/components/OrganizationInvoiceHist
 import { OrganizationCustomProperties } from '@/components/OrganizationCustomProperties'
 import { CRMContactsList } from '@/components/CRMContactsList'
 import { CRMActivityTimeline, type Activity as CRMActivity } from '@/components/CRMActivityTimeline'
+import { ProductSubscriptionsCard } from '@/components/ProductSubscriptionsCard'
 import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
 import { CreateContactDialog } from '@/components/CreateContactDialog'
 import { CreateStandaloneInvoiceDialog } from '@/components/CreateStandaloneInvoiceDialog'
@@ -36,6 +37,9 @@ interface Subscription {
   subscriptionNumber: string
   productPlanId: string
   planName: string
+  productId: string | null
+  productName: string | null
+  productStatus: string | null
   status: string
   billingCycle: string
   seats: number
@@ -129,7 +133,7 @@ function OrganizationDetailPage() {
   const [data, setData] = useState<OrganizationData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'invoices' | 'deals' | 'activity' | 'properties'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'invoices' | 'deals' | 'activity' | 'properties' | 'subscriptions'>('overview')
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false)
@@ -258,9 +262,6 @@ function OrganizationDetailPage() {
     userName: undefined, // Could be fetched if needed
   }))
 
-  // Get active subscription
-  const activeSubscription = subscriptions.find(s => s.status === 'active')
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Breadcrumb Navigation */}
@@ -276,7 +277,7 @@ function OrganizationDetailPage() {
       {/* Organization Header */}
       <OrganizationHeader
         customer={customer}
-        subscription={activeSubscription || null}
+        subscriptions={subscriptions}
         onEdit={() => setIsEditDialogOpen(true)}
         onAddContact={() => setIsAddContactDialogOpen(true)}
         onCreateInvoice={() => setIsCreateInvoiceDialogOpen(true)}
@@ -354,6 +355,17 @@ function OrganizationDetailPage() {
           >
             Custom Properties
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('subscriptions')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'subscriptions'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+            }`}
+          >
+            Subscriptions ({subscriptions.length})
+          </button>
         </nav>
       </div>
 
@@ -363,33 +375,45 @@ function OrganizationDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main content column */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Subscription Info */}
-              {activeSubscription && (
+              {/* Product Subscriptions Summary */}
+              {subscriptions.length > 0 && (
                 <div className="bg-card rounded-lg border p-6">
-                  <h2 className="text-lg font-semibold mb-4">Current Subscription</h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm text-muted-foreground">Plan</div>
-                      <div className="font-medium">{activeSubscription.planName}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Billing Cycle</div>
-                      <div className="font-medium capitalize">{activeSubscription.billingCycle}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Seats</div>
-                      <div className="font-medium">{activeSubscription.seats}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">MRR</div>
-                      <div className="font-medium">${(activeSubscription.mrr / 100).toFixed(2)}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Current Period</div>
-                      <div className="font-medium text-sm">
-                        {new Date(activeSubscription.currentPeriodStart).toLocaleDateString()} - {new Date(activeSubscription.currentPeriodEnd).toLocaleDateString()}
+                  <h2 className="text-lg font-semibold mb-4">Product Subscriptions</h2>
+                  <div className="space-y-4">
+                    {Array.from(new Set(subscriptions.filter(s => s.productName).map(s => s.productName))).map(productName => {
+                      const productSubscriptions = subscriptions.filter(s => s.productName === productName)
+                      const activeSub = productSubscriptions.find(s => s.status === 'active')
+                      return (
+                        <div key={productName} className="border rounded-lg p-4">
+                          <div className="font-medium mb-2">{productName}</div>
+                          {activeSub && (
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <div className="text-muted-foreground">Plan</div>
+                                <div className="font-medium">{activeSub.planName}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">MRR</div>
+                                <div className="font-medium">${(activeSub.mrr / 100).toFixed(2)}</div>
+                              </div>
+                            </div>
+                          )}
+                          {productSubscriptions.length > 1 && (
+                            <div className="text-xs text-muted-foreground mt-2">
+                              {productSubscriptions.length} subscription(s) total
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {subscriptions.filter(s => !s.productName).length > 0 && (
+                      <div className="border rounded-lg p-4">
+                        <div className="font-medium mb-2">Other Plans</div>
+                        <div className="text-sm text-muted-foreground">
+                          {subscriptions.filter(s => !s.productName).length} subscription(s) without product
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -561,6 +585,17 @@ function OrganizationDetailPage() {
               metadata={customer.metadata}
               onUpdate={handleMetadataUpdate}
             />
+          </div>
+        )}
+
+        {activeTab === 'subscriptions' && (
+          <div className="bg-card rounded-lg border">
+            <div className="p-6 border-b">
+              <h2 className="text-lg font-semibold">Product Subscriptions</h2>
+            </div>
+            <div className="p-6">
+              <ProductSubscriptionsCard subscriptions={subscriptions} />
+            </div>
           </div>
         )}
       </div>

@@ -20,9 +20,15 @@ const mockSubscription = {
 	id: "sub-1",
 	subscriptionNumber: "SUB-001",
 	planName: "Enterprise Plan",
+	productId: "prod-1",
+	productName: "Acme CRM Platform",
+	productStatus: "active",
 	status: "active",
 	billingCycle: "monthly",
 	mrr: 49900, // $499.00 in cents
+	currentPeriodStart: new Date().toISOString(),
+	currentPeriodEnd: new Date().toISOString(),
+	createdAt: new Date().toISOString(),
 };
 
 describe("OrganizationHeader", () => {
@@ -32,7 +38,7 @@ describe("OrganizationHeader", () => {
 
 	const defaultProps = {
 		customer: mockCustomer,
-		subscription: mockSubscription,
+		subscriptions: [mockSubscription],
 		onEdit: mockOnEdit,
 		onAddContact: mockOnAddContact,
 		onCreateInvoice: mockOnCreateInvoice,
@@ -256,29 +262,74 @@ describe("OrganizationHeader", () => {
 	});
 
 	describe("Subscription Info", () => {
-		it("should render subscription plan name", () => {
+		it("should render product subscription summary", () => {
 			render(<OrganizationHeader {...defaultProps} />);
 
-			expect(screen.getByText("Enterprise Plan")).toBeInTheDocument();
-		});
-
-		it("should render MRR formatted as currency", () => {
-			render(<OrganizationHeader {...defaultProps} />);
-
+			expect(screen.getByText(/Products:/i)).toBeInTheDocument();
+			expect(screen.getByText(/Total MRR:/i)).toBeInTheDocument();
 			expect(screen.getByText("$499.00")).toBeInTheDocument();
 		});
 
-		it("should render billing cycle", () => {
+		it("should render product name badge", () => {
 			render(<OrganizationHeader {...defaultProps} />);
 
-			expect(screen.getByText("monthly")).toBeInTheDocument();
+			expect(screen.getByText("Acme CRM Platform")).toBeInTheDocument();
 		});
 
-		it("should not render subscription section when null", () => {
-			render(<OrganizationHeader {...defaultProps} subscription={null} />);
+		it("should render active subscription count", () => {
+			render(<OrganizationHeader {...defaultProps} />);
 
-			expect(screen.queryByText("Enterprise Plan")).not.toBeInTheDocument();
-			expect(screen.queryByText("MRR:")).not.toBeInTheDocument();
+			const activeLabel = screen.getByText(/Active:/i);
+			expect(activeLabel).toBeInTheDocument();
+			// Check that the count appears after the Active label
+			const activeSection = activeLabel.closest("div");
+			expect(activeSection).toHaveTextContent("1");
+		});
+
+		it("should not render subscription section when empty array", () => {
+			render(<OrganizationHeader {...defaultProps} subscriptions={[]} />);
+
+			expect(screen.queryByText(/Products:/i)).not.toBeInTheDocument();
+			expect(screen.queryByText(/Total MRR:/i)).not.toBeInTheDocument();
+		});
+
+		it("should handle subscriptions without products", () => {
+			const subscriptionWithoutProduct = {
+				...mockSubscription,
+				productId: null,
+				productName: null,
+				productStatus: null,
+			};
+
+			render(
+				<OrganizationHeader
+					{...defaultProps}
+					subscriptions={[subscriptionWithoutProduct]}
+				/>,
+			);
+
+			expect(screen.getByText(/Products:/i)).toBeInTheDocument();
+			expect(screen.getByText(/plan\(s\)/i)).toBeInTheDocument();
+		});
+
+		it("should show multiple products", () => {
+			const subscription2 = {
+				...mockSubscription,
+				id: "sub-2",
+				productId: "prod-2",
+				productName: "Another Product",
+				productStatus: "active",
+			};
+
+			render(
+				<OrganizationHeader
+					{...defaultProps}
+					subscriptions={[mockSubscription, subscription2]}
+				/>,
+			);
+
+			expect(screen.getByText("Acme CRM Platform")).toBeInTheDocument();
+			expect(screen.getByText("Another Product")).toBeInTheDocument();
 		});
 	});
 

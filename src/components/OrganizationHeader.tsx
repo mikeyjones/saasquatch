@@ -18,6 +18,9 @@ interface Subscription {
   id: string
   subscriptionNumber: string
   planName: string
+  productId: string | null
+  productName: string | null
+  productStatus: string | null
   status: string
   billingCycle: string
   mrr: number
@@ -25,13 +28,13 @@ interface Subscription {
 
 interface OrganizationHeaderProps {
   customer: Customer
-  subscription: Subscription | null
+  subscriptions: Subscription[]
   onEdit?: () => void
   onAddContact?: () => void
   onCreateInvoice?: () => void
 }
 
-export function OrganizationHeader({ customer, subscription, onEdit, onAddContact, onCreateInvoice }: OrganizationHeaderProps) {
+export function OrganizationHeader({ customer, subscriptions, onEdit, onAddContact, onCreateInvoice }: OrganizationHeaderProps) {
   const getStatusColor = (status: string | null) => {
     if (!status) return 'bg-gray-100 text-gray-800'
 
@@ -142,22 +145,42 @@ export function OrganizationHeader({ customer, subscription, onEdit, onAddContac
               </div>
             )}
 
-            {/* Subscription Info */}
-            {subscription && (
+            {/* Product Subscriptions Summary */}
+            {subscriptions.length > 0 && (
               <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center gap-6 text-sm">
+                <div className="flex items-center gap-4 text-sm flex-wrap">
                   <div>
-                    <span className="text-muted-foreground">Plan: </span>
-                    <span className="font-medium">{subscription.planName}</span>
+                    <span className="text-muted-foreground">Products: </span>
+                    <span className="font-medium">
+                      {new Set(subscriptions.filter(s => s.productName).map(s => s.productName)).size}
+                      {subscriptions.some(s => !s.productName) && ' + '}
+                      {subscriptions.some(s => !s.productName) && subscriptions.filter(s => !s.productName).length + ' plan(s)'}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">MRR: </span>
-                    <span className="font-medium">${(subscription.mrr / 100).toFixed(2)}</span>
+                    <span className="text-muted-foreground">Total MRR: </span>
+                    <span className="font-medium">
+                      ${(subscriptions.filter(s => s.status === 'active').reduce((sum, s) => sum + s.mrr, 0) / 100).toFixed(2)}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Billing: </span>
-                    <span className="font-medium capitalize">{subscription.billingCycle}</span>
+                    <span className="text-muted-foreground">Active: </span>
+                    <span className="font-medium">
+                      {subscriptions.filter(s => s.status === 'active').length}
+                    </span>
                   </div>
+                  {subscriptions.filter(s => s.productName).length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {Array.from(new Set(subscriptions.filter(s => s.productName).map(s => s.productName))).map(productName => (
+                        <span
+                          key={productName}
+                          className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-primary/10 text-primary"
+                        >
+                          {productName}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

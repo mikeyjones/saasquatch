@@ -6,6 +6,7 @@ import {
   user,
   subscription,
   productPlan,
+  productFamily,
   tenantUser,
   invoice,
   deal,
@@ -99,6 +100,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
               subscriptionNumber: subscription.subscriptionNumber,
               productPlanId: subscription.productPlanId,
               planName: productPlan.name,
+              productId: productFamily.id,
+              productName: productFamily.name,
+              productStatus: productFamily.status,
               status: subscription.status,
               billingCycle: subscription.billingCycle,
               seats: subscription.seats,
@@ -109,6 +113,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             })
             .from(subscription)
             .innerJoin(productPlan, eq(subscription.productPlanId, productPlan.id))
+            .leftJoin(productFamily, eq(productPlan.productFamilyId, productFamily.id))
             .where(
               and(
                 eq(subscription.tenantOrganizationId, params.customerId),
@@ -122,6 +127,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             subscriptionNumber: s.subscriptionNumber,
             productPlanId: s.productPlanId,
             planName: s.planName,
+            productId: s.productId,
+            productName: s.productName,
+            productStatus: s.productStatus,
             status: s.status,
             billingCycle: s.billingCycle,
             seats: s.seats,
