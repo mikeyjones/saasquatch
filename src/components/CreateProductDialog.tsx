@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { z } from 'zod'
 
@@ -54,17 +54,20 @@ export function CreateProductDialog({
 
   const isEditMode = !!product
 
-  const form = useAppForm({
-    defaultValues: {
+  // Memoize defaultValues to prevent unnecessary form recreation
+  const defaultValues = useMemo(
+    () => ({
       name: product?.name || '',
       description: product?.description || '',
       status: (product?.status || 'draft') as 'active' | 'draft' | 'archived',
-    },
-    validators: {
-      onBlur: zodFormValidator(productSchema),
-    },
-    onSubmit: async ({ value }) => {
-      if (!tenant) return
+    }),
+    [product]
+  )
+
+  // Memoize onSubmit handler to keep it stable
+  const handleSubmit = useCallback(
+    async (value: typeof defaultValues): Promise<boolean> => {
+      if (!tenant) return false
       setIsSubmitting(true)
       setError(null)
 
@@ -80,7 +83,7 @@ export function CreateProductDialog({
 
           if (!result.success) {
             setError(result.error || 'Failed to update product')
-            return
+            return false
           }
         } else {
           const input: CreateProductInput = {
@@ -92,15 +95,30 @@ export function CreateProductDialog({
 
           if (!result.success) {
             setError(result.error || 'Failed to create product')
-            return
+            return false
           }
         }
 
-        resetForm()
+        setError(null)
         onOpenChange(false)
         onSaved?.()
+        return true
       } finally {
         setIsSubmitting(false)
+      }
+    },
+    [tenant, isEditMode, product, onOpenChange, onSaved]
+  )
+
+  const form = useAppForm({
+    defaultValues,
+    validators: {
+      onBlur: zodFormValidator(productSchema),
+    },
+    onSubmit: async ({ value }) => {
+      const success = await handleSubmit(value)
+      if (success) {
+        form.reset()
       }
     },
   })
@@ -114,12 +132,12 @@ export function CreateProductDialog({
   useEffect(() => {
     if (open) {
       form.reset()
-      form.setFieldValue('name', product?.name || '')
-      form.setFieldValue('description', product?.description || '')
-      form.setFieldValue('status', (product?.status || 'draft') as 'active' | 'draft' | 'archived')
+      form.setFieldValue('name', defaultValues.name)
+      form.setFieldValue('description', defaultValues.description)
+      form.setFieldValue('status', defaultValues.status)
       setError(null)
     }
-  }, [open, product, form.reset, form.setFieldValue])
+  }, [open, defaultValues, form])
 
   const handleDialogClose = (isOpen: boolean) => {
     if (!isOpen) {
@@ -204,4 +222,5 @@ export function CreateProductDialog({
     </Dialog>
   )
 }
+
 
