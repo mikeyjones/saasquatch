@@ -1,5 +1,11 @@
 import { Store } from "@tanstack/store";
 
+/**
+ * Represents a support ticket with basic information.
+ * 
+ * Used for ticket lists and overview displays. For full ticket details
+ * including all messages and metadata, use TicketDetail.
+ */
 export interface Ticket {
 	id: string;
 	title: string;
@@ -33,6 +39,12 @@ export interface Ticket {
 	};
 }
 
+/**
+ * Represents a support ticket with full details including all messages.
+ * 
+ * Includes complete message history, AI triage information, SLA deadlines,
+ * and assignment details.
+ */
 export interface TicketDetail {
 	id: string;
 	title: string;
@@ -88,6 +100,11 @@ export interface TicketDetail {
 	} | null;
 }
 
+/**
+ * Input data for creating a new support ticket.
+ * 
+ * Includes the ticket title, priority, initial message, and customer information.
+ */
 export interface CreateTicketInput {
 	title: string;
 	priority: "urgent" | "high" | "normal" | "low";
@@ -100,11 +117,28 @@ export interface CreateTicketInput {
 	};
 }
 
-// Create a store for tickets (used for optimistic updates)
+/**
+ * Store for tickets (used for optimistic updates).
+ * 
+ * Provides reactive state management for ticket lists, allowing components
+ * to subscribe to ticket updates.
+ */
 export const ticketsStore = new Store<Ticket[]>([]);
 
 /**
- * Fetch all tickets from the API
+ * Fetch all tickets from the API.
+ * 
+ * Supports filtering by status, priority, search query, assignment, and
+ * unassigned tickets. Updates the tickets store with fetched data.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param filters - Optional filters for tickets
+ * @param filters.status - Filter by ticket status
+ * @param filters.priority - Filter by ticket priority
+ * @param filters.search - Search query for ticket title or content
+ * @param filters.assignedToUserId - Filter by assigned user ID
+ * @param filters.unassigned - Filter for unassigned tickets only
+ * @returns Promise resolving to an array of tickets
  */
 export async function fetchTickets(
 	tenantSlug: string,
@@ -145,7 +179,11 @@ export async function fetchTickets(
 }
 
 /**
- * Fetch a single ticket with all details
+ * Fetch a single ticket with all details including full message history.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param ticketId - The ID of the ticket to fetch
+ * @returns Promise resolving to the ticket details or null if not found
  */
 export async function fetchTicket(
 	tenantSlug: string,
@@ -171,7 +209,13 @@ export async function fetchTicket(
 }
 
 /**
- * Create a new ticket via API
+ * Create a new ticket via API.
+ * 
+ * Creates a ticket and adds it to the tickets store optimistically.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param input - The ticket data to create
+ * @returns Promise resolving to the created ticket or null on error
  */
 export async function createTicket(
 	tenantSlug: string,
@@ -233,7 +277,17 @@ export async function createTicket(
 }
 
 /**
- * Update ticket status, priority, or assignment
+ * Update ticket status, priority, or assignment.
+ * 
+ * Updates the ticket via API and optimistically updates the tickets store.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param ticketId - The ID of the ticket to update
+ * @param updates - The fields to update
+ * @param updates.status - New ticket status
+ * @param updates.priority - New ticket priority
+ * @param updates.assignedToUserId - User ID to assign ticket to, or null to unassign
+ * @returns Promise resolving to true if successful, false otherwise
  */
 export async function updateTicket(
 	tenantSlug: string,
@@ -282,7 +336,13 @@ export async function updateTicket(
 }
 
 /**
- * Post a message to a ticket (support staff reply or internal note)
+ * Post a message to a ticket (support staff reply or internal note).
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param ticketId - The ID of the ticket to post to
+ * @param content - The message content
+ * @param isInternal - Whether this is an internal note (not visible to customer)
+ * @returns Promise resolving to a result object with success status and optional message or error
  */
 export async function postTicketMessage(
 	tenantSlug: string,
@@ -335,7 +395,14 @@ export async function postTicketMessage(
 	}
 }
 
-// Legacy function for backward compatibility with CreateTicketDialog
+/**
+ * Legacy function for backward compatibility with CreateTicketDialog.
+ * 
+ * Creates a ticket locally without API call. For new code, use createTicket instead.
+ * 
+ * @param input - The ticket data (without customerId)
+ * @returns The created ticket object
+ */
 export function addTicket(
 	input: Omit<CreateTicketInput, "customerId">,
 ): Ticket {
@@ -364,6 +431,9 @@ export function addTicket(
 	return newTicket;
 }
 
+/**
+ * Available filter options for ticket lists.
+ */
 export const filterOptions = [
 	{ id: "all", label: "All" },
 	{ id: "my-open", label: "Mine" },
@@ -375,7 +445,9 @@ export const filterOptions = [
 ];
 
 /**
- * Support staff member for ticket assignment
+ * Support staff member for ticket assignment.
+ * 
+ * Represents a support team member who can be assigned to tickets.
  */
 export interface SupportMember {
 	id: string;
@@ -386,7 +458,10 @@ export interface SupportMember {
 }
 
 /**
- * Fetch support staff members for ticket assignment dropdown
+ * Fetch support staff members for ticket assignment dropdown.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @returns Promise resolving to an array of support staff members
  */
 export async function fetchSupportMembers(
 	tenantSlug: string,

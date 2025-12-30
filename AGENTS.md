@@ -538,15 +538,146 @@ bun run test:coverage
 
 Both tools must pass with zero errors before considering work complete.
 
+## Documentation Standards
+
+### TSDoc Comments
+
+**Always add TSDoc comments to exported functions, components, interfaces, and types** to maintain 80% docstring coverage.
+
+The project uses JSDoc-style comments compatible with TSDoc. Add documentation as you write code, not as an afterthought.
+
+#### Format
+
+```typescript
+/**
+ * Brief description of what the function/component does.
+ * 
+ * Optional longer description explaining behavior, edge cases, or usage.
+ * 
+ * @param paramName - Description of parameter
+ * @returns Description of return value
+ */
+export function myFunction(paramName: string): string {
+  // ...
+}
+```
+
+#### Component Documentation
+
+```typescript
+/**
+ * Dialog component for creating or editing a resource.
+ * 
+ * Supports both create and edit modes. When a resource is provided,
+ * the form is pre-populated and the dialog operates in edit mode.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.resource - Resource to edit (optional, for edit mode)
+ * @param props.onSaved - Callback fired after successful save
+ */
+export function CreateResourceDialog({ ... }: CreateResourceDialogProps) {
+  // ...
+}
+```
+
+#### Interface Documentation
+
+```typescript
+/**
+ * Represents a resource with its properties.
+ * 
+ * Used for data transfer and type safety throughout the application.
+ */
+export interface Resource {
+  id: string
+  name: string
+  // ...
+}
+```
+
+#### What to Document
+
+- ✅ All exported functions (public API)
+- ✅ All exported React components
+- ✅ All exported interfaces and types
+- ✅ Helper functions used across modules
+- ❌ Internal/private functions (unless complex)
+- ❌ Test files
+- ❌ Generated files (`routeTree.gen.ts`)
+- ❌ UI primitives in `src/components/ui/` (vendor components)
+
+#### Examples
+
+**Function:**
+```typescript
+/**
+ * Fetch all products for a tenant organization with their associated plans.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param filters - Optional filters for product status
+ * @returns Promise resolving to an array of products with their plans
+ */
+export async function fetchProducts(
+  tenantSlug: string,
+  filters?: { status?: string }
+): Promise<Product[]> {
+  // ...
+}
+```
+
+**Hook:**
+```typescript
+/**
+ * Hook to get the current tenant slug from route params.
+ * 
+ * Use this in components that need the tenant identifier for navigation or display.
+ * 
+ * @returns The current tenant slug, or empty string if not in tenant route
+ */
+export function useTenantSlug(): string {
+  // ...
+}
+```
+
+**Utility:**
+```typescript
+/**
+ * Utility function to merge Tailwind CSS classes.
+ * 
+ * Combines clsx for conditional classes and tailwind-merge to resolve
+ * conflicting Tailwind classes intelligently.
+ * 
+ * @param inputs - Class values to merge (strings, objects, arrays)
+ * @returns Merged class string
+ */
+export function cn(...inputs: ClassValue[]): string {
+  // ...
+}
+```
+
+### Documentation Coverage
+
+The project maintains **80% docstring coverage** for exported code. When adding new exports:
+
+1. **Write the docstring immediately** as you write the code
+2. **Include @param and @returns** tags for functions
+3. **Describe component props** for React components
+4. **Explain purpose and usage** for interfaces/types
+
+This ensures documentation stays current and helps other developers (and AI agents) understand the codebase.
+
 ## When Adding New Features
 
 1. **Start with tests** that describe the expected behavior
 2. **Check schema** — add database columns/tables if needed
 3. **Update API** — add or modify route handlers
 4. **Build components** — create UI with tests
-5. **Run full test suite** — ensure no regressions (`bun run test`)
-6. **Check coverage** — maintain thresholds (`bun run test:coverage`)
-7. **Run linting** — fix any code quality issues (`bun run lint`)
+5. **Add documentation** — write TSDoc comments for all exported functions, components, and types
+6. **Run full test suite** — ensure no regressions (`bun run test`)
+7. **Check coverage** — maintain thresholds (`bun run test:coverage`)
+8. **Run linting** — fix any code quality issues (`bun run lint`)
 
 ---
 

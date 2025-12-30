@@ -8,8 +8,17 @@
 // Types
 // ============================================================================
 
+/**
+ * Available categories for knowledge articles and playbooks.
+ */
 export type KnowledgeCategory = 'AUTHENTICATION' | 'BILLING' | 'DEVELOPER' | 'GENERAL' | 'ONBOARDING' | 'AUTOMATION'
 
+/**
+ * Represents a knowledge base article.
+ * 
+ * Articles contain help documentation, guides, and FAQs for customers
+ * and support staff.
+ */
 export interface KnowledgeArticle {
   id: string
   title: string
@@ -27,6 +36,12 @@ export interface KnowledgeArticle {
   updatedBy: string | null
 }
 
+/**
+ * Represents a support playbook with steps, triggers, and actions.
+ * 
+ * Playbooks guide support staff through common scenarios and can be
+ * manual (step-by-step guide) or automated (triggers actions).
+ */
 export interface Playbook {
   id: string
   name: string
@@ -45,6 +60,9 @@ export interface Playbook {
   updatedBy: string | null
 }
 
+/**
+ * A single step in a playbook workflow.
+ */
 export interface PlaybookStep {
   order: number
   title: string
@@ -52,16 +70,27 @@ export interface PlaybookStep {
   action?: string
 }
 
+/**
+ * Trigger condition for an automated playbook.
+ */
 export interface PlaybookTrigger {
   type: string
   condition: string
 }
 
+/**
+ * Action to execute in an automated playbook.
+ */
 export interface PlaybookAction {
   type: string
   config: Record<string, unknown>
 }
 
+/**
+ * Search result from knowledge base search.
+ * 
+ * Can be either an article or a playbook, with relevance score.
+ */
 export interface SearchResult {
   id: string
   type: 'article' | 'playbook'
@@ -79,6 +108,13 @@ export interface SearchResult {
 // Article API
 // ============================================================================
 
+/**
+ * Fetch all knowledge articles for a tenant organization.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param filters - Optional filters for article status and category
+ * @returns Promise resolving to an array of knowledge articles
+ */
 export async function fetchArticles(
   tenantSlug: string,
   filters?: { status?: string; category?: string }
@@ -106,6 +142,9 @@ export async function fetchArticles(
   }
 }
 
+/**
+ * Input data for creating a new knowledge article.
+ */
 export interface CreateArticleInput {
   title: string
   content?: string
@@ -114,6 +153,13 @@ export interface CreateArticleInput {
   status?: 'draft' | 'published' | 'archived'
 }
 
+/**
+ * Create a new knowledge article.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param input - The article data to create
+ * @returns Promise resolving to a result object with success status and optional article or error
+ */
 export async function createArticle(
   tenantSlug: string,
   input: CreateArticleInput
@@ -139,6 +185,11 @@ export async function createArticle(
   }
 }
 
+/**
+ * Input data for updating an existing knowledge article.
+ * 
+ * All fields are optional except id. Only provided fields will be updated.
+ */
 export interface UpdateArticleInput {
   id: string
   title?: string
@@ -148,6 +199,13 @@ export interface UpdateArticleInput {
   status?: 'draft' | 'published' | 'archived'
 }
 
+/**
+ * Update an existing knowledge article.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param input - The article data to update (must include article id)
+ * @returns Promise resolving to a result object with success status and optional error
+ */
 export async function updateArticle(
   tenantSlug: string,
   input: UpdateArticleInput
@@ -173,6 +231,13 @@ export async function updateArticle(
   }
 }
 
+/**
+ * Delete a knowledge article.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param articleId - The ID of the article to delete
+ * @returns Promise resolving to a result object with success status and optional error
+ */
 export async function deleteArticle(
   tenantSlug: string,
   articleId: string
@@ -203,6 +268,13 @@ export async function deleteArticle(
 // Playbook API
 // ============================================================================
 
+/**
+ * Fetch all playbooks for a tenant organization.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param filters - Optional filters for playbook type, status, and category
+ * @returns Promise resolving to an array of playbooks
+ */
 export async function fetchPlaybooks(
   tenantSlug: string,
   filters?: { type?: string; status?: string; category?: string }
@@ -231,6 +303,9 @@ export async function fetchPlaybooks(
   }
 }
 
+/**
+ * Input data for creating a new playbook.
+ */
 export interface CreatePlaybookInput {
   name: string
   description?: string
@@ -243,6 +318,13 @@ export interface CreatePlaybookInput {
   status?: 'draft' | 'active' | 'inactive'
 }
 
+/**
+ * Create a new playbook.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param input - The playbook data to create
+ * @returns Promise resolving to a result object with success status and optional playbook or error
+ */
 export async function createPlaybook(
   tenantSlug: string,
   input: CreatePlaybookInput
@@ -268,6 +350,11 @@ export async function createPlaybook(
   }
 }
 
+/**
+ * Input data for updating an existing playbook.
+ * 
+ * All fields are optional except id. Only provided fields will be updated.
+ */
 export interface UpdatePlaybookInput {
   id: string
   name?: string
@@ -281,6 +368,13 @@ export interface UpdatePlaybookInput {
   status?: 'draft' | 'active' | 'inactive'
 }
 
+/**
+ * Update an existing playbook.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param input - The playbook data to update (must include playbook id)
+ * @returns Promise resolving to a result object with success status and optional error
+ */
 export async function updatePlaybook(
   tenantSlug: string,
   input: UpdatePlaybookInput
@@ -306,6 +400,13 @@ export async function updatePlaybook(
   }
 }
 
+/**
+ * Delete a playbook.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param playbookId - The ID of the playbook to delete
+ * @returns Promise resolving to a result object with success status and optional error
+ */
 export async function deletePlaybook(
   tenantSlug: string,
   playbookId: string
@@ -336,6 +437,21 @@ export async function deletePlaybook(
 // Search API
 // ============================================================================
 
+/**
+ * Search the knowledge base for articles and playbooks.
+ * 
+ * Performs a full-text search across articles and playbooks with optional
+ * filtering by type, status, and category.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param query - The search query string
+ * @param options - Optional search options
+ * @param options.type - Filter by content type ('article', 'playbook', or 'all')
+ * @param options.status - Filter by status
+ * @param options.category - Filter by category
+ * @param options.limit - Maximum number of results to return
+ * @returns Promise resolving to an array of search results with relevance scores
+ */
 export async function searchKnowledge(
   tenantSlug: string,
   query: string,
@@ -376,6 +492,9 @@ export async function searchKnowledge(
 // Constants
 // ============================================================================
 
+/**
+ * Available knowledge categories.
+ */
 export const categories: KnowledgeCategory[] = [
   'AUTHENTICATION',
   'BILLING',
@@ -385,23 +504,35 @@ export const categories: KnowledgeCategory[] = [
   'AUTOMATION',
 ]
 
+/**
+ * Category options formatted for UI dropdowns.
+ */
 export const categoryOptions = categories.map((cat) => ({
   label: cat.charAt(0) + cat.slice(1).toLowerCase(),
   value: cat,
 }))
 
+/**
+ * Article status options for UI dropdowns.
+ */
 export const articleStatusOptions = [
   { label: 'Draft', value: 'draft' },
   { label: 'Published', value: 'published' },
   { label: 'Archived', value: 'archived' },
 ]
 
+/**
+ * Playbook status options for UI dropdowns.
+ */
 export const playbookStatusOptions = [
   { label: 'Draft', value: 'draft' },
   { label: 'Active', value: 'active' },
   { label: 'Inactive', value: 'inactive' },
 ]
 
+/**
+ * Playbook type options for UI dropdowns.
+ */
 export const playbookTypeOptions = [
   { label: 'Manual', value: 'manual' },
   { label: 'Automated', value: 'automated' },

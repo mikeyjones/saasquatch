@@ -12,8 +12,14 @@ import { db } from '@/db'
 import { knowledgeArticle, playbook } from '@/db/schema'
 import { sql, eq, and, or, desc } from 'drizzle-orm'
 
+/**
+ * Type of search result (article or playbook).
+ */
 export type SearchResultType = 'article' | 'playbook'
 
+/**
+ * Search result from knowledge base search.
+ */
 export interface SearchResult {
   id: string
   type: SearchResultType
@@ -27,6 +33,9 @@ export interface SearchResult {
   updatedAt: Date
 }
 
+/**
+ * Options for knowledge base search.
+ */
 export interface SearchOptions {
   organizationId: string
   query: string
@@ -37,7 +46,10 @@ export interface SearchOptions {
 }
 
 /**
- * Parse JSON tags from database text field
+ * Parse JSON tags from database text field.
+ * 
+ * @param tagsJson - JSON string or null
+ * @returns Parsed tags array or null if invalid
  */
 function parseTags(tagsJson: string | null): string[] | null {
   if (!tagsJson) return null
@@ -49,7 +61,11 @@ function parseTags(tagsJson: string | null): string[] | null {
 }
 
 /**
- * Truncate content for search result preview
+ * Truncate content for search result preview.
+ * 
+ * @param content - Content to truncate
+ * @param maxLength - Maximum length before truncation
+ * @returns Truncated content with ellipsis or null
  */
 function truncateContent(content: string | null, maxLength = 200): string | null {
   if (!content) return null
@@ -58,10 +74,14 @@ function truncateContent(content: string | null, maxLength = 200): string | null
 }
 
 /**
- * Search knowledge articles and playbooks using fuzzy matching
- *
+ * Search knowledge articles and playbooks using fuzzy matching.
+ * 
  * Uses PostgreSQL's pg_trgm extension for similarity scoring.
  * Searches across title/name, content/description, category, and tags.
+ * Returns results sorted by relevance score.
+ * 
+ * @param options - Search options
+ * @returns Promise resolving to an array of search results
  */
 export async function searchKnowledge(
   options: SearchOptions
@@ -119,7 +139,14 @@ export async function searchKnowledge(
 }
 
 /**
- * Search knowledge articles using pg_trgm similarity
+ * Search knowledge articles using pg_trgm similarity.
+ * 
+ * @param organizationId - Organization ID to scope search
+ * @param query - Search query string
+ * @param status - Optional status filter
+ * @param category - Optional category filter
+ * @param limit - Maximum number of results
+ * @returns Promise resolving to an array of article search results
  */
 async function searchArticles(
   organizationId: string,
@@ -203,7 +230,14 @@ async function searchArticles(
 }
 
 /**
- * Search playbooks using pg_trgm similarity
+ * Search playbooks using pg_trgm similarity.
+ * 
+ * @param organizationId - Organization ID to scope search
+ * @param query - Search query string
+ * @param status - Optional status filter
+ * @param category - Optional category filter
+ * @param limit - Maximum number of results
+ * @returns Promise resolving to an array of playbook search results
  */
 async function searchPlaybooks(
   organizationId: string,
@@ -287,7 +321,15 @@ async function searchPlaybooks(
 }
 
 /**
- * Get recent knowledge items when no search query is provided
+ * Get recent knowledge items when no search query is provided.
+ * 
+ * @param options - Options for fetching recent items
+ * @param options.organizationId - Organization ID to scope results
+ * @param options.type - Type filter ('article', 'playbook', or 'all')
+ * @param options.status - Optional status filter
+ * @param options.category - Optional category filter
+ * @param options.limit - Maximum number of results
+ * @returns Promise resolving to an array of recent knowledge items
  */
 async function getRecentKnowledge(options: {
   organizationId: string
@@ -368,7 +410,14 @@ export { generateSlug } from './slug-utils'
 import { generateSlug as createSlug } from './slug-utils'
 
 /**
- * Generate a unique slug by checking for existing slugs
+ * Generate a unique slug by checking for existing slugs.
+ * 
+ * Creates a base slug from the title and appends a counter if the slug
+ * already exists in the database.
+ * 
+ * @param organizationId - Organization ID to scope slug uniqueness
+ * @param title - Title to generate slug from
+ * @returns Promise resolving to a unique slug string
  */
 export async function generateUniqueSlug(
   organizationId: string,

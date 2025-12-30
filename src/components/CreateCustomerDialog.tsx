@@ -41,6 +41,9 @@ const customerSchema = z.object({
   seats: z.number().min(1).default(1),
 })
 
+/**
+ * Product plan data for customer creation.
+ */
 interface ProductPlan {
   id: string
   name: string
@@ -53,11 +56,17 @@ interface ProductPlan {
   }
 }
 
+/**
+ * Team member data for assignment.
+ */
 interface TeamMember {
   id: string
   name: string
 }
 
+/**
+ * Customer data structure.
+ */
 interface CustomerData {
   id: string
   name: string
@@ -71,6 +80,9 @@ interface CustomerData {
   notes?: string | null
 }
 
+/**
+ * Props for the CreateCustomerDialog component.
+ */
 interface CreateCustomerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -93,6 +105,20 @@ const INDUSTRIES = [
   'Other',
 ]
 
+/**
+ * Dialog component for creating or editing a customer/organization.
+ * 
+ * Supports both create and edit modes. When customerId is provided,
+ * the form is pre-populated with existing customer data. Optionally
+ * allows creating a subscription during customer creation.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.onCustomerCreated - Callback fired after successful save
+ * @param props.customerId - Customer ID for edit mode (optional)
+ * @param props.customer - Pre-filled customer data for edit mode (optional)
+ */
 export function CreateCustomerDialog({
   open,
   onOpenChange,

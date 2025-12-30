@@ -27,6 +27,9 @@ const productSchema = z.object({
   status: z.enum(['active', 'draft', 'archived']),
 })
 
+/**
+ * Props for the CreateProductDialog component.
+ */
 interface CreateProductDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -34,13 +37,27 @@ interface CreateProductDialogProps {
   onSaved?: () => void
 }
 
-// Status options
+/**
+ * Status options for product status dropdown.
+ */
 const statusOptions = [
   { label: 'Draft', value: 'draft' },
   { label: 'Active', value: 'active' },
   { label: 'Archived', value: 'archived' },
 ]
 
+/**
+ * Dialog component for creating or editing a product.
+ * 
+ * Supports both create and edit modes. When a product is provided,
+ * the form is pre-populated and the dialog operates in edit mode.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.product - Product to edit (optional, for edit mode)
+ * @param props.onSaved - Callback fired after successful save
+ */
 export function CreateProductDialog({
   open,
   onOpenChange,
@@ -184,7 +201,7 @@ export function CreateProductDialog({
           {/* Description Field */}
           <form.AppField name="description">
             {(field) => (
-              <field.TextArea label="Description" rows={3} placeholder="Describe what this product offers..." />
+              <field.TextArea label="Description" rows={3} />
             )}
           </form.AppField>
 

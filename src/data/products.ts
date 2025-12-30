@@ -53,6 +53,12 @@ export interface AvailableAddOn {
   }
 }
 
+/**
+ * Represents a product tier/plan with pricing and features.
+ * 
+ * A product tier belongs to a parent product and contains pricing
+ * information, features, and optional bolt-ons.
+ */
 export interface ProductTier {
   id: string
   name: string
@@ -77,6 +83,12 @@ export interface ProductTier {
   updatedAt?: Date
 }
 
+/**
+ * Extended product plan details with full pricing and feature information.
+ * 
+ * Includes additional pricing models (yearly, seat-based, usage-based) and
+ * feature flags beyond the base ProductTier.
+ */
 export interface ProductPlanDetail extends ProductTier {
   productFamilyId?: string | null
   yearlyPrice?: {
@@ -103,6 +115,12 @@ export interface ProductPlanDetail extends ProductTier {
   }>
 }
 
+/**
+ * Input data for creating a new product plan.
+ * 
+ * All fields except name are optional. The plan will be linked to a parent
+ * product if productId is provided.
+ */
 export interface CreatePlanInput {
   name: string
   description?: string
@@ -123,6 +141,11 @@ export interface CreatePlanInput {
   boltOns?: BoltOnInput[]
 }
 
+/**
+ * Input data for updating an existing product plan.
+ * 
+ * All fields are optional except id. Only provided fields will be updated.
+ */
 export interface UpdatePlanInput extends Partial<CreatePlanInput> {
   id: string
 }
@@ -165,7 +188,11 @@ export interface UpdateProductInput extends Partial<CreateProductInput> {
 // ============================================================================
 
 /**
- * Fetch all product plans for a tenant organization
+ * Fetch all product plans for a tenant organization.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param filters - Optional filters for plan status
+ * @returns Promise resolving to an array of product plans
  */
 export async function fetchPlans(
   tenantSlug: string,
@@ -197,7 +224,11 @@ export async function fetchPlans(
 }
 
 /**
- * Fetch a single product plan with full details
+ * Fetch a single product plan with full details including pricing and features.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param planId - The ID of the plan to fetch
+ * @returns Promise resolving to the plan details or null if not found
  */
 export async function fetchPlan(
   tenantSlug: string,
@@ -225,7 +256,11 @@ export async function fetchPlan(
 }
 
 /**
- * Create a new product plan
+ * Create a new product plan.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param planData - The plan data to create
+ * @returns Promise resolving to a result object with success status and optional plan or error
  */
 export async function createPlan(
   tenantSlug: string,
@@ -258,7 +293,11 @@ export async function createPlan(
 }
 
 /**
- * Update an existing product plan
+ * Update an existing product plan.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param planData - The plan data to update (must include plan id)
+ * @returns Promise resolving to a result object with success status and optional error
  */
 export async function updatePlan(
   tenantSlug: string,
@@ -291,7 +330,11 @@ export async function updatePlan(
 }
 
 /**
- * Delete a product plan
+ * Delete a product plan.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param planId - The ID of the plan to delete
+ * @returns Promise resolving to a result object with success status and optional error
  */
 export async function deletePlan(
   tenantSlug: string,
@@ -320,8 +363,14 @@ export async function deletePlan(
 }
 
 /**
- * Fetch all available add-ons for the organization
- * Used when configuring bolt-ons for a plan
+ * Fetch all available add-ons for the organization.
+ * 
+ * Used when configuring bolt-ons for a plan. Returns add-ons that can be
+ * attached to product plans.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param filters - Optional filters for add-on status
+ * @returns Promise resolving to an array of available add-ons
  */
 export async function fetchAddOns(
   tenantSlug: string,
@@ -357,7 +406,11 @@ export async function fetchAddOns(
 // ============================================================================
 
 /**
- * Fetch all products for a tenant organization with their plans
+ * Fetch all products for a tenant organization with their associated plans.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param filters - Optional filters for product status
+ * @returns Promise resolving to an array of products with their plans
  */
 export async function fetchProducts(
   tenantSlug: string,
@@ -389,7 +442,11 @@ export async function fetchProducts(
 }
 
 /**
- * Create a new product
+ * Create a new product.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param productData - The product data to create
+ * @returns Promise resolving to a result object with success status and optional product or error
  */
 export async function createProduct(
   tenantSlug: string,
@@ -422,7 +479,11 @@ export async function createProduct(
 }
 
 /**
- * Update an existing product
+ * Update an existing product.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param productData - The product data to update (must include product id)
+ * @returns Promise resolving to a result object with success status and optional error
  */
 export async function updateProduct(
   tenantSlug: string,
@@ -455,7 +516,11 @@ export async function updateProduct(
 }
 
 /**
- * Delete a product
+ * Delete a product.
+ * 
+ * @param tenantSlug - The tenant organization slug
+ * @param productId - The ID of the product to delete
+ * @returns Promise resolving to a result object with success status and optional error
  */
 export async function deleteProduct(
   tenantSlug: string,

@@ -1,5 +1,8 @@
 import { Package, Calendar, Users, DollarSign, CheckCircle2, XCircle, Clock, Pause } from 'lucide-react'
 
+/**
+ * Subscription data for display in ProductSubscriptionsCard.
+ */
 interface Subscription {
   id: string
   subscriptionNumber: string
@@ -16,10 +19,22 @@ interface Subscription {
   createdAt: string
 }
 
+/**
+ * Props for the ProductSubscriptionsCard component.
+ */
 interface ProductSubscriptionsCardProps {
   subscriptions: Subscription[]
 }
 
+/**
+ * Card component displaying product subscriptions grouped by product.
+ * 
+ * Shows all subscriptions for a customer organization, grouped by product.
+ * Displays product name, plan details, status, MRR, seats, and billing cycle.
+ * 
+ * @param props - Component props
+ * @param props.subscriptions - Array of subscriptions to display
+ */
 export function ProductSubscriptionsCard({ subscriptions }: ProductSubscriptionsCardProps) {
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {

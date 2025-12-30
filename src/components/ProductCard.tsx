@@ -3,6 +3,9 @@ import { ChevronDown, ChevronUp, Package, Plus, Pencil, Trash2, Check } from 'lu
 import { Button } from '@/components/ui/button'
 import type { Product, ProductTier } from '@/data/products'
 
+/**
+ * Props for the ProductCard component.
+ */
 interface ProductCardProps {
   product: Product
   onEditProduct?: (product: Product) => void
@@ -12,6 +15,20 @@ interface ProductCardProps {
   onDeletePlan?: (plan: ProductTier, product: Product) => void
 }
 
+/**
+ * Card component displaying a product with expandable plan list.
+ * 
+ * Shows product information in a collapsible card format. When expanded,
+ * displays all associated plans with actions to manage them.
+ * 
+ * @param props - Component props
+ * @param props.product - The product to display
+ * @param props.onEditProduct - Callback when edit product is clicked
+ * @param props.onDeleteProduct - Callback when delete product is clicked
+ * @param props.onAddPlan - Callback when add plan is clicked
+ * @param props.onEditPlan - Callback when edit plan is clicked
+ * @param props.onDeletePlan - Callback when delete plan is clicked
+ */
 export function ProductCard({
   product,
   onEditProduct,

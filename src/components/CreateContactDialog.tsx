@@ -49,11 +49,17 @@ export interface Contact {
   updatedAt: string
 }
 
+/**
+ * Customer data for contact creation.
+ */
 interface Customer {
   id: string
   name: string
 }
 
+/**
+ * Props for the CreateContactDialog component.
+ */
 interface CreateContactDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -71,6 +77,21 @@ const ROLES = [
   { value: 'viewer', label: 'Viewer' },
 ]
 
+/**
+ * Dialog component for creating or editing a contact.
+ * 
+ * Supports both create and edit modes. When contactId is provided,
+ * the form is pre-populated with existing contact data.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.onContactCreated - Callback fired after successful save
+ * @param props.customerId - Customer ID to associate contact with (optional)
+ * @param props.customerName - Customer name for display (optional)
+ * @param props.contactId - Contact ID for edit mode (optional)
+ * @param props.contact - Pre-filled contact data for edit mode (optional)
+ */
 export function CreateContactDialog({
   open,
   onOpenChange,

@@ -37,6 +37,9 @@ const planSchema = z.object({
   baseInterval: z.enum(['monthly', 'yearly']),
 })
 
+/**
+ * Props for the ProductPlanDialog component.
+ */
 interface ProductPlanDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -88,6 +91,20 @@ const intervalOptions = [
   { label: 'Yearly', value: 'yearly' },
 ]
 
+/**
+ * Dialog component for creating or editing a product plan.
+ * 
+ * Supports both create and edit modes. When creating a new plan, productId
+ * must be provided to link the plan to its parent product.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.plan - Plan to edit (optional, for edit mode)
+ * @param props.productId - Parent product ID (required when creating)
+ * @param props.productName - Product name for display (optional)
+ * @param props.onSaved - Callback fired after successful save
+ */
 export function ProductPlanDialog({
   open,
   onOpenChange,

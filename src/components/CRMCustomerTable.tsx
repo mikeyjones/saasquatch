@@ -29,6 +29,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { CRMActivityTimeline, type Activity } from './CRMActivityTimeline'
 
+/**
+ * Customer data for CRM table display.
+ */
 export interface CRMCustomer {
   id: string
   name: string
@@ -52,6 +55,9 @@ export interface CRMCustomer {
   activities?: Activity[]
 }
 
+/**
+ * Props for the CRMCustomerTable component.
+ */
 interface CRMCustomerTableProps {
   customers: CRMCustomer[]
   selectedIds: string[]
@@ -74,6 +80,12 @@ const subscriptionStyles = {
   past_due: 'bg-orange-100 text-orange-700',
 }
 
+/**
+ * Format a currency value in a compact format (K, M).
+ * 
+ * @param value - The numeric value to format
+ * @returns Formatted currency string
+ */
 function formatCurrency(value: number): string {
   if (value >= 1000000) {
     return `$${(value / 1000000).toFixed(1)}M`
@@ -84,6 +96,12 @@ function formatCurrency(value: number): string {
   return `$${value.toLocaleString()}`
 }
 
+/**
+ * Format a timestamp as relative time (e.g., "2h ago", "3d ago").
+ * 
+ * @param timestamp - ISO timestamp string
+ * @returns Formatted relative time string
+ */
 function formatRelativeTime(timestamp: string): string {
   const date = new Date(timestamp)
   const now = new Date()
@@ -104,6 +122,20 @@ function formatRelativeTime(timestamp: string): string {
   return date.toLocaleDateString()
 }
 
+/**
+ * Table component displaying CRM customers with sorting, filtering, and selection.
+ * 
+ * Features expandable rows showing activity timeline, bulk selection, and
+ * action buttons for editing, creating subscriptions, and adding contacts.
+ * 
+ * @param props - Component props
+ * @param props.customers - Array of customers to display
+ * @param props.selectedIds - Array of selected customer IDs
+ * @param props.onSelectionChange - Callback when selection changes
+ * @param props.onEdit - Callback when edit is clicked
+ * @param props.onCreateSubscription - Callback when create subscription is clicked
+ * @param props.onAddContact - Callback when add contact is clicked
+ */
 export function CRMCustomerTable({
   customers,
   selectedIds,

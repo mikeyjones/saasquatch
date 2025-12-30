@@ -3,7 +3,13 @@
  */
 
 /**
- * Generate a URL-friendly slug from a title
+ * Generate a URL-friendly slug from a title.
+ * 
+ * Converts text to lowercase, removes special characters, replaces spaces
+ * with hyphens, and limits length to 100 characters.
+ * 
+ * @param title - The title to convert to a slug
+ * @returns URL-friendly slug string
  */
 export function generateSlug(title: string): string {
   return title

@@ -1,6 +1,9 @@
 import { Building2, Globe, Mail, Edit, UserPlus, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+/**
+ * Customer organization data.
+ */
 interface Customer {
   id: string
   name: string
@@ -14,6 +17,9 @@ interface Customer {
   tags: string[]
 }
 
+/**
+ * Subscription data for an organization.
+ */
 interface Subscription {
   id: string
   subscriptionNumber: string
@@ -26,6 +32,9 @@ interface Subscription {
   mrr: number
 }
 
+/**
+ * Props for the OrganizationHeader component.
+ */
 interface OrganizationHeaderProps {
   customer: Customer
   subscriptions: Subscription[]
@@ -34,6 +43,19 @@ interface OrganizationHeaderProps {
   onCreateInvoice?: () => void
 }
 
+/**
+ * Header component displaying organization/customer information.
+ * 
+ * Shows customer details, subscription summary, status badges, and action buttons.
+ * Displays product subscriptions grouped by product with summary metrics.
+ * 
+ * @param props - Component props
+ * @param props.customer - The customer/organization data
+ * @param props.subscriptions - Array of subscriptions for this organization
+ * @param props.onEdit - Callback when edit button is clicked
+ * @param props.onAddContact - Callback when add contact button is clicked
+ * @param props.onCreateInvoice - Callback when create invoice button is clicked
+ */
 export function OrganizationHeader({ customer, subscriptions, onEdit, onAddContact, onCreateInvoice }: OrganizationHeaderProps) {
   const getStatusColor = (status: string | null) => {
     if (!status) return 'bg-gray-100 text-gray-800'
@@ -75,7 +97,7 @@ export function OrganizationHeader({ customer, subscriptions, onEdit, onAddConta
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           {/* Logo */}
-          <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+          <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
             {customer.logo ? (
               <img
                 src={customer.logo}

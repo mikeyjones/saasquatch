@@ -27,12 +27,18 @@ const dealSchema = z.object({
   notes: z.string().default(''),
 })
 
+/**
+ * Tenant organization data.
+ */
 interface TenantOrg {
   id: string
   name: string
   slug: string
 }
 
+/**
+ * Pipeline stage data.
+ */
 interface PipelineStage {
   id: string
   name: string
@@ -40,6 +46,9 @@ interface PipelineStage {
   color: string
 }
 
+/**
+ * Pipeline data with stages.
+ */
 interface Pipeline {
   id: string
   name: string
@@ -48,6 +57,9 @@ interface Pipeline {
   isDefault?: boolean
 }
 
+/**
+ * Props for the CreateDealDialog component.
+ */
 interface CreateDealDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -57,7 +69,11 @@ interface CreateDealDialogProps {
 }
 
 /**
- * Fuzzy match score - returns a score based on how well the query matches the text
+ * Fuzzy match score - returns a score based on how well the query matches the text.
+ * 
+ * @param text - Text to search in
+ * @param query - Search query
+ * @returns Score from 0-100
  */
 function fuzzyScore(text: string, query: string): number {
   const textLower = text.toLowerCase()
@@ -109,7 +125,11 @@ function getOrgScore(org: TenantOrg, query: string): number {
 }
 
 /**
- * Highlight matching parts of text
+ * Highlight matching parts of text in search results.
+ * 
+ * @param props - Component props
+ * @param props.text - The text to highlight
+ * @param props.query - The search query to highlight
  */
 function HighlightedText({ text, query }: { text: string; query: string }) {
   if (!query) return <>{text}</>
@@ -133,6 +153,19 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   return <>{text}</>
 }
 
+/**
+ * Dialog component for creating a new deal.
+ * 
+ * Includes organization search with fuzzy matching, pipeline and stage selection,
+ * deal value input, and assignment options.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.onDealCreated - Callback fired after successful deal creation
+ * @param props.defaultPipelineId - Default pipeline ID to pre-select (optional)
+ * @param props.defaultStageId - Default stage ID to pre-select (optional)
+ */
 export function CreateDealDialog({
   open,
   onOpenChange,

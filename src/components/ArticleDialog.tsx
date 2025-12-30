@@ -33,6 +33,9 @@ const articleSchema = z.object({
   status: z.enum(['draft', 'published', 'archived']),
 })
 
+/**
+ * Props for the ArticleDialog component.
+ */
 interface ArticleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -40,6 +43,18 @@ interface ArticleDialogProps {
   onSaved?: () => void
 }
 
+/**
+ * Dialog component for creating or editing a knowledge article.
+ * 
+ * Supports both create and edit modes. When an article is provided,
+ * the form is pre-populated and the dialog operates in edit mode.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.article - Article to edit (optional, for edit mode)
+ * @param props.onSaved - Callback fired after successful save
+ */
 export function ArticleDialog({
   open,
   onOpenChange,

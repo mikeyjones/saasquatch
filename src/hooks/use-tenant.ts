@@ -1,5 +1,8 @@
 import { useParams, useRouteContext } from '@tanstack/react-router'
 
+/**
+ * Tenant organization data.
+ */
 export interface Tenant {
   id: string
   name: string
@@ -7,7 +10,9 @@ export interface Tenant {
   logo: string | null
 }
 
-// Type for the /$tenant route context
+/**
+ * Type for the /$tenant route context.
+ */
 interface TenantRouteContext {
   tenant?: Tenant
 }
@@ -33,7 +38,18 @@ export function useTenant(): Tenant | null {
 
 /**
  * Build a tenant-scoped path.
- * Example: buildTenantPath('acme', '/app/support') => '/acme/app/support'
+ * 
+ * Prepends the tenant slug to a path for tenant-scoped navigation.
+ * 
+ * @param tenant - Tenant slug
+ * @param path - Path to scope (will be prefixed with / if not already)
+ * @returns Tenant-scoped path
+ * 
+ * @example
+ * ```ts
+ * buildTenantPath('acme', '/app/support') // => '/acme/app/support'
+ * buildTenantPath('acme', 'app/support')  // => '/acme/app/support'
+ * ```
  */
 export function buildTenantPath(tenant: string, path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`

@@ -21,12 +21,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+/**
+ * Company data for subscription creation.
+ */
 interface Company {
   id: string
   name: string
   subscriptionStatus?: string | null
 }
 
+/**
+ * Product plan data for subscription creation.
+ */
 interface ProductPlan {
   id: string
   name: string
@@ -35,6 +41,9 @@ interface ProductPlan {
   pricingModel: string
 }
 
+/**
+ * Props for the CreateSubscriptionDialog component.
+ */
 interface CreateSubscriptionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -43,6 +52,19 @@ interface CreateSubscriptionDialogProps {
   preSelectedCompanyName?: string | null
 }
 
+/**
+ * Dialog component for creating a new subscription.
+ * 
+ * Allows selecting a company and product plan, configuring billing cycle,
+ * seats, and other subscription parameters.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.onSubscriptionCreated - Callback fired after successful subscription creation
+ * @param props.preSelectedCompanyId - Pre-selected company ID (optional)
+ * @param props.preSelectedCompanyName - Pre-selected company name (optional)
+ */
 export function CreateSubscriptionDialog({
   open,
   onOpenChange,

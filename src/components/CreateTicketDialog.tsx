@@ -78,7 +78,11 @@ function getMemberScore(member: Member, query: string): number {
 }
 
 /**
- * Highlight matching parts of text
+ * Highlight matching parts of text in search results.
+ * 
+ * @param props - Component props
+ * @param props.text - The text to highlight
+ * @param props.query - The search query to highlight
  */
 function HighlightedText({ text, query }: { text: string; query: string }) {
   if (!query) return <>{text}</>
@@ -117,12 +121,26 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   return <>{result}</>
 }
 
+/**
+ * Props for the CreateTicketDialog component.
+ */
 interface CreateTicketDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onTicketCreated?: () => void
 }
 
+/**
+ * Dialog component for creating a new support ticket.
+ * 
+ * Includes customer search with fuzzy matching, priority selection,
+ * and initial message input.
+ * 
+ * @param props - Component props
+ * @param props.open - Whether the dialog is open
+ * @param props.onOpenChange - Callback when dialog open state changes
+ * @param props.onTicketCreated - Callback fired after successful ticket creation
+ */
 export function CreateTicketDialog({
   open,
   onOpenChange,
