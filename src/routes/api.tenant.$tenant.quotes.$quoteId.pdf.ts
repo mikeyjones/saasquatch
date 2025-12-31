@@ -1,0 +1,105 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { db } from '@/db'
+import { quote, organization } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { auth } from '@/lib/auth'
+import { getQuotePDFPath, quotePDFExists } from '@/lib/quote-pdf'
+import * as fs from 'node:fs'
+
+export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/pdf')({
+	server: {
+		handlers: {
+			/**
+			 * GET /api/tenant/:tenant/quotes/:quoteId/pdf
+			 * Download quote PDF
+			 */
+			GET: async ({ request, params }) => {
+				try {
+					const session = await auth.api.getSession({
+						headers: request.headers,
+					})
+
+					if (!session?.user) {
+						return new Response(
+							JSON.stringify({ error: 'Unauthorized' }),
+							{ status: 401, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+
+					// Get the organization by slug
+					const org = await db
+						.select({ id: organization.id })
+						.from(organization)
+						.where(eq(organization.slug, params.tenant))
+						.limit(1)
+
+					if (org.length === 0) {
+						return new Response(
+							JSON.stringify({ error: 'Organization not found' }),
+							{ status: 404, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+
+					const orgId = org[0].id
+
+					// Fetch the quote
+					const quoteData = await db
+						.select({
+							id: quote.id,
+							quoteNumber: quote.quoteNumber,
+							pdfPath: quote.pdfPath,
+						})
+						.from(quote)
+						.where(
+							and(eq(quote.id, params.quoteId), eq(quote.organizationId, orgId))
+						)
+						.limit(1)
+
+					if (quoteData.length === 0) {
+						return new Response(
+							JSON.stringify({ error: 'Quote not found' }),
+							{ status: 404, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+
+					const q = quoteData[0]
+
+					if (!q.pdfPath) {
+						return new Response(
+							JSON.stringify({ error: 'PDF not available for this quote' }),
+							{ status: 404, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+
+					// Check if PDF file exists
+					if (!quotePDFExists(q.pdfPath)) {
+						return new Response(
+							JSON.stringify({ error: 'PDF file not found on server' }),
+							{ status: 404, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+
+					// Read the PDF file
+					const fullPath = getQuotePDFPath(q.pdfPath)
+					const pdfBuffer = fs.readFileSync(fullPath)
+
+					// Return PDF with appropriate headers
+					return new Response(pdfBuffer, {
+						status: 200,
+						headers: {
+							'Content-Type': 'application/pdf',
+							'Content-Disposition': `attachment; filename="${q.quoteNumber}.pdf"`,
+							'Content-Length': pdfBuffer.length.toString(),
+						},
+					})
+				} catch (error) {
+					console.error('Error downloading quote PDF:', error)
+					return new Response(
+						JSON.stringify({ error: 'Internal server error' }),
+						{ status: 500, headers: { 'Content-Type': 'application/json' } }
+					)
+				}
+			},
+		},
+	},
+})

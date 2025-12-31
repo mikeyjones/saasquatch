@@ -12,6 +12,7 @@ import {
   deal,
   dealActivity,
   pipelineStage,
+  quote,
 } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
@@ -275,6 +276,87 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             createdAt: a.createdAt.toISOString(),
           }))
 
+          // Fetch all quotes for this customer
+          const quotes = await db
+            .select({
+              id: quote.id,
+              quoteNumber: quote.quoteNumber,
+              status: quote.status,
+              version: quote.version,
+              subtotal: quote.subtotal,
+              tax: quote.tax,
+              total: quote.total,
+              currency: quote.currency,
+              validUntil: quote.validUntil,
+              lineItems: quote.lineItems,
+              pdfPath: quote.pdfPath,
+              billingName: quote.billingName,
+              billingEmail: quote.billingEmail,
+              notes: quote.notes,
+              sentAt: quote.sentAt,
+              acceptedAt: quote.acceptedAt,
+              rejectedAt: quote.rejectedAt,
+              dealId: quote.dealId,
+              dealName: deal.name,
+              productPlanId: quote.productPlanId,
+              planName: productPlan.name,
+              convertedToInvoiceId: quote.convertedToInvoiceId,
+              invoiceNumber: invoice.invoiceNumber,
+              createdAt: quote.createdAt,
+              updatedAt: quote.updatedAt,
+            })
+            .from(quote)
+            .leftJoin(deal, eq(quote.dealId, deal.id))
+            .leftJoin(productPlan, eq(quote.productPlanId, productPlan.id))
+            .leftJoin(invoice, eq(quote.convertedToInvoiceId, invoice.id))
+            .where(
+              and(
+                eq(quote.tenantOrganizationId, params.customerId),
+                eq(quote.organizationId, orgId)
+              )
+            )
+            .orderBy(desc(quote.createdAt))
+
+          const quotesData = quotes.map(q => ({
+            id: q.id,
+            quoteNumber: q.quoteNumber,
+            status: q.status,
+            version: q.version,
+            subtotal: q.subtotal,
+            tax: q.tax,
+            total: q.total,
+            currency: q.currency,
+            validUntil: q.validUntil?.toISOString() || null,
+            lineItems: JSON.parse(q.lineItems),
+            pdfPath: q.pdfPath,
+            billingName: q.billingName,
+            billingEmail: q.billingEmail,
+            notes: q.notes,
+            sentAt: q.sentAt?.toISOString() || null,
+            acceptedAt: q.acceptedAt?.toISOString() || null,
+            rejectedAt: q.rejectedAt?.toISOString() || null,
+            deal: q.dealId
+              ? {
+                  id: q.dealId,
+                  name: q.dealName,
+                }
+              : null,
+            productPlan: q.productPlanId
+              ? {
+                  id: q.productPlanId,
+                  name: q.planName,
+                }
+              : null,
+            convertedInvoice: q.convertedToInvoiceId
+              ? {
+                  id: q.convertedToInvoiceId,
+                  invoiceNumber: q.invoiceNumber,
+                }
+              : null,
+            createdAt: q.createdAt.toISOString(),
+            updatedAt: q.updatedAt.toISOString(),
+          }))
+
           // Calculate metrics
           const totalMRR = subscriptionsData
             .filter(s => s.status === 'active')
@@ -308,6 +390,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
               contacts: contactsData,
               invoices: invoicesData,
               deals: dealsData,
+              quotes: quotesData,
               activities: activitiesData,
               metrics: {
                 totalMRR,
@@ -315,6 +398,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
                 contactCount: contactsData.length,
                 dealCount: dealsData.length,
                 invoiceCount: invoicesData.length,
+                quoteCount: quotesData.length,
               },
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }

@@ -154,12 +154,17 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
       const link = document.createElement('a')
       link.href = blobUrl
       link.download = `${invoice.invoiceNumber}.pdf`
+      link.style.display = 'none'
       document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
-
-      // Clean up the blob URL
-      URL.revokeObjectURL(blobUrl)
+      
+      // Use setTimeout to ensure click completes before cleanup
+      setTimeout(() => {
+        if (link.parentNode === document.body) {
+          document.body.removeChild(link)
+        }
+        URL.revokeObjectURL(blobUrl)
+      }, 100)
     } catch (error) {
       console.error('Error downloading PDF:', error)
       alert('Failed to download PDF. Please try again.')
@@ -448,10 +453,17 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
             const link = document.createElement('a')
             link.href = blobUrl
             link.download = `${inv.invoiceNumber}.pdf`
+            link.style.display = 'none'
             document.body.appendChild(link)
             link.click()
-            document.body.removeChild(link)
-            URL.revokeObjectURL(blobUrl)
+            
+            // Use setTimeout to ensure click completes before cleanup
+            setTimeout(() => {
+              if (link.parentNode === document.body) {
+                document.body.removeChild(link)
+              }
+              URL.revokeObjectURL(blobUrl)
+            }, 100)
           } catch (error) {
             console.error('Error downloading PDF:', error)
             alert('Failed to download PDF. Please try again.')

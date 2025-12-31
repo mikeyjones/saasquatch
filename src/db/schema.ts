@@ -1171,3 +1171,75 @@ export const invoice = pgTable(
     statusIdx: index('invoice_status_idx').on(table.organizationId, table.status),
   })
 )
+
+/**
+ * Quote - Pricing proposals sent to customers
+ * Can be linked to a deal or standalone, and optionally linked to product plans
+ * Quotes can be converted to invoices when accepted
+ */
+export const quote = pgTable(
+  'quote',
+  {
+    id: text('id').primaryKey(),
+    // The support staff organization this quote belongs to
+    organizationId: text('organizationId')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    // The customer organization
+    tenantOrganizationId: text('tenantOrganizationId')
+      .notNull()
+      .references(() => tenantOrganization.id, { onDelete: 'cascade' }),
+    // Optional link to deal
+    dealId: text('dealId')
+      .references(() => deal.id, { onDelete: 'set null' }),
+    // Optional link to product plan
+    productPlanId: text('productPlanId')
+      .references(() => productPlan.id, { onDelete: 'set null' }),
+    // Human-readable quote number (e.g., "QUO-ACME-1001")
+    quoteNumber: text('quoteNumber').notNull(),
+    // Quote status: draft, sent, accepted, rejected, expired, converted
+    status: text('status').notNull().default('draft'),
+    // Quote version (for tracking revisions)
+    version: integer('version').notNull().default(1),
+    // Parent quote ID (if this is a revision)
+    parentQuoteId: text('parentQuoteId')
+      .references(() => quote.id, { onDelete: 'set null' }),
+    // Pricing amounts (in cents)
+    subtotal: integer('subtotal').notNull().default(0),
+    tax: integer('tax').notNull().default(0),
+    total: integer('total').notNull().default(0),
+    // Currency
+    currency: text('currency').notNull().default('USD'),
+    // Quote validity expiration date
+    validUntil: timestamp('validUntil'),
+    // Line items (JSON array)
+    lineItems: text('lineItems').notNull(), // JSON: [{ description, quantity, unitPrice, total }]
+    // Converted to invoice (when accepted)
+    convertedToInvoiceId: text('convertedToInvoiceId')
+      .references(() => invoice.id, { onDelete: 'set null' }),
+    // PDF storage path
+    pdfPath: text('pdfPath'),
+    // Billing details (snapshot at time of quote)
+    billingName: text('billingName'),
+    billingEmail: text('billingEmail'),
+    billingAddress: text('billingAddress'),
+    // Notes
+    notes: text('notes'),
+    // Metadata
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt').notNull().defaultNow(),
+    sentAt: timestamp('sentAt'), // When quote was sent to customer
+    acceptedAt: timestamp('acceptedAt'), // When customer accepted
+    rejectedAt: timestamp('rejectedAt'), // When customer rejected
+  },
+  (table) => ({
+    orgIdx: index('quote_organization_idx').on(table.organizationId),
+    tenantOrgIdx: index('quote_tenant_org_idx').on(table.tenantOrganizationId),
+    dealIdx: index('quote_deal_idx').on(table.dealId),
+    productPlanIdx: index('quote_product_plan_idx').on(table.productPlanId),
+    quoteNumberIdx: index('quote_number_idx').on(table.organizationId, table.quoteNumber),
+    statusIdx: index('quote_status_idx').on(table.organizationId, table.status),
+    parentQuoteIdx: index('quote_parent_idx').on(table.parentQuoteId),
+    convertedInvoiceIdx: index('quote_converted_invoice_idx').on(table.convertedToInvoiceId),
+  })
+)

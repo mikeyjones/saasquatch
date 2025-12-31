@@ -12,6 +12,10 @@ import { ProductSubscriptionsCard } from '@/components/ProductSubscriptionsCard'
 import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
 import { CreateContactDialog } from '@/components/CreateContactDialog'
 import { CreateStandaloneInvoiceDialog } from '@/components/CreateStandaloneInvoiceDialog'
+import { CreateQuoteDialog } from '@/components/CreateQuoteDialog'
+import { QuoteList } from '@/components/QuoteList'
+import { QuoteDetailDialog } from '@/components/QuoteDetailDialog'
+import { sendQuote, acceptQuote, rejectQuote, getQuotePDFUrl, type Quote } from '@/data/quotes'
 
 export const Route = createFileRoute('/$tenant/app/sales/crm/$customerId')({
   component: OrganizationDetailPage,
@@ -115,6 +119,7 @@ interface OrganizationData {
   contacts: Contact[]
   invoices: Invoice[]
   deals: Deal[]
+  quotes: Quote[]
   activities: Activity[]
   metrics: {
     totalMRR: number
@@ -122,6 +127,7 @@ interface OrganizationData {
     contactCount: number
     dealCount: number
     invoiceCount: number
+    quoteCount: number
   }
 }
 
@@ -133,11 +139,14 @@ function OrganizationDetailPage() {
   const [data, setData] = useState<OrganizationData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'invoices' | 'deals' | 'activity' | 'properties' | 'subscriptions'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'invoices' | 'deals' | 'quotes' | 'activity' | 'properties' | 'subscriptions'>('overview')
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false)
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
+  const [isCreateQuoteDialogOpen, setIsCreateQuoteDialogOpen] = useState(false)
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null)
+  const [isQuoteDetailDialogOpen, setIsQuoteDetailDialogOpen] = useState(false)
 
   // Fetch organization data
   const fetchOrganization = useCallback(async () => {
@@ -238,7 +247,73 @@ function OrganizationDetailPage() {
     )
   }
 
-  const { customer, subscriptions, contacts, invoices, deals, activities, metrics } = data
+  const { customer, subscriptions, contacts, invoices, deals, quotes, activities, metrics } = data
+
+  const handleViewQuote = (quote: Quote) => {
+    setSelectedQuote(quote)
+    setIsQuoteDetailDialogOpen(true)
+  }
+
+  const handleSendQuote = async (quote: Quote) => {
+    const result = await sendQuote(tenant, quote.id)
+    if (result.success) {
+      fetchOrganization()
+    } else {
+      alert(result.error || 'Failed to send quote')
+    }
+  }
+
+  const handleAcceptQuote = async (quote: Quote) => {
+    const result = await acceptQuote(tenant, quote.id)
+    if (result.success) {
+      fetchOrganization()
+      setIsQuoteDetailDialogOpen(false)
+      setSelectedQuote(null)
+    } else {
+      alert(result.error || 'Failed to accept quote')
+    }
+  }
+
+  const handleRejectQuote = async (quote: Quote) => {
+    const result = await rejectQuote(tenant, quote.id)
+    if (result.success) {
+      fetchOrganization()
+      setIsQuoteDetailDialogOpen(false)
+      setSelectedQuote(null)
+    } else {
+      alert(result.error || 'Failed to reject quote')
+    }
+  }
+
+  const handleDownloadQuotePDF = async (quote: Quote) => {
+    try {
+      const url = getQuotePDFUrl(tenant, quote.id)
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error('Failed to download PDF')
+      }
+
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = `${quote.quoteNumber}.pdf`
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      
+      // Use setTimeout to ensure click completes before cleanup
+      setTimeout(() => {
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a)
+        }
+        window.URL.revokeObjectURL(downloadUrl)
+      }, 100)
+    } catch (err) {
+      console.error('Error downloading PDF:', err)
+      alert('Failed to download quote PDF')
+    }
+  }
 
   // Transform activities to match CRMActivityTimeline component format
   function mapActivityType(
@@ -332,6 +407,17 @@ function OrganizationDetailPage() {
             }`}
           >
             Deals ({deals.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('quotes')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'quotes'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+            }`}
+          >
+            Quotes ({quotes.length})
           </button>
           <button
             type="button"
@@ -565,6 +651,26 @@ function OrganizationDetailPage() {
           </div>
         )}
 
+        {activeTab === 'quotes' && (
+          <div className="bg-card rounded-lg border">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Quotes</h2>
+              <Button size="sm" onClick={() => setIsCreateQuoteDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Quote
+              </Button>
+            </div>
+            <div className="p-6">
+              <QuoteList
+                quotes={quotes}
+                onViewQuote={handleViewQuote}
+                onSendQuote={handleSendQuote}
+                onDownloadPDF={handleDownloadQuotePDF}
+              />
+            </div>
+          </div>
+        )}
+
         {activeTab === 'activity' && (
           <div className="bg-card rounded-lg border">
             <div className="p-6 border-b">
@@ -624,6 +730,26 @@ function OrganizationDetailPage() {
         onInvoiceCreated={fetchOrganization}
         customerId={customerId}
         customerName={customer.name}
+      />
+
+      {/* Create Quote Dialog */}
+      <CreateQuoteDialog
+        open={isCreateQuoteDialogOpen}
+        onOpenChange={setIsCreateQuoteDialogOpen}
+        onQuoteCreated={fetchOrganization}
+        preSelectedCompanyId={customerId}
+        preSelectedCompanyName={customer.name}
+      />
+
+      {/* Quote Detail Dialog */}
+      <QuoteDetailDialog
+        open={isQuoteDetailDialogOpen}
+        onOpenChange={setIsQuoteDetailDialogOpen}
+        quote={selectedQuote}
+        onSendQuote={handleSendQuote}
+        onAcceptQuote={handleAcceptQuote}
+        onRejectQuote={handleRejectQuote}
+        onDownloadPDF={handleDownloadQuotePDF}
       />
     </div>
   )
