@@ -150,7 +150,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
       const blob = await response.blob()
 
       // Create a blob URL and trigger download
-      const blobUrl = URL.createObjectURL(blob)
+      const blobUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = blobUrl
       link.download = `${invoice.invoiceNumber}.pdf`
@@ -163,7 +163,9 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
         if (link.parentNode === document.body) {
           document.body.removeChild(link)
         }
-        URL.revokeObjectURL(blobUrl)
+        if (window.URL && window.URL.revokeObjectURL) {
+          window.URL.revokeObjectURL(blobUrl)
+        }
       }, 100)
     } catch (error) {
       console.error('Error downloading PDF:', error)
@@ -449,7 +451,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
             }
 
             const blob = await response.blob()
-            const blobUrl = URL.createObjectURL(blob)
+            const blobUrl = window.URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = blobUrl
             link.download = `${inv.invoiceNumber}.pdf`
@@ -462,7 +464,9 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
               if (link.parentNode === document.body) {
                 document.body.removeChild(link)
               }
-              URL.revokeObjectURL(blobUrl)
+              if (window.URL && window.URL.revokeObjectURL) {
+                window.URL.revokeObjectURL(blobUrl)
+              }
             }, 100)
           } catch (error) {
             console.error('Error downloading PDF:', error)

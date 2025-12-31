@@ -1,6 +1,6 @@
 import { createFileRoute, useParams, Link } from '@tanstack/react-router'
 import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, AlertTriangle, XCircle, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OrganizationHeader } from '@/components/OrganizationHeader'
 import { OrganizationMetrics } from '@/components/OrganizationMetrics'
@@ -147,6 +147,7 @@ function OrganizationDetailPage() {
   const [isCreateQuoteDialogOpen, setIsCreateQuoteDialogOpen] = useState(false)
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null)
   const [isQuoteDetailDialogOpen, setIsQuoteDetailDialogOpen] = useState(false)
+  const [quoteStatusFilter, setQuoteStatusFilter] = useState<'all' | 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted'>('all')
 
   // Fetch organization data
   const fetchOrganization = useCallback(async () => {
@@ -248,6 +249,20 @@ function OrganizationDetailPage() {
   }
 
   const { customer, subscriptions, contacts, invoices, deals, quotes, activities, metrics } = data
+
+  const statusFilters = [
+    { value: 'all' as const, label: 'All', icon: FileText },
+    { value: 'draft' as const, label: 'Draft', icon: Clock },
+    { value: 'sent' as const, label: 'Sent', icon: Send },
+    { value: 'accepted' as const, label: 'Accepted', icon: CheckCircle },
+    { value: 'rejected' as const, label: 'Rejected', icon: XCircle },
+    { value: 'expired' as const, label: 'Expired', icon: AlertTriangle },
+    { value: 'converted' as const, label: 'Converted', icon: CheckCircle },
+  ]
+
+  const filteredQuotes = quoteStatusFilter === 'all'
+    ? quotes
+    : quotes.filter(q => q.status === quoteStatusFilter)
 
   const handleViewQuote = (quote: Quote) => {
     setSelectedQuote(quote)
@@ -660,9 +675,42 @@ function OrganizationDetailPage() {
                 Create Quote
               </Button>
             </div>
-            <div className="p-6">
+            <div className="p-6 space-y-4">
+              {/* Status Filter Buttons */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                {statusFilters.map((filter) => {
+                  const Icon = filter.icon
+                  const count = filter.value === 'all' ? quotes.length : quotes.filter(q => q.status === filter.value).length
+                  const isActive = quoteStatusFilter === filter.value
+
+                  return (
+                    <button
+                      type="button"
+                      key={filter.value}
+                      onClick={() => setQuoteStatusFilter(filter.value)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                        isActive
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {filter.label}
+                      {count > 0 && (
+                        <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
+                          isActive ? 'bg-white/20' : 'bg-gray-100'
+                        }`}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Quote List */}
               <QuoteList
-                quotes={quotes}
+                quotes={filteredQuotes}
                 onViewQuote={handleViewQuote}
                 onSendQuote={handleSendQuote}
                 onDownloadPDF={handleDownloadQuotePDF}

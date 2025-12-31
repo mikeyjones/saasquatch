@@ -23,10 +23,12 @@ import {
 } from '@/components/ui/select'
 import { Combobox } from '@/components/ui/combobox'
 import { createQuote, type CreateQuoteInput } from '@/data/quotes'
-import { fetchPlans, fetchProducts, type Product } from '@/data/products'
+import { fetchPlans, fetchProducts, type Product, type ProductTier } from '@/data/products'
 
 interface LineItem {
 	id: string
+	productId?: string
+	planId?: string
 	description: string
 	quantity: number
 	unitPrice: number // in dollars
@@ -38,15 +40,16 @@ interface Company {
 	name: string
 }
 
-interface ProductPlan {
-	id: string
-	name: string
-	description?: string
-}
-
 interface Deal {
 	id: string
 	name: string
+}
+
+interface CustomerSubscription {
+	id: string
+	productId: string | null
+	productName: string | null
+	status: string
 }
 
 /**
@@ -77,7 +80,6 @@ export function CreateQuoteDialog({
 	onOpenChange,
 	onQuoteCreated,
 	preSelectedCompanyId,
-	preSelectedCompanyName,
 	preSelectedDealId,
 }: CreateQuoteDialogProps) {
 	const params = useParams({ strict: false }) as { tenant?: string }
@@ -103,21 +105,17 @@ export function CreateQuoteDialog({
 		preSelectedCompanyId || ''
 	)
 	const [isLoadingCompanies, setIsLoadingCompanies] = useState(false)
+	const [customerSubscriptions, setCustomerSubscriptions] = useState<CustomerSubscription[]>([])
 
 	// Deal selection
 	const [deals, setDeals] = useState<Deal[]>([])
 	const [selectedDealId, setSelectedDealId] = useState<string | undefined>(preSelectedDealId || undefined)
 	const [isLoadingDeals, setIsLoadingDeals] = useState(false)
 
-	// Product selection
+	// Products and plans (for all line items)
 	const [products, setProducts] = useState<Product[]>([])
-	const [selectedProductId, setSelectedProductId] = useState<string | undefined>(undefined)
+	const [plans, setPlans] = useState<ProductTier[]>([])
 	const [isLoadingProducts, setIsLoadingProducts] = useState(false)
-
-	// Product plan selection
-	const [plans, setPlans] = useState<ProductPlan[]>([])
-	const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>(undefined)
-	const [isLoadingPlans, setIsLoadingPlans] = useState(false)
 
 	// Load companies
 	useEffect(() => {
@@ -144,6 +142,36 @@ export function CreateQuoteDialog({
 		loadCompanies()
 	}, [open, tenant, preSelectedCompanyId, selectedCompanyId])
 
+	// Load customer subscriptions when company is selected
+	useEffect(() => {
+		if (!selectedCompanyId || !tenant) {
+			setCustomerSubscriptions([])
+			return
+		}
+
+		const loadSubscriptions = async () => {
+			try {
+				const response = await fetch(`/api/tenant/${tenant}/crm/customers/${selectedCompanyId}`)
+				if (response.ok) {
+					const data = await response.json()
+					const subs = (data.subscriptions || [])
+						.filter((s: any) => s.status === 'active' || s.status === 'trial')
+						.map((s: any) => ({
+							id: s.id,
+							productId: s.productId,
+							productName: s.productName,
+							status: s.status,
+						}))
+					setCustomerSubscriptions(subs)
+				}
+			} catch (err) {
+				console.error('Failed to load customer subscriptions:', err)
+			}
+		}
+
+		loadSubscriptions()
+	}, [selectedCompanyId, tenant])
+
 	// Load deals
 	useEffect(() => {
 		if (!open || !tenant) return
@@ -169,7 +197,7 @@ export function CreateQuoteDialog({
 		loadDeals()
 	}, [open, tenant, preSelectedDealId, selectedDealId])
 
-	// Load products (which include their plans)
+	// Load products and plans
 	useEffect(() => {
 		if (!open || !tenant) return
 
@@ -179,7 +207,6 @@ export function CreateQuoteDialog({
 				const productsData = await fetchProducts(tenant, { status: 'active' })
 				setProducts(productsData)
 
-				// Also load all plans for backward compatibility
 				const plansData = await fetchPlans(tenant, { status: 'active' })
 				setPlans(plansData)
 			} catch (err) {
@@ -192,29 +219,6 @@ export function CreateQuoteDialog({
 		loadProducts()
 	}, [open, tenant])
 
-	// Clear selected plan when product changes
-	useEffect(() => {
-		setSelectedPlanId(undefined)
-	}, [selectedProductId])
-
-	// Auto-populate line items when plan is selected
-	useEffect(() => {
-		if (!selectedPlanId || lineItems.some((item) => item.description)) return
-
-		const plan = plans.find((p) => p.id === selectedPlanId)
-		if (plan) {
-			setLineItems([
-				{
-					id: crypto.randomUUID(),
-					description: plan.name,
-					quantity: 1,
-					unitPrice: 0, // Will need to fetch pricing separately
-					total: 0,
-				},
-			])
-		}
-	}, [selectedPlanId, plans])
-
 	// Convert companies to combobox options
 	const companyOptions = useMemo(() => {
 		return companies.map((company) => ({
@@ -223,21 +227,22 @@ export function CreateQuoteDialog({
 		}))
 	}, [companies])
 
-	// Convert products to combobox options
-	const productOptions = useMemo(() => {
-		return products.map((product) => ({
-			value: product.id,
-			label: product.name,
-		}))
-	}, [products])
+	// Get available products for a specific line item (excluding already subscribed and already added)
+	const getAvailableProductsForLine = (lineItemId: string) => {
+		const subscribedProductIds = customerSubscriptions.map((s) => s.productId).filter(Boolean)
+		const usedProductIds = lineItems
+			.filter((item) => item.id !== lineItemId && item.productId)
+			.map((item) => item.productId)
 
-	// Filter plans based on selected product
-	const filteredPlans = useMemo(() => {
-		if (!selectedProductId) {
-			return []
-		}
-		return plans.filter((plan) => plan.productId === selectedProductId)
-	}, [plans, selectedProductId])
+		return products.filter(
+			(product) => !subscribedProductIds.includes(product.id) && !usedProductIds.includes(product.id)
+		)
+	}
+
+	// Get available plans for a product in a specific line item
+	const getAvailablePlansForProduct = (productId: string) => {
+		return plans.filter((plan) => plan.productId === productId)
+	}
 
 	// Calculate totals
 	const subtotal = useMemo(() => {
@@ -257,8 +262,7 @@ export function CreateQuoteDialog({
 		setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
 		setSelectedCompanyId(preSelectedCompanyId || '')
 		setSelectedDealId(preSelectedDealId || undefined)
-		setSelectedProductId(undefined)
-		setSelectedPlanId(undefined)
+		setCustomerSubscriptions([])
 		setError(null)
 	}
 
@@ -305,9 +309,46 @@ export function CreateQuoteDialog({
 		setLineItems(updated)
 	}
 
+	const handleLineItemProductChange = (lineItemId: string, productId: string) => {
+		const updated = lineItems.map((item) => {
+			if (item.id !== lineItemId) return item
+
+			const product = products.find((p) => p.id === productId)
+			return {
+				...item,
+				productId,
+				planId: undefined,
+				description: product?.name || '',
+				unitPrice: 0,
+				total: 0,
+			}
+		})
+
+		setLineItems(updated)
+	}
+
+	const handleLineItemPlanChange = (lineItemId: string, planId: string) => {
+		const updated = lineItems.map((item) => {
+			if (item.id !== lineItemId) return item
+
+			const plan = plans.find((p) => p.id === planId)
+			const unitPrice = plan?.basePrice?.amount || 0
+
+			return {
+				...item,
+				planId,
+				description: plan?.name || '',
+				unitPrice,
+				total: item.quantity * unitPrice,
+			}
+		})
+
+		setLineItems(updated)
+	}
+
 	const canSubmit = useMemo(() => {
-		// Must have selected company and at least one line item with a description
-		const hasValidLineItem = lineItems.some((item) => item.description.trim() !== '')
+		// Must have selected company and at least one line item with product and plan
+		const hasValidLineItem = lineItems.some((item) => item.productId && item.planId)
 		return selectedCompanyId && hasValidLineItem && !isSubmitting
 	}, [lineItems, selectedCompanyId, isSubmitting])
 
@@ -354,10 +395,6 @@ export function CreateQuoteDialog({
 
 			if (selectedDealId) {
 				quoteData.dealId = selectedDealId
-			}
-
-			if (selectedPlanId) {
-				quoteData.productPlanId = selectedPlanId
 			}
 
 			const result = await createQuote(tenant, quoteData)
@@ -459,79 +496,6 @@ export function CreateQuoteDialog({
 						)}
 					</div>
 
-					{/* Product Selection (Optional) */}
-					<div className="space-y-2">
-						<Label htmlFor="product">Product (Optional)</Label>
-						{isLoadingProducts ? (
-							<div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
-								Loading products...
-							</div>
-						) : (
-							<>
-								<Combobox
-									id="product"
-									options={productOptions}
-									value={selectedProductId}
-									onValueChange={setSelectedProductId}
-									placeholder="Select a product"
-									searchPlaceholder="Type to search products..."
-									emptyText="No products found"
-								/>
-								{selectedProductId && (
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={() => setSelectedProductId(undefined)}
-										className="h-6 text-xs"
-									>
-										Clear selection
-									</Button>
-								)}
-							</>
-						)}
-					</div>
-
-					{/* Product Plan Selection (Optional) */}
-					<div className="space-y-2">
-						<Label htmlFor="plan">Product Plan (Optional)</Label>
-						{!selectedProductId ? (
-							<div className="flex h-10 w-full items-center justify-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
-								Select a product first
-							</div>
-						) : (
-							<>
-								<Select
-									value={selectedPlanId}
-									onValueChange={(value) => setSelectedPlanId(value)}
-									disabled={filteredPlans.length === 0}
-								>
-									<SelectTrigger id="plan">
-										<SelectValue placeholder={filteredPlans.length === 0 ? "No plans available" : "Select a plan (optional)"} />
-									</SelectTrigger>
-									<SelectContent>
-										{filteredPlans.map((plan) => (
-											<SelectItem key={plan.id} value={plan.id}>
-												{plan.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								{selectedPlanId && (
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={() => setSelectedPlanId(undefined)}
-										className="h-6 text-xs"
-									>
-										Clear selection
-									</Button>
-								)}
-							</>
-						)}
-					</div>
-
 					{/* Validity Date */}
 					<div className="space-y-2">
 						<Label htmlFor={validUntilId}>Valid Until</Label>
@@ -560,40 +524,89 @@ export function CreateQuoteDialog({
 						</div>
 
 						<div className="space-y-3">
-							{lineItems.map((item, index) => (
-								<div
-									key={item.id}
-									className="p-4 border rounded-lg space-y-3 bg-muted/30"
-								>
-									<div className="flex items-start justify-between gap-2">
-										<div className="flex-1 space-y-2">
-											<Label htmlFor={`description-${index}`} className="text-xs">
-												Description
-											</Label>
-											<Input
-												id={`description-${index}`}
-												value={item.description}
-												onChange={(e) =>
-													updateLineItem(item.id, 'description', e.target.value)
-												}
-												placeholder="e.g., Consulting Services"
-												required={index === 0}
-											/>
-										</div>
-										{lineItems.length > 1 && (
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => removeLineItem(item.id)}
-												className="h-8 w-8 p-0 mt-6"
-											>
-												<Trash2 className="h-4 w-4 text-destructive" />
-											</Button>
-										)}
-									</div>
+							{lineItems.map((item, index) => {
+								const availableProducts = getAvailableProductsForLine(item.id)
+								const availablePlans = item.productId ? getAvailablePlansForProduct(item.productId) : []
 
-									<div className="grid grid-cols-3 gap-3">
+								return (
+									<div
+										key={item.id}
+										className="p-4 border rounded-lg space-y-3 bg-muted/30"
+									>
+										<div className="flex items-start justify-between gap-2">
+											<div className="flex-1 space-y-3">
+												{/* Product Selection */}
+												<div className="space-y-2">
+													<Label htmlFor={`product-${index}`} className="text-xs">
+														Product *
+													</Label>
+													<Select
+														value={item.productId}
+														onValueChange={(value) => handleLineItemProductChange(item.id, value)}
+														disabled={!selectedCompanyId || isLoadingProducts}
+													>
+														<SelectTrigger id={`product-${index}`}>
+															<SelectValue placeholder={!selectedCompanyId ? "Select a company first" : "Select a product"} />
+														</SelectTrigger>
+														<SelectContent>
+															{availableProducts.length === 0 ? (
+																<SelectItem value="no-products" disabled>
+																	No available products
+																</SelectItem>
+															) : (
+																availableProducts.map((product) => (
+																	<SelectItem key={product.id} value={product.id}>
+																		{product.name}
+																	</SelectItem>
+																))
+															)}
+														</SelectContent>
+													</Select>
+												</div>
+
+												{/* Plan Selection */}
+												<div className="space-y-2">
+													<Label htmlFor={`plan-${index}`} className="text-xs">
+														Plan *
+													</Label>
+													<Select
+														value={item.planId}
+														onValueChange={(value) => handleLineItemPlanChange(item.id, value)}
+														disabled={!item.productId}
+													>
+														<SelectTrigger id={`plan-${index}`}>
+															<SelectValue placeholder={!item.productId ? "Select a product first" : "Select a plan"} />
+														</SelectTrigger>
+														<SelectContent>
+															{availablePlans.length === 0 ? (
+																<SelectItem value="no-plans" disabled>
+																	No plans available
+																</SelectItem>
+															) : (
+																availablePlans.map((plan) => (
+																	<SelectItem key={plan.id} value={plan.id}>
+																		{plan.name}
+																	</SelectItem>
+																))
+															)}
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
+											{lineItems.length > 1 && (
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={() => removeLineItem(item.id)}
+													className="h-8 w-8 p-0 mt-6"
+												>
+													<Trash2 className="h-4 w-4 text-destructive" />
+												</Button>
+											)}
+										</div>
+
+										<div className="grid grid-cols-3 gap-3">
 										<div className="space-y-2">
 											<Label htmlFor={`quantity-${index}`} className="text-xs">
 												Quantity
@@ -632,7 +645,7 @@ export function CreateQuoteDialog({
 										</div>
 									</div>
 								</div>
-							))}
+							)})}
 						</div>
 					</div>
 

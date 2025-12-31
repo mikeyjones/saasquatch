@@ -204,27 +204,27 @@ function QuotesPage() {
 			/>
 
 			{/* Page Header */}
-			<div className="flex items-center justify-between mb-6">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 				<div>
 					<h1 className="text-2xl font-semibold text-gray-900">Quotes</h1>
 					<p className="text-sm text-gray-500 mt-1">
 						Create and manage pricing proposals for customers
 					</p>
 				</div>
-				<div className="flex items-center gap-3">
-					<Button variant="outline" onClick={() => refetch()}>
-						<RefreshCw size={18} className="mr-1" />
-						Refresh
+				<div className="flex items-center gap-2 sm:gap-3">
+					<Button variant="outline" onClick={() => refetch()} size="sm" className="sm:h-10">
+						<RefreshCw size={16} className="sm:mr-1" />
+						<span className="hidden sm:inline">Refresh</span>
 					</Button>
-					<Button onClick={() => setIsCreateDialogOpen(true)}>
-						<Plus size={18} className="mr-1" />
+					<Button onClick={() => setIsCreateDialogOpen(true)} size="sm" className="sm:h-10 flex-1 sm:flex-initial">
+						<Plus size={16} className="mr-1" />
 						Create Quote
 					</Button>
 				</div>
 			</div>
 
 			{/* Status Filter Tabs */}
-			<div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+			<div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 -mx-6 px-6 sm:mx-0 sm:px-0 scrollbar-hide">
 				{statusFilters.map((filter) => {
 					const Icon = filter.icon
 					const count =
@@ -236,17 +236,17 @@ function QuotesPage() {
 							type="button"
 							key={filter.value}
 							onClick={() => setStatusFilter(filter.value)}
-							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+							className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
 								isActive
 									? 'bg-indigo-500 text-white'
 									: 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
 							}`}
 						>
-							<Icon size={16} />
-							{filter.label}
+							<Icon size={14} className="sm:w-4 sm:h-4" />
+							<span className="hidden xs:inline">{filter.label}</span>
 							{count > 0 && (
 								<span
-									className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
+									className={`px-1.5 py-0.5 text-xs rounded-full ${
 										isActive ? 'bg-white/20' : 'bg-gray-100'
 									}`}
 								>
@@ -260,22 +260,22 @@ function QuotesPage() {
 
 			{/* Summary Stats */}
 			{quotes.length > 0 && (
-				<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-					<div className="bg-white p-4 rounded-lg border border-gray-200">
-						<p className="text-sm text-gray-500">Total Quotes</p>
-						<p className="text-2xl font-bold text-gray-900">{quotes.length}</p>
+				<div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+					<div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+						<p className="text-xs sm:text-sm text-gray-500">Total Quotes</p>
+						<p className="text-xl sm:text-2xl font-bold text-gray-900">{quotes.length}</p>
 					</div>
-					<div className="bg-white p-4 rounded-lg border border-amber-200 bg-amber-50">
-						<p className="text-sm text-amber-600">Draft</p>
-						<p className="text-2xl font-bold text-amber-700">{statusCounts.draft || 0}</p>
+					<div className="bg-white p-3 sm:p-4 rounded-lg border border-amber-200 bg-amber-50">
+						<p className="text-xs sm:text-sm text-amber-600">Draft</p>
+						<p className="text-xl sm:text-2xl font-bold text-amber-700">{statusCounts.draft || 0}</p>
 					</div>
-					<div className="bg-white p-4 rounded-lg border border-blue-200 bg-blue-50">
-						<p className="text-sm text-blue-600">Sent</p>
-						<p className="text-2xl font-bold text-blue-700">{statusCounts.sent || 0}</p>
+					<div className="bg-white p-3 sm:p-4 rounded-lg border border-blue-200 bg-blue-50">
+						<p className="text-xs sm:text-sm text-blue-600">Sent</p>
+						<p className="text-xl sm:text-2xl font-bold text-blue-700">{statusCounts.sent || 0}</p>
 					</div>
-					<div className="bg-white p-4 rounded-lg border border-emerald-200 bg-emerald-50">
-						<p className="text-sm text-emerald-600">Converted</p>
-						<p className="text-2xl font-bold text-emerald-700">
+					<div className="bg-white p-3 sm:p-4 rounded-lg border border-emerald-200 bg-emerald-50">
+						<p className="text-xs sm:text-sm text-emerald-600">Converted</p>
+						<p className="text-xl sm:text-2xl font-bold text-emerald-700">
 							{statusCounts.converted || 0}
 						</p>
 					</div>

@@ -335,6 +335,10 @@ export const Route = createFileRoute('/api/tenant/$tenant/crm/customers/$custome
             sentAt: q.sentAt?.toISOString() || null,
             acceptedAt: q.acceptedAt?.toISOString() || null,
             rejectedAt: q.rejectedAt?.toISOString() || null,
+            tenantOrganization: {
+              id: c.id,
+              name: c.name,
+            },
             deal: q.dealId
               ? {
                   id: q.dealId,

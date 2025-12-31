@@ -133,7 +133,7 @@ export function QuoteList({
 											</span>
 										</div>
 										<p className="text-sm text-gray-500 mt-1">
-											{quote.tenantOrganization.name}
+											{quote.tenantOrganization?.name || 'Unknown Customer'}
 										</p>
 									</div>
 									<span
@@ -215,7 +215,7 @@ export function QuoteList({
 								</div>
 								<div className="col-span-3">
 									<p className="text-sm text-gray-900">
-										{quote.tenantOrganization.name}
+										{quote.tenantOrganization?.name || 'Unknown Customer'}
 									</p>
 									{quote.deal && (
 										<p className="text-xs text-gray-500">Deal: {quote.deal.name}</p>
