@@ -7,19 +7,12 @@
  * @module QuoteList
  */
 
-import {
-	FileText,
-	Download,
-	CheckCircle,
-	Clock,
-	AlertTriangle,
-	XCircle,
-	Eye,
-	Send,
-} from 'lucide-react'
+import { FileText, Download, Eye, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { Quote } from '@/data/quotes'
+import { formatCurrency, formatDateShort } from '@/lib/format'
+import { quoteStatusConfig } from '@/lib/quote-status'
 
 /**
  * Props for the QuoteList component.
@@ -37,72 +30,6 @@ interface QuoteListProps {
 	isSending?: string | null
 }
 
-/**
- * Configuration for quote status display.
- * Maps each status to its label, icon, and styling.
- */
-const statusConfig = {
-	draft: {
-		label: 'Draft',
-		icon: Clock,
-		className: 'bg-amber-50 text-amber-700 border border-amber-200',
-	},
-	sent: {
-		label: 'Sent',
-		icon: Send,
-		className: 'bg-blue-50 text-blue-700 border border-blue-200',
-	},
-	accepted: {
-		label: 'Accepted',
-		icon: CheckCircle,
-		className: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-	},
-	rejected: {
-		label: 'Rejected',
-		icon: XCircle,
-		className: 'bg-red-50 text-red-700 border border-red-200',
-	},
-	expired: {
-		label: 'Expired',
-		icon: AlertTriangle,
-		className: 'bg-orange-50 text-orange-700 border border-orange-200',
-	},
-	converted: {
-		label: 'Converted',
-		icon: CheckCircle,
-		className: 'bg-purple-50 text-purple-700 border border-purple-200',
-	},
-}
-
-/**
- * Formats an amount in cents to a localized currency string.
- *
- * @param cents - Amount in cents (e.g., 1500 = $15.00)
- * @param currency - ISO 4217 currency code (default: "USD")
- * @returns Formatted currency string
- */
-function formatCurrency(cents: number, currency = 'USD'): string {
-	const amount = cents / 100
-	return new Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency,
-	}).format(amount)
-}
-
-/**
- * Formats an ISO date string to a short, readable format.
- *
- * @param dateString - ISO 8601 date string, or null/undefined
- * @returns Formatted date (e.g., "Dec 31, 2024") or "N/A" if no date
- */
-function formatDate(dateString: string | null | undefined): string {
-	if (!dateString) return 'N/A'
-	return new Date(dateString).toLocaleDateString('en-US', {
-		month: 'short',
-		day: '2-digit',
-		year: 'numeric',
-	})
-}
 
 /**
  * QuoteList displays a responsive list of quotes with status indicators and actions.
@@ -156,7 +83,7 @@ export function QuoteList({
 
 			{/* Quote Rows */}
 			{quotes.map((quote) => {
-				const status = statusConfig[quote.status]
+				const status = quoteStatusConfig[quote.status]
 				const StatusIcon = status.icon
 				const isThisQuoteSending = isSending === quote.id
 
@@ -198,7 +125,7 @@ export function QuoteList({
 								{quote.validUntil && (
 									<div className="flex items-center justify-between text-sm">
 										<span className="text-gray-500">Valid Until:</span>
-										<span>{formatDate(quote.validUntil)}</span>
+										<span>{formatDateShort(quote.validUntil)}</span>
 									</div>
 								)}
 
@@ -272,7 +199,7 @@ export function QuoteList({
 								</div>
 								<div className="col-span-2">
 									<span className="text-sm text-gray-600">
-										{formatDate(quote.validUntil)}
+										{formatDateShort(quote.validUntil)}
 									</span>
 								</div>
 								<div className="col-span-1">

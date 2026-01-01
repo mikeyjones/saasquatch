@@ -24,7 +24,63 @@ import {
 } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
-import type { QuoteLineItem } from './quotes'
+import type { QuoteLineItem } from '@/data/quotes'
+
+/**
+ * Validates a line item to ensure all required fields are present and values are valid.
+ *
+ * Checks:
+ * - Description is a non-empty string
+ * - Quantity is a positive number (> 0)
+ * - Unit price is a non-negative number (>= 0)
+ * - Total is a non-negative number (>= 0)
+ * - Total matches quantity × unitPrice (within 1 cent tolerance)
+ *
+ * @param item - The line item to validate
+ * @returns Error message if validation fails, null if valid
+ */
+export function validateLineItem(item: QuoteLineItem): string | null {
+	// Check required fields exist
+	if (!item.description || typeof item.description !== 'string' || item.description.trim().length === 0) {
+		return 'Line item description is required and must be a non-empty string'
+	}
+
+	if (typeof item.quantity !== 'number' || isNaN(item.quantity)) {
+		return 'Line item quantity must be a valid number'
+	}
+
+	if (typeof item.unitPrice !== 'number' || isNaN(item.unitPrice)) {
+		return 'Line item unit price must be a valid number'
+	}
+
+	if (typeof item.total !== 'number' || isNaN(item.total)) {
+		return 'Line item total must be a valid number'
+	}
+
+	// Validate quantity is positive
+	if (item.quantity <= 0) {
+		return 'Line item quantity must be greater than 0'
+	}
+
+	// Validate unit price is non-negative
+	if (item.unitPrice < 0) {
+		return 'Line item unit price must be non-negative'
+	}
+
+	// Validate total is non-negative
+	if (item.total < 0) {
+		return 'Line item total must be non-negative'
+	}
+
+	// Validate total matches quantity * unitPrice (with small tolerance for floating point)
+	const expectedTotal = item.quantity * item.unitPrice
+	const tolerance = 0.01 // Allow 1 cent tolerance for rounding
+	if (Math.abs(item.total - expectedTotal) > tolerance) {
+		return `Line item total (${item.total}) does not match quantity × unit price (${item.quantity} × ${item.unitPrice} = ${expectedTotal})`
+	}
+
+	return null
+}
 
 export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId')({
 	server: {
@@ -215,7 +271,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId')({
 
 					// Verify quote exists and belongs to organization
 					const existingQuote = await db
-						.select({ id: quote.id, status: quote.status })
+						.select({ id: quote.id, status: quote.status, subtotal: quote.subtotal })
 						.from(quote)
 						.where(
 							and(eq(quote.id, params.quoteId), eq(quote.organizationId, orgId))
@@ -269,32 +325,37 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId')({
 							)
 						}
 
-						for (const item of lineItems) {
-							if (
-								!item.description ||
-								typeof item.quantity !== 'number' ||
-								typeof item.unitPrice !== 'number'
-							) {
-								return new Response(
-									JSON.stringify({
-										error:
-											'Invalid line item format. Each line item must have description, quantity, and unitPrice',
-									}),
-									{ status: 400, headers: { 'Content-Type': 'application/json' } }
-								)
-							}
+					// Validate each line item
+					for (let i = 0; i < lineItems.length; i++) {
+						const item = lineItems[i]
+						const validationError = validateLineItem(item)
+						if (validationError) {
+							return new Response(
+								JSON.stringify({
+									error: `Line item ${i + 1}: ${validationError}`,
+								}),
+								{ status: 400, headers: { 'Content-Type': 'application/json' } }
+							)
 						}
+					}
 
-						const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0)
-						const taxAmount = tax !== undefined ? tax : existingQuote[0].status === 'draft' ? 0 : undefined
-						const total = subtotal + (taxAmount || 0)
+					// Recalculate totals server-side (don't trust client-provided totals)
+					// Recalculate each line item total from quantity × unitPrice
+					const recalculatedLineItems = lineItems.map((item) => ({
+						...item,
+						total: item.quantity * item.unitPrice,
+					}))
 
-						updates.lineItems = JSON.stringify(lineItems)
-						updates.subtotal = subtotal
-						if (taxAmount !== undefined) {
-							updates.tax = taxAmount
-						}
-						updates.total = total
+					// Calculate subtotal from recalculated line items
+					const subtotal = recalculatedLineItems.reduce((sum, item) => sum + item.total, 0)
+					// Use provided tax or default to 0 (if tax not provided, assume 0 for recalculation)
+					const taxAmount = tax ?? 0
+					const total = subtotal + taxAmount
+
+					updates.lineItems = JSON.stringify(recalculatedLineItems)
+					updates.subtotal = subtotal
+					updates.tax = taxAmount
+					updates.total = total
 					} else if (tax !== undefined) {
 						// Update tax only
 						const currentQuote = await db

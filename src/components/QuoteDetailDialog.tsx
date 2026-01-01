@@ -12,14 +12,12 @@ import {
 	FileText,
 	Download,
 	CheckCircle,
-	Clock,
-	AlertTriangle,
-	XCircle,
 	Send,
 	Building,
 	Calendar,
 	Mail,
 	Tag,
+	XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,6 +29,8 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog'
 import type { Quote } from '@/data/quotes'
+import { formatCurrency, formatDateLong } from '@/lib/format'
+import { quoteStatusDetailConfig } from '@/lib/quote-status'
 
 /**
  * Props for the QuoteDetailDialog component.
@@ -54,78 +54,6 @@ interface QuoteDetailDialogProps {
 	isProcessing?: boolean
 }
 
-/**
- * Configuration for quote status display in the dialog.
- * Each status has a human-readable label, description, icon, and CSS classes.
- */
-const statusConfig = {
-	draft: {
-		label: 'Draft',
-		description: 'Not yet sent to customer',
-		icon: Clock,
-		className: 'bg-amber-50 text-amber-700 border border-amber-200',
-	},
-	sent: {
-		label: 'Sent',
-		description: 'Sent to customer, awaiting response',
-		icon: Send,
-		className: 'bg-blue-50 text-blue-700 border border-blue-200',
-	},
-	accepted: {
-		label: 'Accepted',
-		description: 'Customer accepted the quote',
-		icon: CheckCircle,
-		className: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-	},
-	rejected: {
-		label: 'Rejected',
-		description: 'Customer rejected the quote',
-		icon: XCircle,
-		className: 'bg-red-50 text-red-700 border border-red-200',
-	},
-	expired: {
-		label: 'Expired',
-		description: 'Quote validity period has expired',
-		icon: AlertTriangle,
-		className: 'bg-orange-50 text-orange-700 border border-orange-200',
-	},
-	converted: {
-		label: 'Converted',
-		description: 'Quote converted to invoice',
-		icon: CheckCircle,
-		className: 'bg-purple-50 text-purple-700 border border-purple-200',
-	},
-}
-
-/**
- * Formats an amount in cents to a localized currency string.
- *
- * @param cents - Amount in cents (e.g., 1500 = $15.00)
- * @param currency - ISO 4217 currency code (default: "USD")
- * @returns Formatted currency string
- */
-function formatCurrency(cents: number, currency = 'USD'): string {
-	const amount = cents / 100
-	return new Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency,
-	}).format(amount)
-}
-
-/**
- * Formats an ISO date string to a long, readable format.
- *
- * @param dateString - ISO 8601 date string, or null/undefined
- * @returns Formatted date (e.g., "December 31, 2024") or "N/A" if no date
- */
-function formatDate(dateString: string | null | undefined): string {
-	if (!dateString) return 'N/A'
-	return new Date(dateString).toLocaleDateString('en-US', {
-		month: 'long',
-		day: 'numeric',
-		year: 'numeric',
-	})
-}
 
 /**
  * QuoteDetailDialog displays comprehensive quote information in a modal dialog.
@@ -171,7 +99,7 @@ export function QuoteDetailDialog({
 }: QuoteDetailDialogProps) {
 	if (!quote) return null
 
-	const status = statusConfig[quote.status]
+	const status = quoteStatusDetailConfig[quote.status]
 	const StatusIcon = status.icon
 
 	return (
@@ -239,7 +167,7 @@ export function QuoteDetailDialog({
 								<Calendar size={12} />
 								Created
 							</div>
-							<p className="font-medium text-gray-900">{formatDate(quote.createdAt)}</p>
+							<p className="font-medium text-gray-900">{formatDateLong(quote.createdAt)}</p>
 						</div>
 						{quote.validUntil && (
 							<div>
@@ -248,7 +176,7 @@ export function QuoteDetailDialog({
 									Valid Until
 								</div>
 								<p className="font-medium text-gray-900">
-									{formatDate(quote.validUntil)}
+									{formatDateLong(quote.validUntil)}
 								</p>
 							</div>
 						)}
@@ -258,7 +186,7 @@ export function QuoteDetailDialog({
 									<Send size={12} />
 									Sent On
 								</div>
-								<p className="font-medium text-blue-700">{formatDate(quote.sentAt)}</p>
+								<p className="font-medium text-blue-700">{formatDateLong(quote.sentAt)}</p>
 							</div>
 						)}
 					</div>
@@ -269,7 +197,7 @@ export function QuoteDetailDialog({
 								<CheckCircle size={14} />
 								Accepted On
 							</div>
-							<p className="text-emerald-900">{formatDate(quote.acceptedAt)}</p>
+							<p className="text-emerald-900">{formatDateLong(quote.acceptedAt)}</p>
 							{quote.convertedInvoice && (
 								<p className="text-xs text-emerald-600 mt-1">
 									Converted to Invoice: {quote.convertedInvoice.invoiceNumber}
@@ -284,7 +212,7 @@ export function QuoteDetailDialog({
 								<XCircle size={14} />
 								Rejected On
 							</div>
-							<p className="text-red-900">{formatDate(quote.rejectedAt)}</p>
+							<p className="text-red-900">{formatDateLong(quote.rejectedAt)}</p>
 						</div>
 					)}
 

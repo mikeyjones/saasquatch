@@ -12,21 +12,7 @@
 import PDFDocument from 'pdfkit'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-
-/**
- * Represents a single line item in a quote PDF.
- * Each line item describes a product or service being quoted.
- */
-export interface QuoteLineItem {
-	/** Description of the product or service */
-	description: string
-	/** Number of units being quoted */
-	quantity: number
-	/** Price per unit in cents (e.g., 1000 = $10.00) */
-	unitPrice: number
-	/** Total price for this line item in cents (quantity × unitPrice) */
-	total: number
-}
+import type { QuoteLineItem } from '@/data/quotes'
 
 /**
  * Data required to generate a quote PDF.

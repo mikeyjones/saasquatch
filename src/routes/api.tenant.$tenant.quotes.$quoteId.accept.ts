@@ -111,18 +111,47 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/accept
 						)
 					}
 
-					// Parse request body for optional invoice dates
-					const body = await request.json().catch(() => ({}))
-					const { issueDate, dueDate } = body as {
-						issueDate?: string
-						dueDate?: string
-					}
+				// Parse request body for optional invoice dates
+				const body = await request.json().catch(() => ({}))
+				const { issueDate, dueDate } = body as {
+					issueDate?: string
+					dueDate?: string
+				}
 
-					// Set dates (default to now and 30 days from now)
-					const issueDateObj = issueDate ? new Date(issueDate) : new Date()
-					const dueDateObj = dueDate
-						? new Date(dueDate)
-						: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+				// Validate and set dates (default to now and 30 days from now)
+				let issueDateObj: Date
+				if (issueDate) {
+					issueDateObj = new Date(issueDate)
+					if (isNaN(issueDateObj.getTime())) {
+						return new Response(
+							JSON.stringify({ error: 'Invalid issueDate format. Expected ISO 8601 date string.' }),
+							{ status: 400, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+				} else {
+					issueDateObj = new Date()
+				}
+
+				let dueDateObj: Date
+				if (dueDate) {
+					dueDateObj = new Date(dueDate)
+					if (isNaN(dueDateObj.getTime())) {
+						return new Response(
+							JSON.stringify({ error: 'Invalid dueDate format. Expected ISO 8601 date string.' }),
+							{ status: 400, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+				} else {
+					dueDateObj = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+				}
+
+				// Validate due date is after issue date
+				if (dueDateObj < issueDateObj) {
+					return new Response(
+						JSON.stringify({ error: 'Due date must be on or after issue date.' }),
+						{ status: 400, headers: { 'Content-Type': 'application/json' } }
+					)
+				}
 
 					// Parse line items
 					const lineItems = JSON.parse(q.lineItems) as InvoiceLineItem[]

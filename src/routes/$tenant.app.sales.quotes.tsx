@@ -18,7 +18,7 @@
 
 import { createFileRoute, useParams } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { RefreshCw, Loader2, FileText, CheckCircle, Clock, AlertTriangle, XCircle, Send, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { QuoteList } from '@/components/QuoteList'
@@ -75,18 +75,28 @@ function QuotesPage() {
 	const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
+	// Fetch all quotes once - filtering is done client-side for instant UX
 	const {
 		data,
 		isLoading,
 		error,
 		refetch,
 	} = useQuery<QuotesResponse>({
-		queryKey: ['quotes', tenant, statusFilter],
+		queryKey: ['quotes', tenant],
 		queryFn: async () => {
-			const quotes = await fetchQuotes(tenant, statusFilter !== 'all' ? { status: statusFilter } : {})
+			const quotes = await fetchQuotes(tenant, {})
 			return { quotes }
 		},
 	})
+
+	// Filter quotes client-side based on status filter
+	const allQuotes = data?.quotes || []
+	const filteredQuotes = useMemo(() => {
+		if (statusFilter === 'all') {
+			return allQuotes
+		}
+		return allQuotes.filter((quote) => quote.status === statusFilter)
+	}, [allQuotes, statusFilter])
 
 	const sendQuoteMutation = useMutation({
 		mutationFn: async (quoteId: string) => {
@@ -134,8 +144,6 @@ function QuotesPage() {
 		},
 	})
 
-	const quotes = data?.quotes || []
-
 	const handleViewQuote = (quote: Quote) => {
 		setSelectedQuote(quote)
 		setIsDetailDialogOpen(true)
@@ -182,13 +190,17 @@ function QuotesPage() {
 		}
 	}
 
-	// Count quotes by status
-	const statusCounts = quotes.reduce(
-		(acc, quote) => {
-			acc[quote.status] = (acc[quote.status] || 0) + 1
-			return acc
-		},
-		{} as Record<string, number>
+	// Count quotes by status (using all quotes, not filtered)
+	const statusCounts = useMemo(
+		() =>
+			allQuotes.reduce(
+				(acc, quote) => {
+					acc[quote.status] = (acc[quote.status] || 0) + 1
+					return acc
+				},
+				{} as Record<string, number>
+			),
+		[allQuotes]
 	)
 
 	if (isLoading) {
@@ -266,7 +278,7 @@ function QuotesPage() {
 				{statusFilters.map((filter) => {
 					const Icon = filter.icon
 					const count =
-						filter.value === 'all' ? quotes.length : statusCounts[filter.value] || 0
+						filter.value === 'all' ? allQuotes.length : statusCounts[filter.value] || 0
 					const isActive = statusFilter === filter.value
 
 					return (
@@ -297,11 +309,11 @@ function QuotesPage() {
 			</div>
 
 			{/* Summary Stats */}
-			{quotes.length > 0 && (
+			{allQuotes.length > 0 && (
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
 					<div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
 						<p className="text-xs sm:text-sm text-gray-500">Total Quotes</p>
-						<p className="text-xl sm:text-2xl font-bold text-gray-900">{quotes.length}</p>
+						<p className="text-xl sm:text-2xl font-bold text-gray-900">{allQuotes.length}</p>
 					</div>
 					<div className="bg-white p-3 sm:p-4 rounded-lg border border-amber-200 bg-amber-50">
 						<p className="text-xs sm:text-sm text-amber-600">Draft</p>
@@ -322,27 +334,31 @@ function QuotesPage() {
 
 			{/* Quote List */}
 			<QuoteList
-				quotes={quotes}
+				quotes={filteredQuotes}
 				onViewQuote={handleViewQuote}
 				onSendQuote={handleSendQuote}
 				onDownloadPDF={handleDownloadPDF}
 				isSending={sendQuoteMutation.isPending ? sendQuoteMutation.variables : null}
 			/>
 
-			{/* Mutation Errors */}
-			{sendQuoteMutation.isError && (
-				<div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg">
-					{sendQuoteMutation.error?.message || 'Failed to send quote'}
-				</div>
-			)}
-			{acceptQuoteMutation.isError && (
-				<div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg">
-					{acceptQuoteMutation.error?.message || 'Failed to accept quote'}
-				</div>
-			)}
-			{rejectQuoteMutation.isError && (
-				<div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg">
-					{rejectQuoteMutation.error?.message || 'Failed to reject quote'}
+			{/* Mutation Errors - Stacked vertically to prevent overlap */}
+			{(sendQuoteMutation.isError || acceptQuoteMutation.isError || rejectQuoteMutation.isError) && (
+				<div className="fixed bottom-4 right-4 flex flex-col gap-2 max-w-md z-50">
+					{sendQuoteMutation.isError && (
+						<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg">
+							{sendQuoteMutation.error?.message || 'Failed to send quote'}
+						</div>
+					)}
+					{acceptQuoteMutation.isError && (
+						<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg">
+							{acceptQuoteMutation.error?.message || 'Failed to accept quote'}
+						</div>
+					)}
+					{rejectQuoteMutation.isError && (
+						<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg">
+							{rejectQuoteMutation.error?.message || 'Failed to reject quote'}
+						</div>
+					)}
 				</div>
 			)}
 		</main>

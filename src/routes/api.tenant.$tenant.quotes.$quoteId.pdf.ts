@@ -18,8 +18,7 @@ import { db } from '@/db'
 import { quote, organization } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
-import { getQuotePDFPath, quotePDFExists } from '@/lib/quote-pdf'
-import * as fs from 'node:fs'
+import { getQuotePDFPath } from '@/lib/quote-pdf'
 
 export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/pdf')({
 	server: {
@@ -79,34 +78,35 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/pdf')(
 
 					const q = quoteData[0]
 
-					if (!q.pdfPath) {
-						return new Response(
-							JSON.stringify({ error: 'PDF not available for this quote' }),
-							{ status: 404, headers: { 'Content-Type': 'application/json' } }
-						)
-					}
+				if (!q.pdfPath) {
+					return new Response(
+						JSON.stringify({ error: 'PDF not available for this quote' }),
+						{ status: 404, headers: { 'Content-Type': 'application/json' } }
+					)
+				}
 
-					// Check if PDF file exists
-					if (!quotePDFExists(q.pdfPath)) {
-						return new Response(
-							JSON.stringify({ error: 'PDF file not found on server' }),
-							{ status: 404, headers: { 'Content-Type': 'application/json' } }
-						)
-					}
+				// Read the PDF file using Bun.file
+				const fullPath = getQuotePDFPath(q.pdfPath)
+				const file = Bun.file(fullPath)
 
-					// Read the PDF file
-					const fullPath = getQuotePDFPath(q.pdfPath)
-					const pdfBuffer = fs.readFileSync(fullPath)
+				if (!(await file.exists())) {
+					return new Response(
+						JSON.stringify({ error: 'PDF file not found on server' }),
+						{ status: 404, headers: { 'Content-Type': 'application/json' } }
+					)
+				}
 
-					// Return PDF with appropriate headers
-					return new Response(pdfBuffer, {
-						status: 200,
-						headers: {
-							'Content-Type': 'application/pdf',
-							'Content-Disposition': `attachment; filename="${q.quoteNumber}.pdf"`,
-							'Content-Length': pdfBuffer.length.toString(),
-						},
-					})
+				const pdfBuffer = await file.arrayBuffer()
+
+				// Return PDF with appropriate headers
+				return new Response(pdfBuffer, {
+					status: 200,
+					headers: {
+						'Content-Type': 'application/pdf',
+						'Content-Disposition': `attachment; filename="${q.quoteNumber}.pdf"`,
+						'Content-Length': pdfBuffer.byteLength.toString(),
+					},
+				})
 				} catch (error) {
 					console.error('Error downloading quote PDF:', error)
 					return new Response(

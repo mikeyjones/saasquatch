@@ -102,8 +102,6 @@ interface CreateQuoteDialogProps {
 	onQuoteCreated?: () => void
 	/** Pre-select a company by ID when dialog opens */
 	preSelectedCompanyId?: string | null
-	/** Pre-fill company name (used with preSelectedCompanyId) */
-	preSelectedCompanyName?: string | null
 	/** Pre-select a deal by ID when dialog opens */
 	preSelectedDealId?: string | null
 }
@@ -190,7 +188,8 @@ export function CreateQuoteDialog({
 				if (response.ok) {
 					const data = await response.json()
 					setCompanies(data.customers || [])
-					if (preSelectedCompanyId && !selectedCompanyId) {
+					// Set pre-selected company only if provided and not already set
+					if (preSelectedCompanyId) {
 						setSelectedCompanyId(preSelectedCompanyId)
 					}
 				}
@@ -202,7 +201,7 @@ export function CreateQuoteDialog({
 		}
 
 		loadCompanies()
-	}, [open, tenant, preSelectedCompanyId, selectedCompanyId])
+	}, [open, tenant, preSelectedCompanyId])
 
 	// Load customer subscriptions when company is selected
 	useEffect(() => {
@@ -245,7 +244,8 @@ export function CreateQuoteDialog({
 				if (response.ok) {
 					const data = await response.json()
 					setDeals(data.deals || [])
-					if (preSelectedDealId && !selectedDealId) {
+					// Set pre-selected deal only if provided and not already set
+					if (preSelectedDealId) {
 						setSelectedDealId(preSelectedDealId)
 					}
 				}
@@ -257,7 +257,7 @@ export function CreateQuoteDialog({
 		}
 
 		loadDeals()
-	}, [open, tenant, preSelectedDealId, selectedDealId])
+	}, [open, tenant, preSelectedDealId])
 
 	// Load products and plans
 	useEffect(() => {

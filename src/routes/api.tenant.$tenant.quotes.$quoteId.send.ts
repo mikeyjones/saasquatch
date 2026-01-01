@@ -41,9 +41,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')
 						)
 					}
 
-					// Get the organization by slug
+					// Get the organization by slug (include name for PDF generation)
 					const org = await db
-						.select({ id: organization.id })
+						.select({ id: organization.id, name: organization.name, slug: organization.slug })
 						.from(organization)
 						.where(eq(organization.slug, params.tenant))
 						.limit(1)
@@ -56,6 +56,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')
 					}
 
 					const orgId = org[0].id
+					const orgName = org[0].name
+					const orgSlug = org[0].slug
 
 					// Fetch the quote with customer info
 					const quoteData = await db
@@ -113,8 +115,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')
 							{
 								quoteNumber: q.quoteNumber,
 								validUntil: q.validUntil ? new Date(q.validUntil) : undefined,
-								organizationName: params.tenant,
-								organizationSlug: params.tenant,
+								organizationName: orgName,
+								organizationSlug: orgSlug,
 								customerName: q.customerName,
 								customerEmail: q.customerEmail || undefined,
 								customerAddress: q.customerAddress || undefined,

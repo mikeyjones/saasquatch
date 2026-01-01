@@ -11,6 +11,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
 import { db } from '@/db'
 import {
 	quote,
@@ -22,20 +23,42 @@ import {
 } from '@/db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
+import type { QuoteLineItem } from '@/data/quotes'
 
 /**
- * Represents a line item in a quote for API operations.
+ * Zod schema for validating quote line items.
+ * Note: We validate the total matches quantity × unitPrice, but we recalculate
+ * it server-side to prevent client manipulation.
  */
-export interface QuoteLineItem {
-	/** Description of the product or service */
-	description: string
-	/** Number of units */
-	quantity: number
-	/** Price per unit in cents */
-	unitPrice: number
-	/** Total price in cents (quantity × unitPrice) */
-	total: number
-}
+const quoteLineItemSchema = z.object({
+	description: z.string().min(1, 'Description is required'),
+	quantity: z.number().int().positive('Quantity must be greater than 0'),
+	unitPrice: z.number().int().min(0, 'Unit price must be non-negative'),
+	total: z.number().int().min(0, 'Total must be non-negative'),
+}).refine(
+	(data) => {
+		const expectedTotal = data.quantity * data.unitPrice
+		// Allow 1 cent tolerance for rounding
+		return Math.abs(data.total - expectedTotal) <= 1
+	},
+	{
+		message: 'Total must equal quantity × unit price',
+		path: ['total'],
+	}
+)
+
+/**
+ * Zod schema for validating create quote request body.
+ */
+const createQuoteSchema = z.object({
+	tenantOrganizationId: z.string().min(1, 'Customer organization ID is required'),
+	lineItems: z.array(quoteLineItemSchema).min(1, 'At least one line item is required'),
+	dealId: z.string().optional(),
+	productPlanId: z.string().optional(),
+	validUntil: z.string().datetime().optional().or(z.null()),
+	tax: z.number().int().min(0, 'Tax must be non-negative').optional(),
+	notes: z.string().optional().or(z.null()),
+})
 
 export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 	server: {
@@ -250,57 +273,33 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 					const orgId = org[0].id
 					const orgSlug = org[0].slug
 
-					// Parse request body
-					const body = await request.json()
-					const {
-						tenantOrganizationId,
-						lineItems,
-						dealId,
-						productPlanId,
-						validUntil,
-						tax,
-						notes,
-					} = body as {
-						tenantOrganizationId: string
-						lineItems: QuoteLineItem[]
-						dealId?: string
-						productPlanId?: string
-						validUntil?: string
-						tax?: number
-						notes?: string
-					}
+				// Parse and validate request body with Zod
+				const body = await request.json()
+				const validationResult = createQuoteSchema.safeParse(body)
 
-					// Validate required fields
-					if (!tenantOrganizationId) {
-						return new Response(
-							JSON.stringify({ error: 'Customer organization ID is required' }),
-							{ status: 400, headers: { 'Content-Type': 'application/json' } }
-						)
-					}
+				if (!validationResult.success) {
+					const errors = validationResult.error.errors.map((err) => {
+						const path = err.path.join('.')
+						return path ? `${path}: ${err.message}` : err.message
+					})
+					return new Response(
+						JSON.stringify({
+							error: 'Validation failed',
+							details: errors,
+						}),
+						{ status: 400, headers: { 'Content-Type': 'application/json' } }
+					)
+				}
 
-					if (!lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
-						return new Response(
-							JSON.stringify({ error: 'At least one line item is required' }),
-							{ status: 400, headers: { 'Content-Type': 'application/json' } }
-						)
-					}
-
-					// Validate line items
-					for (const item of lineItems) {
-						if (
-							!item.description ||
-							typeof item.quantity !== 'number' ||
-							typeof item.unitPrice !== 'number'
-						) {
-							return new Response(
-								JSON.stringify({
-									error:
-										'Invalid line item format. Each line item must have description, quantity, and unitPrice',
-								}),
-								{ status: 400, headers: { 'Content-Type': 'application/json' } }
-							)
-						}
-					}
+				const {
+					tenantOrganizationId,
+					lineItems,
+					dealId,
+					productPlanId,
+					validUntil,
+					tax,
+					notes,
+				} = validationResult.data
 
 					// Verify customer organization exists and belongs to this organization
 					const customer = await db
@@ -360,10 +359,17 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						}
 					}
 
-					// Calculate totals
-					const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0)
-					const taxAmount = tax || 0
-					const total = subtotal + taxAmount
+				// Recalculate totals server-side (don't trust client-provided totals)
+				// Recalculate each line item total from quantity × unitPrice
+				const recalculatedLineItems = lineItems.map((item) => ({
+					...item,
+					total: item.quantity * item.unitPrice,
+				}))
+
+				// Calculate subtotal from recalculated line items
+				const subtotal = recalculatedLineItems.reduce((sum, item) => sum + item.total, 0)
+				const taxAmount = tax || 0
+				const total = subtotal + taxAmount
 
 					// Generate quote number
 					const quoteCount = await db
@@ -374,29 +380,38 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 					const count = quoteCount[0]?.count || 0
 					const quoteNumber = `QUO-${orgSlug.toUpperCase()}-${(count + 1001).toString()}`
 
-					// Set validity date
-					const validUntilObj = validUntil ? new Date(validUntil) : null
+				// Set validity date (validate if provided)
+				let validUntilObj: Date | null = null
+				if (validUntil) {
+					validUntilObj = new Date(validUntil)
+					if (isNaN(validUntilObj.getTime())) {
+						return new Response(
+							JSON.stringify({ error: 'Invalid validUntil date format. Expected ISO 8601 date string.' }),
+							{ status: 400, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+				}
 
-					// Generate quote ID
-					const quoteId = `quote_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+				// Generate quote ID
+				const quoteId = `quote_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
-					// Create quote
-					await db.insert(quote).values({
-						id: quoteId,
-						organizationId: orgId,
-						tenantOrganizationId,
-						dealId: dealId || null,
-						productPlanId: productPlanId || null,
-						quoteNumber,
-						status: 'draft',
-						version: 1,
-						parentQuoteId: null,
-						subtotal,
-						tax: taxAmount,
-						total,
-						currency: 'USD',
-						validUntil: validUntilObj,
-						lineItems: JSON.stringify(lineItems),
+				// Create quote with recalculated line items
+				await db.insert(quote).values({
+					id: quoteId,
+					organizationId: orgId,
+					tenantOrganizationId,
+					dealId: dealId || null,
+					productPlanId: productPlanId || null,
+					quoteNumber,
+					status: 'draft',
+					version: 1,
+					parentQuoteId: null,
+					subtotal,
+					tax: taxAmount,
+					total,
+					currency: 'USD',
+					validUntil: validUntilObj,
+					lineItems: JSON.stringify(recalculatedLineItems),
 						convertedToInvoiceId: null,
 						pdfPath: null,
 						billingName: customer[0].name,
