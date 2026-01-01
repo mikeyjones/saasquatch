@@ -1,3 +1,13 @@
+/**
+ * QuoteDetailDialog Component
+ *
+ * A modal dialog that displays comprehensive details about a quote,
+ * including customer information, line items, totals, and status history.
+ * Provides action buttons for managing the quote lifecycle.
+ *
+ * @module QuoteDetailDialog
+ */
+
 import {
 	FileText,
 	Download,
@@ -26,24 +36,28 @@ import type { Quote } from '@/data/quotes'
  * Props for the QuoteDetailDialog component.
  */
 interface QuoteDetailDialogProps {
-	/** Controls the open state of the dialog. */
+	/** Whether the dialog is currently visible */
 	open: boolean
-	/** Callback function to change the open state of the dialog. */
+	/** Callback to control the dialog's open state */
 	onOpenChange: (open: boolean) => void
-	/** The quote to display. */
+	/** The quote to display; pass null to render nothing */
 	quote: Quote | null
-	/** Callback function when sending a quote. */
+	/** Callback invoked when user clicks "Send Quote" (draft quotes only) */
 	onSendQuote?: (quote: Quote) => void
-	/** Callback function when accepting a quote. */
+	/** Callback invoked when user clicks "Accept" (sent quotes only) */
 	onAcceptQuote?: (quote: Quote) => void
-	/** Callback function when rejecting a quote. */
+	/** Callback invoked when user clicks "Reject" (sent quotes only) */
 	onRejectQuote?: (quote: Quote) => void
-	/** Callback function when downloading quote PDF. */
+	/** Callback invoked when user clicks "Download PDF" */
 	onDownloadPDF?: (quote: Quote) => void
-	/** Whether a quote action is in progress. */
+	/** When true, disables action buttons and shows loading text */
 	isProcessing?: boolean
 }
 
+/**
+ * Configuration for quote status display in the dialog.
+ * Each status has a human-readable label, description, icon, and CSS classes.
+ */
 const statusConfig = {
 	draft: {
 		label: 'Draft',
@@ -83,6 +97,13 @@ const statusConfig = {
 	},
 }
 
+/**
+ * Formats an amount in cents to a localized currency string.
+ *
+ * @param cents - Amount in cents (e.g., 1500 = $15.00)
+ * @param currency - ISO 4217 currency code (default: "USD")
+ * @returns Formatted currency string
+ */
 function formatCurrency(cents: number, currency = 'USD'): string {
 	const amount = cents / 100
 	return new Intl.NumberFormat('en-US', {
@@ -91,6 +112,12 @@ function formatCurrency(cents: number, currency = 'USD'): string {
 	}).format(amount)
 }
 
+/**
+ * Formats an ISO date string to a long, readable format.
+ *
+ * @param dateString - ISO 8601 date string, or null/undefined
+ * @returns Formatted date (e.g., "December 31, 2024") or "N/A" if no date
+ */
 function formatDate(dateString: string | null | undefined): string {
 	if (!dateString) return 'N/A'
 	return new Date(dateString).toLocaleDateString('en-US', {
@@ -101,8 +128,36 @@ function formatDate(dateString: string | null | undefined): string {
 }
 
 /**
- * QuoteDetailDialog component displays detailed information about a quote with actions.
- * @param props The props for the QuoteDetailDialog component.
+ * QuoteDetailDialog displays comprehensive quote information in a modal dialog.
+ *
+ * Features:
+ * - Status badge with color-coded styling and description
+ * - Customer and deal information sections
+ * - Product plan display (if linked)
+ * - Timeline showing created, valid until, and sent dates
+ * - Acceptance/rejection status with timestamps
+ * - Line items table with quantities and pricing
+ * - Totals section (subtotal, tax, grand total)
+ * - Notes section (if present)
+ * - Action buttons based on quote status:
+ *   - Draft: Send Quote
+ *   - Sent: Accept & Convert to Invoice, Reject
+ *   - Any with PDF: Download PDF
+ *
+ * @param props - Component props
+ * @returns Dialog component or null if no quote provided
+ *
+ * @example
+ * <QuoteDetailDialog
+ *   open={isOpen}
+ *   onOpenChange={setIsOpen}
+ *   quote={selectedQuote}
+ *   onSendQuote={handleSend}
+ *   onAcceptQuote={handleAccept}
+ *   onRejectQuote={handleReject}
+ *   onDownloadPDF={handleDownload}
+ *   isProcessing={isLoading}
+ * />
  */
 export function QuoteDetailDialog({
 	open,

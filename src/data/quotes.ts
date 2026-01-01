@@ -10,79 +10,143 @@
 // ============================================================================
 
 /**
- * Represents a line item in a quote.
+ * Represents a single line item in a quote.
+ * Each line item describes a product or service being offered.
  */
 export interface QuoteLineItem {
+	/** Human-readable description of the item (e.g., "Pro Plan - Monthly") */
 	description: string
+	/** Number of units being quoted */
 	quantity: number
-	unitPrice: number // in cents
-	total: number // in cents
+	/** Price per unit in cents (e.g., 9900 = $99.00) */
+	unitPrice: number
+	/** Total price for this line (quantity × unitPrice) in cents */
+	total: number
 }
 
 /**
- * Represents a quote with all its details.
+ * Represents a complete quote with all its details.
+ *
+ * Quotes progress through the following lifecycle:
+ * - **draft**: Initial state, can be edited
+ * - **sent**: Sent to customer, awaiting response
+ * - **accepted**: Customer accepted, ready to convert to invoice
+ * - **rejected**: Customer rejected the quote
+ * - **expired**: Quote validity period has passed
+ * - **converted**: Quote was accepted and converted to an invoice
  */
 export interface Quote {
+	/** Unique identifier for the quote */
 	id: string
+	/** Human-readable quote number (e.g., "QUO-ACME-1001") */
 	quoteNumber: string
+	/** Current lifecycle status of the quote */
 	status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted'
+	/** Version number for tracking revisions */
 	version: number
+	/** ID of the parent quote if this is a revision */
 	parentQuoteId?: string | null
-	subtotal: number // in cents
-	tax: number // in cents
-	total: number // in cents
+	/** Sum of all line item totals in cents */
+	subtotal: number
+	/** Tax amount in cents */
+	tax: number
+	/** Grand total (subtotal + tax) in cents */
+	total: number
+	/** ISO 4217 currency code (e.g., "USD", "EUR") */
 	currency: string
+	/** ISO 8601 date string for quote expiration */
 	validUntil?: string | null
+	/** Array of products/services being quoted */
 	lineItems: QuoteLineItem[]
+	/** Relative path to generated PDF (e.g., "/quotes/org-id/QUO-1.pdf") */
 	pdfPath?: string | null
+	/** Customer billing contact name (snapshot at time of quote) */
 	billingName?: string | null
+	/** Customer billing email (snapshot at time of quote) */
 	billingEmail?: string | null
+	/** Internal notes about this quote */
 	notes?: string | null
+	/** ISO 8601 timestamp when quote was sent to customer */
 	sentAt?: string | null
+	/** ISO 8601 timestamp when customer accepted */
 	acceptedAt?: string | null
+	/** ISO 8601 timestamp when customer rejected */
 	rejectedAt?: string | null
+	/** Customer organization receiving the quote */
 	tenantOrganization: {
+		/** Customer organization ID */
 		id: string
+		/** Customer organization name */
 		name: string
 	}
+	/** Linked deal (optional) */
 	deal?: {
+		/** Deal ID */
 		id: string
+		/** Deal name */
 		name: string
 	} | null
+	/** Linked product plan (optional) */
 	productPlan?: {
+		/** Product plan ID */
 		id: string
+		/** Product plan name */
 		name: string
 	} | null
+	/** Invoice created when quote was accepted and converted */
 	convertedInvoice?: {
+		/** Invoice ID */
 		id: string
+		/** Invoice number for reference */
 		invoiceNumber: string
 	} | null
+	/** ISO 8601 timestamp when quote was created */
 	createdAt: string
+	/** ISO 8601 timestamp when quote was last updated */
 	updatedAt: string
 }
 
 /**
- * Input structure for creating a new quote.
+ * Input data for creating a new quote.
+ *
+ * At minimum, requires a customer organization and at least one line item.
+ * Additional options like deal linking and validity dates are optional.
  */
 export interface CreateQuoteInput {
+	/** ID of the customer organization to quote */
 	tenantOrganizationId: string
+	/** Array of line items (must have at least one) */
 	lineItems: QuoteLineItem[]
+	/** Optional: Link quote to an existing deal */
 	dealId?: string
+	/** Optional: Link quote to a specific product plan */
 	productPlanId?: string
+	/** Optional: ISO 8601 date string for quote expiration */
 	validUntil?: string
+	/** Optional: Tax amount in cents */
 	tax?: number
+	/** Optional: Internal notes */
 	notes?: string
 }
 
 /**
- * Input structure for updating an existing quote.
+ * Input data for updating an existing quote.
+ *
+ * Only draft quotes can be updated. All fields are optional;
+ * only provided fields will be updated.
  */
 export interface UpdateQuoteInput {
+	/** New line items (replaces existing) */
 	lineItems?: QuoteLineItem[]
+	/** Update or remove deal link (null to unlink) */
 	dealId?: string | null
+	/** Update or remove product plan link (null to unlink) */
 	productPlanId?: string | null
+	/** Update or remove validity date (null to remove) */
 	validUntil?: string | null
+	/** Update tax amount in cents */
 	tax?: number
+	/** Update or remove notes (null to remove) */
 	notes?: string | null
 }
 

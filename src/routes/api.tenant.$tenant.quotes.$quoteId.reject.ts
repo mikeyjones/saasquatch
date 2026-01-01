@@ -1,3 +1,18 @@
+/**
+ * Quote Reject API Route
+ *
+ * Provides endpoint for rejecting a quote:
+ * - POST /api/tenant/:tenant/quotes/:quoteId/reject - Mark quote as rejected
+ *
+ * This endpoint:
+ * - Validates the quote is in 'sent' status
+ * - Updates status to 'rejected' with timestamp
+ *
+ * Requires authentication and organization membership.
+ *
+ * @module api/quotes/reject
+ */
+
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import { quote, organization } from '@/db/schema'

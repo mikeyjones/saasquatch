@@ -1,3 +1,12 @@
+/**
+ * CreateQuoteDialog Component
+ *
+ * A comprehensive dialog for creating new quotes with product/plan selection,
+ * line item management, and pricing calculation.
+ *
+ * @module CreateQuoteDialog
+ */
+
 import { useState, useMemo, useId, useEffect } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { FileText, Plus, Trash2 } from 'lucide-react'
@@ -25,30 +34,59 @@ import { Combobox } from '@/components/ui/combobox'
 import { createQuote, type CreateQuoteInput } from '@/data/quotes'
 import { fetchPlans, fetchProducts, type Product, type ProductTier } from '@/data/products'
 
+/**
+ * Represents a single line item in the quote form.
+ * Each line item can be linked to a product and plan.
+ */
 interface LineItem {
+	/** Unique identifier for this line item in the form */
 	id: string
+	/** Selected product ID for this line item */
 	productId?: string
+	/** Selected plan ID for this line item */
 	planId?: string
+	/** Description text (auto-populated from plan name) */
 	description: string
+	/** Number of units */
 	quantity: number
-	unitPrice: number // in dollars
-	total: number // in dollars
+	/** Price per unit in dollars (not cents) */
+	unitPrice: number
+	/** Total price for this line (quantity × unitPrice) in dollars */
+	total: number
 }
 
+/**
+ * Represents a company/customer that can receive a quote.
+ */
 interface Company {
+	/** Unique company identifier */
 	id: string
+	/** Company display name */
 	name: string
 }
 
+/**
+ * Represents a deal that can be linked to a quote.
+ */
 interface Deal {
+	/** Unique deal identifier */
 	id: string
+	/** Deal display name */
 	name: string
 }
 
+/**
+ * Represents a customer's existing product subscription.
+ * Used to filter out products the customer already has.
+ */
 interface CustomerSubscription {
+	/** Subscription ID */
 	id: string
+	/** Product ID for this subscription */
 	productId: string | null
+	/** Product name for display */
 	productName: string | null
+	/** Subscription status (active, trial, etc.) */
 	status: string
 }
 
@@ -56,24 +94,48 @@ interface CustomerSubscription {
  * Props for the CreateQuoteDialog component.
  */
 interface CreateQuoteDialogProps {
-	/** Controls the open state of the dialog. */
+	/** Whether the dialog is currently visible */
 	open: boolean
-	/** Callback function to change the open state of the dialog. */
+	/** Callback to control the dialog's open state */
 	onOpenChange: (open: boolean) => void
-	/** Callback function to be called after a quote is successfully created. */
+	/** Callback invoked after successful quote creation */
 	onQuoteCreated?: () => void
-	/** Optional ID of a company to pre-select in the dialog. */
+	/** Pre-select a company by ID when dialog opens */
 	preSelectedCompanyId?: string | null
-	/** Optional name of a company to pre-fill in the dialog. */
+	/** Pre-fill company name (used with preSelectedCompanyId) */
 	preSelectedCompanyName?: string | null
-	/** Optional ID of a deal to pre-select in the dialog. */
+	/** Pre-select a deal by ID when dialog opens */
 	preSelectedDealId?: string | null
 }
 
 /**
- * CreateQuoteDialog component provides a form for creating new quotes.
- * It allows selecting a company, optional deal and product plan, line items, validity date, and notes.
- * @param props The props for the CreateQuoteDialog component.
+ * CreateQuoteDialog provides a multi-step form for creating new quotes.
+ *
+ * Features:
+ * - Searchable company selection via Combobox
+ * - Optional deal linking
+ * - Dynamic line items with product/plan dropdowns
+ * - Automatic price calculation from selected plans
+ * - Products already subscribed by customer are filtered out
+ * - Validity date selection (defaults to 30 days from today)
+ * - Tax amount input
+ * - Notes field
+ * - Real-time subtotal/tax/total calculation
+ *
+ * The dialog loads companies, deals, and products asynchronously when opened.
+ * When a company is selected, their existing subscriptions are loaded to
+ * prevent quoting products they already have.
+ *
+ * @param props - Component props
+ * @returns Dialog component with quote creation form
+ *
+ * @example
+ * <CreateQuoteDialog
+ *   open={isOpen}
+ *   onOpenChange={setIsOpen}
+ *   onQuoteCreated={() => refetchQuotes()}
+ *   preSelectedCompanyId="company-123"
+ * />
  */
 export function CreateQuoteDialog({
 	open,

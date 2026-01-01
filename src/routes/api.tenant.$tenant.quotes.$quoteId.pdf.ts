@@ -1,3 +1,18 @@
+/**
+ * Quote PDF Download API Route
+ *
+ * Provides endpoint for downloading a quote as PDF:
+ * - GET /api/tenant/:tenant/quotes/:quoteId/pdf - Download PDF
+ *
+ * This endpoint:
+ * - Validates the quote exists and has a PDF
+ * - Streams the PDF file with appropriate headers
+ *
+ * Requires authentication and organization membership.
+ *
+ * @module api/quotes/pdf
+ */
+
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import { quote, organization } from '@/db/schema'

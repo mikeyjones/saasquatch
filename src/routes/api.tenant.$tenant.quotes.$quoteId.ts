@@ -1,3 +1,17 @@
+/**
+ * Single Quote API Routes
+ *
+ * Provides REST endpoints for managing individual quotes:
+ * - GET /api/tenant/:tenant/quotes/:quoteId - Get quote details
+ * - PUT /api/tenant/:tenant/quotes/:quoteId - Update a draft quote
+ * - DELETE /api/tenant/:tenant/quotes/:quoteId - Delete a draft quote
+ *
+ * All endpoints require authentication and organization membership.
+ * Only draft quotes can be modified or deleted.
+ *
+ * @module api/quotes/quoteId
+ */
+
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import {

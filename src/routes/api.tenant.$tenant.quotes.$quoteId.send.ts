@@ -1,3 +1,19 @@
+/**
+ * Quote Send API Route
+ *
+ * Provides endpoint for sending a quote to a customer:
+ * - POST /api/tenant/:tenant/quotes/:quoteId/send - Mark quote as sent
+ *
+ * This endpoint:
+ * - Validates the quote is in draft status
+ * - Generates a PDF document for the quote
+ * - Updates status to 'sent' with timestamp
+ *
+ * Requires authentication and organization membership.
+ *
+ * @module api/quotes/send
+ */
+
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import { quote, organization, tenantOrganization } from '@/db/schema'

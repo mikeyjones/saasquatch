@@ -1,3 +1,21 @@
+/**
+ * Quotes Page
+ *
+ * Main page for managing quotes in the sales module. Provides a comprehensive
+ * interface for viewing, creating, sending, accepting, and rejecting quotes.
+ *
+ * Features:
+ * - Filterable quote list by status
+ * - Create new quotes via dialog
+ * - View quote details in modal
+ * - Send draft quotes to customers
+ * - Accept quotes and convert to invoices
+ * - Reject quotes
+ * - Download quote PDFs
+ *
+ * @module routes/quotes
+ */
+
 import { createFileRoute, useParams } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -12,13 +30,25 @@ export const Route = createFileRoute('/$tenant/app/sales/quotes')({
 	component: QuotesPage,
 })
 
+/**
+ * Response structure from quotes API.
+ */
 interface QuotesResponse {
+	/** Array of quotes */
 	quotes: Quote[]
+	/** Error message if request failed */
 	error?: string
 }
 
+/**
+ * Valid quote status filter values.
+ */
 type QuoteStatus = 'all' | 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted'
 
+/**
+ * Configuration for status filter tabs.
+ * Maps each status to its label and icon for display.
+ */
 const statusFilters: { value: QuoteStatus; label: string; icon: React.ElementType }[] = [
 	{ value: 'all', label: 'All Quotes', icon: FileText },
 	{ value: 'draft', label: 'Draft', icon: Clock },
@@ -29,6 +59,14 @@ const statusFilters: { value: QuoteStatus; label: string; icon: React.ElementTyp
 	{ value: 'converted', label: 'Converted', icon: CheckCircle },
 ]
 
+/**
+ * QuotesPage component displays the quotes management interface.
+ *
+ * Uses TanStack Query for data fetching and mutations, with automatic
+ * cache invalidation when quotes are modified.
+ *
+ * @returns Quotes page with list, filters, and action dialogs
+ */
 function QuotesPage() {
 	const { tenant } = useParams({ from: '/$tenant/app/sales/quotes' })
 	const queryClient = useQueryClient()

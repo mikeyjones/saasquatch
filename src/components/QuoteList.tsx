@@ -1,3 +1,12 @@
+/**
+ * QuoteList Component
+ *
+ * Displays a list of quotes in a responsive card-based layout with
+ * status badges and action buttons. Supports both mobile and desktop views.
+ *
+ * @module QuoteList
+ */
+
 import {
 	FileText,
 	Download,
@@ -16,18 +25,22 @@ import type { Quote } from '@/data/quotes'
  * Props for the QuoteList component.
  */
 interface QuoteListProps {
-	/** Array of quotes to display. */
+	/** Array of quotes to display in the list */
 	quotes: Quote[]
-	/** Callback function when viewing a quote. */
+	/** Callback invoked when user clicks to view a quote's details */
 	onViewQuote?: (quote: Quote) => void
-	/** Callback function when sending a quote. */
+	/** Callback invoked when user clicks to send a draft quote to customer */
 	onSendQuote?: (quote: Quote) => void
-	/** Callback function when downloading quote PDF. */
+	/** Callback invoked when user clicks to download the quote as PDF */
 	onDownloadPDF?: (quote: Quote) => void
-	/** ID of quote currently being sent. */
+	/** ID of the quote currently being sent (shows loading state) */
 	isSending?: string | null
 }
 
+/**
+ * Configuration for quote status display.
+ * Maps each status to its label, icon, and styling.
+ */
 const statusConfig = {
 	draft: {
 		label: 'Draft',
@@ -61,6 +74,13 @@ const statusConfig = {
 	},
 }
 
+/**
+ * Formats an amount in cents to a localized currency string.
+ *
+ * @param cents - Amount in cents (e.g., 1500 = $15.00)
+ * @param currency - ISO 4217 currency code (default: "USD")
+ * @returns Formatted currency string
+ */
 function formatCurrency(cents: number, currency = 'USD'): string {
 	const amount = cents / 100
 	return new Intl.NumberFormat('en-US', {
@@ -69,6 +89,12 @@ function formatCurrency(cents: number, currency = 'USD'): string {
 	}).format(amount)
 }
 
+/**
+ * Formats an ISO date string to a short, readable format.
+ *
+ * @param dateString - ISO 8601 date string, or null/undefined
+ * @returns Formatted date (e.g., "Dec 31, 2024") or "N/A" if no date
+ */
 function formatDate(dateString: string | null | undefined): string {
 	if (!dateString) return 'N/A'
 	return new Date(dateString).toLocaleDateString('en-US', {
@@ -79,8 +105,26 @@ function formatDate(dateString: string | null | undefined): string {
 }
 
 /**
- * QuoteList component displays a list of quotes with status badges and actions.
- * @param props The props for the QuoteList component.
+ * QuoteList displays a responsive list of quotes with status indicators and actions.
+ *
+ * Features:
+ * - Responsive layout (card view on mobile, table-like on desktop)
+ * - Status badges with color-coded styling
+ * - Action buttons for View, Send, and Download PDF
+ * - Loading state indication when sending quotes
+ * - Empty state when no quotes exist
+ *
+ * @param props - Component props
+ * @returns Quote list component or empty state message
+ *
+ * @example
+ * <QuoteList
+ *   quotes={quotes}
+ *   onViewQuote={(quote) => setSelectedQuote(quote)}
+ *   onSendQuote={(quote) => handleSend(quote.id)}
+ *   onDownloadPDF={(quote) => downloadPDF(quote.id)}
+ *   isSending={sendingQuoteId}
+ * />
  */
 export function QuoteList({
 	quotes,

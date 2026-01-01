@@ -1,36 +1,76 @@
+/**
+ * Quote PDF Generation Module
+ *
+ * This module provides functionality for generating, managing, and serving
+ * PDF documents for quotes. It uses PDFKit to create professional-looking
+ * quote documents with organization branding, customer details, line items,
+ * and totals.
+ *
+ * @module quote-pdf
+ */
+
 import PDFDocument from 'pdfkit'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+/**
+ * Represents a single line item in a quote PDF.
+ * Each line item describes a product or service being quoted.
+ */
 export interface QuoteLineItem {
+	/** Description of the product or service */
 	description: string
+	/** Number of units being quoted */
 	quantity: number
-	unitPrice: number // in cents
-	total: number // in cents
+	/** Price per unit in cents (e.g., 1000 = $10.00) */
+	unitPrice: number
+	/** Total price for this line item in cents (quantity × unitPrice) */
+	total: number
 }
 
+/**
+ * Data required to generate a quote PDF.
+ * Contains all information that will appear on the generated document.
+ */
 export interface QuotePDFData {
+	/** Unique quote identifier displayed on the PDF (e.g., "QUO-ACME-1001") */
 	quoteNumber: string
+	/** Expiration date for the quote, displayed if provided */
 	validUntil?: Date
-	// From organization (the business sending the quote)
+	/** Name of the organization sending the quote (appears in header) */
 	organizationName: string
+	/** Slug/identifier for the organization (used in footer and contact info) */
 	organizationSlug: string
-	// Customer details
+	/** Name of the customer receiving the quote */
 	customerName: string
+	/** Customer's email address, displayed in billing section */
 	customerEmail?: string
+	/** Customer's billing address, displayed in billing section */
 	customerAddress?: string
-	// Line items and totals
+	/** Array of products/services being quoted */
 	lineItems: QuoteLineItem[]
-	subtotal: number // in cents
-	tax: number // in cents
-	total: number // in cents
+	/** Sum of all line item totals in cents */
+	subtotal: number
+	/** Tax amount in cents */
+	tax: number
+	/** Grand total (subtotal + tax) in cents */
+	total: number
+	/** Currency code for formatting (e.g., "USD", "EUR") */
 	currency: string
-	// Additional info
+	/** Additional notes or terms to display on the quote */
 	notes?: string
 }
 
 /**
- * Format cents to currency string
+ * Formats an amount in cents to a localized currency string.
+ *
+ * @param cents - The amount in cents (e.g., 1500 = $15.00)
+ * @param currency - ISO 4217 currency code (default: "USD")
+ * @returns Formatted currency string (e.g., "$15.00")
+ *
+ * @example
+ * formatCurrency(1500, 'USD') // Returns "$15.00"
+ * formatCurrency(1000, 'EUR') // Returns "€10.00"
  */
 function formatCurrency(cents: number, currency = 'USD'): string {
 	const amount = cents / 100
@@ -41,7 +81,10 @@ function formatCurrency(cents: number, currency = 'USD'): string {
 }
 
 /**
- * Format date to readable string
+ * Formats a Date object to a human-readable string.
+ *
+ * @param date - The date to format
+ * @returns Formatted date string (e.g., "January 15, 2024")
  */
 function formatDate(date: Date): string {
 	return date.toLocaleDateString('en-US', {
@@ -52,10 +95,36 @@ function formatDate(date: Date): string {
 }
 
 /**
- * Generate a PDF quote and save it to the filesystem
- * @param data Quote data
- * @param organizationId Organization ID for directory structure
- * @returns Path to the generated PDF file (relative to public directory)
+ * Generates a professional PDF quote document and saves it to the filesystem.
+ *
+ * The PDF includes:
+ * - Organization header and branding
+ * - Quote number and validity date
+ * - Customer billing information
+ * - Detailed line items table
+ * - Subtotal, tax, and grand total
+ * - Optional notes section
+ *
+ * PDFs are saved to: `public/quotes/{organizationId}/{quoteNumber}.pdf`
+ *
+ * @param data - Quote data containing all information to display on the PDF
+ * @param organizationId - Organization ID used for directory structure
+ * @returns Promise resolving to the relative path of the generated PDF
+ *          (e.g., "/quotes/org-123/QUO-ACME-1001.pdf")
+ *
+ * @throws Will throw if file system operations fail
+ *
+ * @example
+ * const pdfPath = await generateQuotePDF({
+ *   quoteNumber: 'QUO-ACME-1001',
+ *   organizationName: 'Acme Corp',
+ *   customerName: 'Customer Inc',
+ *   lineItems: [{ description: 'Service', quantity: 1, unitPrice: 10000, total: 10000 }],
+ *   subtotal: 10000,
+ *   tax: 0,
+ *   total: 10000,
+ *   currency: 'USD',
+ * }, 'org-123')
  */
 export async function generateQuotePDF(
 	data: QuotePDFData,
@@ -237,7 +306,15 @@ export async function generateQuotePDF(
 }
 
 /**
- * Check if a quote PDF exists
+ * Checks whether a quote PDF file exists on the filesystem.
+ *
+ * @param pdfPath - Relative path to the PDF (e.g., "/quotes/org-123/QUO-1.pdf")
+ * @returns True if the file exists, false otherwise
+ *
+ * @example
+ * if (quotePDFExists('/quotes/org-123/QUO-ACME-1001.pdf')) {
+ *   // Serve the existing PDF
+ * }
  */
 export function quotePDFExists(pdfPath: string): boolean {
 	const fullPath = path.join(process.cwd(), 'public', pdfPath.replace(/^\//, ''))
@@ -245,14 +322,28 @@ export function quotePDFExists(pdfPath: string): boolean {
 }
 
 /**
- * Get the full filesystem path for a quote PDF
+ * Converts a relative PDF path to an absolute filesystem path.
+ *
+ * @param pdfPath - Relative path to the PDF (e.g., "/quotes/org-123/QUO-1.pdf")
+ * @returns Absolute filesystem path to the PDF file
+ *
+ * @example
+ * const fullPath = getQuotePDFPath('/quotes/org-123/QUO-ACME-1001.pdf')
+ * // Returns: "/path/to/project/public/quotes/org-123/QUO-ACME-1001.pdf"
  */
 export function getQuotePDFPath(pdfPath: string): string {
 	return path.join(process.cwd(), 'public', pdfPath.replace(/^\//, ''))
 }
 
 /**
- * Delete a quote PDF
+ * Deletes a quote PDF file from the filesystem.
+ *
+ * Safely handles the case where the file doesn't exist.
+ *
+ * @param pdfPath - Relative path to the PDF to delete
+ *
+ * @example
+ * deleteQuotePDF('/quotes/org-123/QUO-ACME-1001.pdf')
  */
 export function deleteQuotePDF(pdfPath: string): void {
 	const fullPath = getQuotePDFPath(pdfPath)

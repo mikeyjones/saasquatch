@@ -1,3 +1,20 @@
+/**
+ * Quote Accept API Route
+ *
+ * Provides endpoint for accepting a quote and converting it to an invoice:
+ * - POST /api/tenant/:tenant/quotes/:quoteId/accept - Accept and convert
+ *
+ * This endpoint:
+ * - Validates the quote is in 'sent' status
+ * - Creates a new invoice from quote data
+ * - Generates a PDF for the invoice
+ * - Updates quote status to 'converted' with link to invoice
+ *
+ * Requires authentication and organization membership.
+ *
+ * @module api/quotes/accept
+ */
+
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import {

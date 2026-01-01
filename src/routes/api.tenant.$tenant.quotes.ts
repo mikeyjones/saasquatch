@@ -1,3 +1,15 @@
+/**
+ * Quotes API Routes
+ *
+ * Provides REST endpoints for managing quotes:
+ * - GET /api/tenant/:tenant/quotes - List all quotes with optional filters
+ * - POST /api/tenant/:tenant/quotes - Create a new quote
+ *
+ * All endpoints require authentication and organization membership.
+ *
+ * @module api/quotes
+ */
+
 import { createFileRoute } from '@tanstack/react-router'
 import { db } from '@/db'
 import {
@@ -11,11 +23,18 @@ import {
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
+/**
+ * Represents a line item in a quote for API operations.
+ */
 export interface QuoteLineItem {
+	/** Description of the product or service */
 	description: string
+	/** Number of units */
 	quantity: number
-	unitPrice: number // in cents
-	total: number // in cents
+	/** Price per unit in cents */
+	unitPrice: number
+	/** Total price in cents (quantity × unitPrice) */
+	total: number
 }
 
 export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
