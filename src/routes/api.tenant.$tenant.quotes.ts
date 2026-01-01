@@ -20,6 +20,7 @@ import {
 	productPlan,
 	organization,
 	invoice,
+	member,
 } from '@/db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
@@ -99,6 +100,25 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 					}
 
 					const orgId = org[0].id
+
+					// Verify user is a member of this organization
+					const membership = await db
+						.select({ role: member.role })
+						.from(member)
+						.where(
+							and(
+								eq(member.organizationId, orgId),
+								eq(member.userId, session.user.id)
+							)
+						)
+						.limit(1)
+
+					if (membership.length === 0) {
+						return new Response(
+							JSON.stringify({ error: 'Forbidden: Not a member of this organization', quotes: [] }),
+							{ status: 403, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
 
 					// Parse query params
 					const url = new URL(request.url)
@@ -392,8 +412,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 					}
 				}
 
-				// Generate quote ID
-				const quoteId = `quote_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+				// Generate quote ID using cryptographically secure UUID
+				const quoteId = `quote_${crypto.randomUUID()}`
 
 				// Create quote with recalculated line items
 				await db.insert(quote).values({

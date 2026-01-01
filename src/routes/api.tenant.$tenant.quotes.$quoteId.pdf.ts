@@ -86,17 +86,29 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/pdf')(
 				}
 
 				// Read the PDF file using Bun.file
+				// Attempt read directly to avoid TOCTOU race condition
 				const fullPath = getQuotePDFPath(q.pdfPath)
 				const file = Bun.file(fullPath)
 
-				if (!(await file.exists())) {
-					return new Response(
-						JSON.stringify({ error: 'PDF file not found on server' }),
-						{ status: 404, headers: { 'Content-Type': 'application/json' } }
-					)
+				let pdfBuffer: ArrayBuffer
+				try {
+					pdfBuffer = await file.arrayBuffer()
+				} catch (fileError) {
+					// Handle file-not-found or other file system errors
+					if (
+						fileError instanceof Error &&
+						(fileError.message.includes('ENOENT') ||
+							fileError.message.includes('not found') ||
+							fileError.name === 'NotFoundError')
+					) {
+						return new Response(
+							JSON.stringify({ error: 'PDF file not found on server' }),
+							{ status: 404, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+					// Re-throw unexpected errors
+					throw fileError
 				}
-
-				const pdfBuffer = await file.arrayBuffer()
 
 				// Return PDF with appropriate headers
 				return new Response(pdfBuffer, {

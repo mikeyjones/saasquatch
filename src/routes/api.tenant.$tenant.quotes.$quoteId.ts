@@ -177,6 +177,16 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId')({
 
 					const q = quoteData[0]
 
+					// Parse line items with error handling for malformed JSON
+					let parsedLineItems: QuoteLineItem[]
+					try {
+						parsedLineItems = JSON.parse(q.lineItems) as QuoteLineItem[]
+					} catch (parseError) {
+						console.error(`Invalid lineItems JSON for quote ${q.id}:`, parseError)
+						// Return empty array as fallback for corrupted data
+						parsedLineItems = []
+					}
+
 					return new Response(
 						JSON.stringify({
 							quote: {
@@ -190,7 +200,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId')({
 								total: q.total,
 								currency: q.currency,
 								validUntil: q.validUntil?.toISOString() || null,
-								lineItems: JSON.parse(q.lineItems) as QuoteLineItem[],
+								lineItems: parsedLineItems,
 								pdfPath: q.pdfPath,
 								billingName: q.billingName,
 								billingEmail: q.billingEmail,
@@ -285,10 +295,10 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId')({
 						)
 					}
 
-					// Don't allow editing converted quotes
-					if (existingQuote[0].status === 'converted') {
+					// Only allow editing draft quotes (per documented behavior)
+					if (existingQuote[0].status !== 'draft') {
 						return new Response(
-							JSON.stringify({ error: 'Cannot edit converted quote' }),
+							JSON.stringify({ error: 'Only draft quotes can be updated' }),
 							{ status: 400, headers: { 'Content-Type': 'application/json' } }
 						)
 					}

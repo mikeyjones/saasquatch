@@ -292,10 +292,50 @@ export async function generateQuotePDF(
 }
 
 /**
+ * Base directory for quote PDFs (public/quotes).
+ * Used for path traversal validation.
+ * Resolved to absolute path for consistent comparison.
+ */
+const QUOTE_PDF_BASE_DIR = path.resolve(process.cwd(), 'public', 'quotes')
+
+/**
+ * Validates that a resolved PDF path stays within the public/quotes directory.
+ * Prevents path traversal attacks by ensuring the resolved path starts with the base directory.
+ *
+ * @param pdfPath - Relative path to the PDF (e.g., "/quotes/org-123/QUO-1.pdf")
+ * @returns Absolute filesystem path to the PDF file
+ * @throws Error if path traversal is detected
+ *
+ * @example
+ * const fullPath = getQuotePDFPath('/quotes/org-123/QUO-ACME-1001.pdf')
+ * // Returns: "/path/to/project/public/quotes/org-123/QUO-ACME-1001.pdf"
+ */
+export function getQuotePDFPath(pdfPath: string): string {
+	// Remove leading slash and normalize the path
+	const normalizedPath = pdfPath.replace(/^\//, '')
+	
+	// Resolve to absolute path
+	const resolvedPath = path.resolve(process.cwd(), 'public', normalizedPath)
+	
+	// Validate that resolved path stays within the public/quotes directory
+	// This prevents path traversal attacks (e.g., "../../../etc/passwd")
+	// Normalize both paths and ensure resolved path starts with base directory
+	// Add path.sep to base to prevent matching parent directories (e.g., public/quotes-backup)
+	const normalizedBaseDir = QUOTE_PDF_BASE_DIR + path.sep
+	const normalizedResolvedPath = resolvedPath + path.sep
+	if (!normalizedResolvedPath.startsWith(normalizedBaseDir)) {
+		throw new Error(`Invalid PDF path: path traversal detected in "${pdfPath}"`)
+	}
+	
+	return resolvedPath
+}
+
+/**
  * Checks whether a quote PDF file exists on the filesystem.
  *
  * @param pdfPath - Relative path to the PDF (e.g., "/quotes/org-123/QUO-1.pdf")
  * @returns True if the file exists, false otherwise
+ * @throws Error if path traversal is detected
  *
  * @example
  * if (quotePDFExists('/quotes/org-123/QUO-ACME-1001.pdf')) {
@@ -303,22 +343,13 @@ export async function generateQuotePDF(
  * }
  */
 export function quotePDFExists(pdfPath: string): boolean {
-	const fullPath = path.join(process.cwd(), 'public', pdfPath.replace(/^\//, ''))
-	return fs.existsSync(fullPath)
-}
-
-/**
- * Converts a relative PDF path to an absolute filesystem path.
- *
- * @param pdfPath - Relative path to the PDF (e.g., "/quotes/org-123/QUO-1.pdf")
- * @returns Absolute filesystem path to the PDF file
- *
- * @example
- * const fullPath = getQuotePDFPath('/quotes/org-123/QUO-ACME-1001.pdf')
- * // Returns: "/path/to/project/public/quotes/org-123/QUO-ACME-1001.pdf"
- */
-export function getQuotePDFPath(pdfPath: string): string {
-	return path.join(process.cwd(), 'public', pdfPath.replace(/^\//, ''))
+	try {
+		const fullPath = getQuotePDFPath(pdfPath)
+		return fs.existsSync(fullPath)
+	} catch (error) {
+		// If path validation fails, treat as non-existent
+		return false
+	}
 }
 
 /**

@@ -47,9 +47,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/accept
 						)
 					}
 
-					// Get the organization by slug
+					// Get the organization by slug and name
 					const org = await db
-						.select({ id: organization.id, slug: organization.slug })
+						.select({ id: organization.id, name: organization.name, slug: organization.slug })
 						.from(organization)
 						.where(eq(organization.slug, params.tenant))
 						.limit(1)
@@ -62,6 +62,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/accept
 					}
 
 					const orgId = org[0].id
+					const orgName = org[0].name
 					const orgSlug = org[0].slug
 
 					// Fetch the quote with customer info
@@ -153,8 +154,19 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/accept
 					)
 				}
 
-					// Parse line items
-					const lineItems = JSON.parse(q.lineItems) as InvoiceLineItem[]
+				// Parse line items with error handling
+				let lineItems: InvoiceLineItem[]
+				try {
+					lineItems = JSON.parse(q.lineItems) as InvoiceLineItem[]
+				} catch (parseError) {
+					console.error('Error parsing quote line items:', parseError)
+					return new Response(
+						JSON.stringify({
+							error: 'Invalid quote data: line items are malformed',
+						}),
+						{ status: 400, headers: { 'Content-Type': 'application/json' } }
+					)
+				}
 
 					// Generate invoice number
 					const invoiceCount = await db
@@ -176,7 +188,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/accept
 								invoiceNumber,
 								issueDate: issueDateObj,
 								dueDate: dueDateObj,
-								organizationName: orgSlug,
+								organizationName: orgName,
 								organizationSlug: orgSlug,
 								customerName: q.customerName,
 								customerEmail: q.customerEmail || undefined,
