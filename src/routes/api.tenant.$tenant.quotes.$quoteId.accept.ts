@@ -177,8 +177,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/accept
 					const count = invoiceCount[0]?.count || 0
 					const invoiceNumber = `INV-${orgSlug.toUpperCase()}-${(count + 1001).toString()}`
 
-					// Generate invoice ID
-					const invoiceId = `invoice_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+					// Generate invoice ID using cryptographically secure UUID
+					const invoiceId = `invoice_${crypto.randomUUID()}`
 
 					// Generate PDF
 					let pdfPath: string | null = null

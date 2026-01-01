@@ -293,6 +293,25 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 					const orgId = org[0].id
 					const orgSlug = org[0].slug
 
+					// Verify user is a member of this organization
+					const membership = await db
+						.select({ id: member.id })
+						.from(member)
+						.where(
+							and(
+								eq(member.organizationId, orgId),
+								eq(member.userId, session.user.id)
+							)
+						)
+						.limit(1)
+
+					if (membership.length === 0) {
+						return new Response(
+							JSON.stringify({ error: 'Forbidden: Not a member of this organization' }),
+							{ status: 403, headers: { 'Content-Type': 'application/json' } }
+						)
+					}
+
 				// Parse and validate request body with Zod
 				const body = await request.json()
 				const validationResult = createQuoteSchema.safeParse(body)
