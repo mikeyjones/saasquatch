@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85.67% </span>
+                <span class="strong">83.91% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>329/384</span>
+                <span class='fraction'>334/398</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">77.9% </span>
+                <span class="strong">77.27% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>67/86</span>
+                <span class='fraction'>68/88</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85.67% </span>
+                <span class="strong">83.91% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>329/384</span>
+                <span class='fraction'>334/398</span>
             </div>
         
             
@@ -526,7 +526,23 @@
 <a name='L461'></a><a href='#L461'>461</a>
 <a name='L462'></a><a href='#L462'>462</a>
 <a name='L463'></a><a href='#L463'>463</a>
-<a name='L464'></a><a href='#L464'>464</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L464'></a><a href='#L464'>464</a>
+<a name='L465'></a><a href='#L465'>465</a>
+<a name='L466'></a><a href='#L466'>466</a>
+<a name='L467'></a><a href='#L467'>467</a>
+<a name='L468'></a><a href='#L468'>468</a>
+<a name='L469'></a><a href='#L469'>469</a>
+<a name='L470'></a><a href='#L470'>470</a>
+<a name='L471'></a><a href='#L471'>471</a>
+<a name='L472'></a><a href='#L472'>472</a>
+<a name='L473'></a><a href='#L473'>473</a>
+<a name='L474'></a><a href='#L474'>474</a>
+<a name='L475'></a><a href='#L475'>475</a>
+<a name='L476'></a><a href='#L476'>476</a>
+<a name='L477'></a><a href='#L477'>477</a>
+<a name='L478'></a><a href='#L478'>478</a>
+<a name='L479'></a><a href='#L479'>479</a>
+<a name='L480'></a><a href='#L480'>480</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -687,6 +703,13 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -979,6 +1002,15 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1141,16 +1173,23 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
       const blob = await response.blob()
 &nbsp;
       // Create a blob URL and trigger download
-      const blobUrl = URL.createObjectURL(blob)
+      const blobUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = blobUrl
       link.download = `${invoice.invoiceNumber}.pdf`
+      link.style.display = 'none'
       document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
-&nbsp;
-      // Clean up the blob URL
-      URL.revokeObjectURL(blobUrl)
+      
+      // Use setTimeout to ensure click completes before cleanup
+      setTimeout(() =&gt; {
+        if (link.parentNode === document.body) {
+          document.body.removeChild(link)
+        }
+        if (window.URL &amp;&amp; window.URL.revokeObjectURL) <span class="branch-0 cbranch-no" title="branch not covered" >{</span>
+<span class="cstat-no" title="statement not covered" >          window.URL.revokeObjectURL(blobUrl)</span>
+<span class="cstat-no" title="statement not covered" >        }</span>
+      }, 100)
 <span class="branch-0 cbranch-no" title="branch not covered" >    } catch (error) {</span>
 <span class="cstat-no" title="statement not covered" >      console.error('Error downloading PDF:', error)</span>
 <span class="cstat-no" title="statement not covered" >      alert('Failed to download PDF. Please try again.')</span>
@@ -1435,14 +1474,23 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
 <span class="cstat-no" title="statement not covered" >            }</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >            const blob = await response.blob()</span>
-<span class="cstat-no" title="statement not covered" >            const blobUrl = URL.createObjectURL(blob)</span>
+<span class="cstat-no" title="statement not covered" >            const blobUrl = window.URL.createObjectURL(blob)</span>
 <span class="cstat-no" title="statement not covered" >            const link = document.createElement('a')</span>
 <span class="cstat-no" title="statement not covered" >            link.href = blobUrl</span>
 <span class="cstat-no" title="statement not covered" >            link.download = `${inv.invoiceNumber}.pdf`</span>
+<span class="cstat-no" title="statement not covered" >            link.style.display = 'none'</span>
 <span class="cstat-no" title="statement not covered" >            document.body.appendChild(link)</span>
 <span class="cstat-no" title="statement not covered" >            link.click()</span>
-<span class="cstat-no" title="statement not covered" >            document.body.removeChild(link)</span>
-<span class="cstat-no" title="statement not covered" >            URL.revokeObjectURL(blobUrl)</span>
+            
+            // Use setTimeout to ensure click completes before cleanup
+<span class="cstat-no" title="statement not covered" >            setTimeout(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >              if (link.parentNode === document.body) {</span>
+<span class="cstat-no" title="statement not covered" >                document.body.removeChild(link)</span>
+<span class="cstat-no" title="statement not covered" >              }</span>
+<span class="cstat-no" title="statement not covered" >              if (window.URL &amp;&amp; window.URL.revokeObjectURL) {</span>
+<span class="cstat-no" title="statement not covered" >                window.URL.revokeObjectURL(blobUrl)</span>
+<span class="cstat-no" title="statement not covered" >              }</span>
+<span class="cstat-no" title="statement not covered" >            }, 100)</span>
 <span class="cstat-no" title="statement not covered" >          } catch (error) {</span>
 <span class="cstat-no" title="statement not covered" >            console.error('Error downloading PDF:', error)</span>
 <span class="cstat-no" title="statement not covered" >            alert('Failed to download PDF. Please try again.')</span>
@@ -1459,7 +1507,7 @@ export function OrganizationInvoiceHistory({ invoices, onInvoiceUpdated }: Organ
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-30T17:08:45.617Z
+                at 2026-01-01T13:25:01.692Z
             </div>
         <script src="../prettify.js"></script>
         <script>
