@@ -275,6 +275,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/product-catalog/plans'
               description: plan.description || '',
               status: plan.status,
               pricingModel: plan.pricingModel,
+              productId: plan.productFamilyId,
               basePrice: basePricing
                 ? {
                     amount: basePricing.amount / 100, // Convert cents to dollars

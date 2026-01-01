@@ -135,10 +135,17 @@ function InvoicesPage() {
       const a = document.createElement('a')
       a.href = url
       a.download = `${invoice.invoiceNumber}.pdf`
+      a.style.display = 'none'
       document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      
+      // Use setTimeout to ensure click completes before cleanup
+      setTimeout(() => {
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a)
+        }
+        window.URL.revokeObjectURL(url)
+      }, 100)
     } catch (err) {
       console.error('Error downloading PDF:', err)
     }

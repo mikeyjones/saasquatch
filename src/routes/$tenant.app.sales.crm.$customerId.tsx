@@ -1,6 +1,6 @@
 import { createFileRoute, useParams, Link } from '@tanstack/react-router'
 import { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, AlertTriangle, XCircle, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { OrganizationHeader } from '@/components/OrganizationHeader'
 import { OrganizationMetrics } from '@/components/OrganizationMetrics'
@@ -12,6 +12,10 @@ import { ProductSubscriptionsCard } from '@/components/ProductSubscriptionsCard'
 import { CreateCustomerDialog } from '@/components/CreateCustomerDialog'
 import { CreateContactDialog } from '@/components/CreateContactDialog'
 import { CreateStandaloneInvoiceDialog } from '@/components/CreateStandaloneInvoiceDialog'
+import { CreateQuoteDialog } from '@/components/CreateQuoteDialog'
+import { QuoteList } from '@/components/QuoteList'
+import { QuoteDetailDialog } from '@/components/QuoteDetailDialog'
+import { sendQuote, acceptQuote, rejectQuote, getQuotePDFUrl, type Quote } from '@/data/quotes'
 
 export const Route = createFileRoute('/$tenant/app/sales/crm/$customerId')({
   component: OrganizationDetailPage,
@@ -115,6 +119,7 @@ interface OrganizationData {
   contacts: Contact[]
   invoices: Invoice[]
   deals: Deal[]
+  quotes: Quote[]
   activities: Activity[]
   metrics: {
     totalMRR: number
@@ -122,6 +127,7 @@ interface OrganizationData {
     contactCount: number
     dealCount: number
     invoiceCount: number
+    quoteCount: number
   }
 }
 
@@ -133,11 +139,15 @@ function OrganizationDetailPage() {
   const [data, setData] = useState<OrganizationData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'invoices' | 'deals' | 'activity' | 'properties' | 'subscriptions'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'contacts' | 'invoices' | 'deals' | 'quotes' | 'activity' | 'properties' | 'subscriptions'>('overview')
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false)
   const [isCreateInvoiceDialogOpen, setIsCreateInvoiceDialogOpen] = useState(false)
+  const [isCreateQuoteDialogOpen, setIsCreateQuoteDialogOpen] = useState(false)
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null)
+  const [isQuoteDetailDialogOpen, setIsQuoteDetailDialogOpen] = useState(false)
+  const [quoteStatusFilter, setQuoteStatusFilter] = useState<'all' | 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted'>('all')
 
   // Fetch organization data
   const fetchOrganization = useCallback(async () => {
@@ -238,7 +248,87 @@ function OrganizationDetailPage() {
     )
   }
 
-  const { customer, subscriptions, contacts, invoices, deals, activities, metrics } = data
+  const { customer, subscriptions, contacts, invoices, deals, quotes, activities, metrics } = data
+
+  const statusFilters = [
+    { value: 'all' as const, label: 'All', icon: FileText },
+    { value: 'draft' as const, label: 'Draft', icon: Clock },
+    { value: 'sent' as const, label: 'Sent', icon: Send },
+    { value: 'accepted' as const, label: 'Accepted', icon: CheckCircle },
+    { value: 'rejected' as const, label: 'Rejected', icon: XCircle },
+    { value: 'expired' as const, label: 'Expired', icon: AlertTriangle },
+    { value: 'converted' as const, label: 'Converted', icon: CheckCircle },
+  ]
+
+  const filteredQuotes = quoteStatusFilter === 'all'
+    ? quotes
+    : quotes.filter(q => q.status === quoteStatusFilter)
+
+  const handleViewQuote = (quote: Quote) => {
+    setSelectedQuote(quote)
+    setIsQuoteDetailDialogOpen(true)
+  }
+
+  const handleSendQuote = async (quote: Quote) => {
+    const result = await sendQuote(tenant, quote.id)
+    if (result.success) {
+      fetchOrganization()
+    } else {
+      alert(result.error || 'Failed to send quote')
+    }
+  }
+
+  const handleAcceptQuote = async (quote: Quote) => {
+    const result = await acceptQuote(tenant, quote.id)
+    if (result.success) {
+      fetchOrganization()
+      setIsQuoteDetailDialogOpen(false)
+      setSelectedQuote(null)
+    } else {
+      alert(result.error || 'Failed to accept quote')
+    }
+  }
+
+  const handleRejectQuote = async (quote: Quote) => {
+    const result = await rejectQuote(tenant, quote.id)
+    if (result.success) {
+      fetchOrganization()
+      setIsQuoteDetailDialogOpen(false)
+      setSelectedQuote(null)
+    } else {
+      alert(result.error || 'Failed to reject quote')
+    }
+  }
+
+  const handleDownloadQuotePDF = async (quote: Quote) => {
+    try {
+      const url = getQuotePDFUrl(tenant, quote.id)
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error('Failed to download PDF')
+      }
+
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = `${quote.quoteNumber}.pdf`
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      
+      // Use setTimeout to ensure click completes before cleanup
+      setTimeout(() => {
+        if (a.parentNode === document.body) {
+          document.body.removeChild(a)
+        }
+        window.URL.revokeObjectURL(downloadUrl)
+      }, 100)
+    } catch (err) {
+      console.error('Error downloading PDF:', err)
+      alert('Failed to download quote PDF')
+    }
+  }
 
   // Transform activities to match CRMActivityTimeline component format
   function mapActivityType(
@@ -332,6 +422,17 @@ function OrganizationDetailPage() {
             }`}
           >
             Deals ({deals.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('quotes')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'quotes'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+            }`}
+          >
+            Quotes ({quotes.length})
           </button>
           <button
             type="button"
@@ -565,6 +666,59 @@ function OrganizationDetailPage() {
           </div>
         )}
 
+        {activeTab === 'quotes' && (
+          <div className="bg-card rounded-lg border">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Quotes</h2>
+              <Button size="sm" onClick={() => setIsCreateQuoteDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Quote
+              </Button>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Status Filter Buttons */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                {statusFilters.map((filter) => {
+                  const Icon = filter.icon
+                  const count = filter.value === 'all' ? quotes.length : quotes.filter(q => q.status === filter.value).length
+                  const isActive = quoteStatusFilter === filter.value
+
+                  return (
+                    <button
+                      type="button"
+                      key={filter.value}
+                      onClick={() => setQuoteStatusFilter(filter.value)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                        isActive
+                          ? 'bg-indigo-500 text-white'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {filter.label}
+                      {count > 0 && (
+                        <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
+                          isActive ? 'bg-white/20' : 'bg-gray-100'
+                        }`}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Quote List */}
+              <QuoteList
+                quotes={filteredQuotes}
+                onViewQuote={handleViewQuote}
+                onSendQuote={handleSendQuote}
+                onDownloadPDF={handleDownloadQuotePDF}
+              />
+            </div>
+          </div>
+        )}
+
         {activeTab === 'activity' && (
           <div className="bg-card rounded-lg border">
             <div className="p-6 border-b">
@@ -624,6 +778,26 @@ function OrganizationDetailPage() {
         onInvoiceCreated={fetchOrganization}
         customerId={customerId}
         customerName={customer.name}
+      />
+
+      {/* Create Quote Dialog */}
+      <CreateQuoteDialog
+        open={isCreateQuoteDialogOpen}
+        onOpenChange={setIsCreateQuoteDialogOpen}
+        onQuoteCreated={fetchOrganization}
+        preSelectedCompanyId={customerId}
+        preSelectedCompanyName={customer.name}
+      />
+
+      {/* Quote Detail Dialog */}
+      <QuoteDetailDialog
+        open={isQuoteDetailDialogOpen}
+        onOpenChange={setIsQuoteDetailDialogOpen}
+        quote={selectedQuote}
+        onSendQuote={handleSendQuote}
+        onAcceptQuote={handleAcceptQuote}
+        onRejectQuote={handleRejectQuote}
+        onDownloadPDF={handleDownloadQuotePDF}
       />
     </div>
   )
