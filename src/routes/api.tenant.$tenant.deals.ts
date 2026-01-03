@@ -181,6 +181,8 @@ export const Route = createFileRoute('/api/tenant/$tenant/deals')({
                 id: d.pipelineId,
                 name: d.pipelineName,
               },
+              // Include stageId at top level for frontend compatibility
+              stageId: d.stageId,
               stage: {
                 id: d.stageId,
                 name: d.stageName,

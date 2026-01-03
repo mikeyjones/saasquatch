@@ -174,6 +174,12 @@ export function PipelineKanban({
           `/api/tenant/${tenant}/deals?pipelineId=${selectedPipeline.id}`
         )
         const data = await response.json()
+        console.log('[PipelineKanban] Fetched deals:', data.deals?.length)
+        if (data.deals?.length > 0) {
+          console.log('[PipelineKanban] First deal:', JSON.stringify(data.deals[0], null, 2))
+          console.log('[PipelineKanban] First deal stageId:', data.deals[0].stageId)
+          console.log('[PipelineKanban] Pipeline stages:', selectedPipeline.stages?.map((s: PipelineStage) => s.id))
+        }
         setDeals(data.deals || [])
       } catch (error) {
         console.error('Failed to fetch deals:', error)
