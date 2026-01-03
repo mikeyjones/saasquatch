@@ -1,10 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useId } from 'react'
 import { useParams } from '@tanstack/react-router'
-import { z } from 'zod'
 import { Search, Building, DollarSign, RefreshCw } from 'lucide-react'
 
 import { useAppForm } from '@/hooks/demo.form'
-import { zodFormValidator } from '@/lib/form-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,15 +15,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const dealSchema = z.object({
-  name: z.string().min(1, 'Deal name is required'),
-  value: z.number().min(0, 'Value must be positive'),
-  tenantOrganizationId: z.string().min(1, 'Organization is required'),
-  pipelineId: z.string().min(1, 'Pipeline is required'),
-  stageId: z.string().min(1, 'Stage is required'),
-  assignedToUserId: z.string().default(''),
-  notes: z.string().default(''),
-})
+// Form validation is done manually in onSubmit since we use external state
+// for organization, pipeline, and stage selections
 
 /**
  * Tenant organization data.
@@ -175,6 +166,7 @@ export function CreateDealDialog({
 }: CreateDealDialogProps) {
   const params = useParams({ strict: false }) as { tenant?: string }
   const tenant = params.tenant || ''
+  const dealNameId = useId()
 
   const [selectedOrg, setSelectedOrg] = useState<TenantOrg | null>(null)
   const [orgSearch, setOrgSearch] = useState('')
@@ -183,6 +175,8 @@ export function CreateDealDialog({
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null)
   const [selectedStage, setSelectedStage] = useState<PipelineStage | null>(null)
   const [valueInput, setValueInput] = useState('')
+  const dealNameRef = useRef<HTMLInputElement>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   // Fetch pipelines when dialog opens
   useEffect(() => {
@@ -269,18 +263,30 @@ export function CreateDealDialog({
       assignedToUserId: '',
       notes: '',
     },
-    validators: {
-      onBlur: zodFormValidator(dealSchema),
-    },
+    // Manual validation - Zod schema validation was causing issues with unregistered fields
+    validators: {},
     onSubmit: async ({ value }) => {
-      if (!selectedOrg || !selectedPipeline || !selectedStage || !tenant) return
+      // Validate required fields and selections
+      const missingFields: string[] = []
+      const dealName = dealNameRef.current?.value?.trim() || ''
+      if (!dealName) missingFields.push('Deal Name')
+      if (!selectedOrg) missingFields.push('Customer Organization')
+      if (!selectedPipeline) missingFields.push('Pipeline')
+      if (!selectedStage) missingFields.push('Initial Stage')
+      
+      if (missingFields.length > 0 || !tenant || !selectedOrg || !selectedPipeline || !selectedStage) {
+        setFormError(`Please fill in: ${missingFields.join(', ')}`)
+        return
+      }
+      
+      setFormError(null)
 
       try {
         const response = await fetch(`/api/tenant/${tenant}/deals`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: value.name,
+            name: dealName,
             value: value.value,
             tenantOrganizationId: selectedOrg.id,
             pipelineId: selectedPipeline.id,
@@ -300,6 +306,7 @@ export function CreateDealDialog({
         setSelectedStage(null)
         setOrgSearch('')
         setValueInput('')
+        if (dealNameRef.current) dealNameRef.current.value = ''
         onOpenChange(false)
         onDealCreated?.()
       } catch (error) {
@@ -311,6 +318,7 @@ export function CreateDealDialog({
   const handleSelectOrg = (org: TenantOrg) => {
     setSelectedOrg(org)
     setOrgSearch(org.name)
+    setFormError(null)
     form.setFieldValue('tenantOrganizationId', org.id)
 
     // Auto-select first pipeline for this org
@@ -369,6 +377,8 @@ export function CreateDealDialog({
       setSelectedStage(null)
       setOrgSearch('')
       setValueInput('')
+      if (dealNameRef.current) dealNameRef.current.value = ''
+      setFormError(null)
     }
     onOpenChange(isOpen)
   }
@@ -391,6 +401,13 @@ export function CreateDealDialog({
           }}
           className="space-y-5"
         >
+          {/* Error Message */}
+          {formError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {formError}
+            </div>
+          )}
+
           {/* Organization Search Field */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">
@@ -427,7 +444,7 @@ export function CreateDealDialog({
 
               {/* Organization Dropdown */}
               {orgSearch && !selectedOrg && !isLoadingPipelines && (
-                <div className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-100 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
                   {filteredOrgs.length > 0 ? (
                     filteredOrgs.map((org) => (
                       <button
@@ -530,14 +547,21 @@ export function CreateDealDialog({
           )}
 
           {/* Deal Name Field */}
-          <form.AppField name="name">
-            {(field) => (
-              <field.TextField
-                label="Deal Name"
-                placeholder="e.g., Enterprise License - 500 Seats"
-              />
-            )}
-          </form.AppField>
+          <div className="space-y-2">
+            <Label htmlFor={dealNameId} className="text-sm font-medium text-gray-700">
+              Deal Name
+            </Label>
+            <Input
+              id={dealNameId}
+              ref={dealNameRef}
+              type="text"
+              placeholder="e.g., Enterprise License - 500 Seats"
+              className="h-10"
+              onChange={() => {
+                if (formError) setFormError(null)
+              }}
+            />
+          </div>
 
           {/* Deal Value Field */}
           <div className="space-y-2">

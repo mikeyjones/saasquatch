@@ -6,7 +6,7 @@ import {
   tenantOrganization,
   organization,
 } from '@/db/schema'
-import { eq, and, asc } from 'drizzle-orm'
+import { eq, and, asc, inArray } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 
 export const Route = createFileRoute('/api/tenant/$tenant/pipelines')({
@@ -93,11 +93,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/pipelines')({
               createdAt: pipeline.createdAt,
             })
             .from(pipeline)
-            .where(
-              tenantOrgIds.length === 1
-                ? eq(pipeline.tenantOrganizationId, tenantOrgIds[0])
-                : undefined
-            )
+            .where(inArray(pipeline.tenantOrganizationId, tenantOrgIds))
 
           // Get stages for each pipeline
           const pipelineIds = pipelines.map((p) => p.id)
