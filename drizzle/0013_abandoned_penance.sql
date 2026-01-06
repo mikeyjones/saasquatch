@@ -1,1 +1,2 @@
-ALTER TABLE "tenant_user" ADD COLUMN "title" text;
+-- No-op: title column already added in migration 0012
+SELECT 1;
