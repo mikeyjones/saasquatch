@@ -1,27 +1,26 @@
-import { config } from 'dotenv'
-import { fileURLToPath } from 'node:url'
-import { dirname, resolve } from 'node:path'
-
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 
 import * as schema from './schema.ts'
 
-// Get the project root directory
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const projectRoot = resolve(__dirname, '../..')
-
-// Load .env.local first, then .env as fallback (using absolute paths)
-config({ path: resolve(projectRoot, '.env.local') })
-config({ path: resolve(projectRoot, '.env') })
-
+// In production, DATABASE_URL is set by the environment
+// In development, it's loaded via vite's env handling or the app's entry point
 const databaseUrl = process.env.DATABASE_URL
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL environment variable is required')
+
+// Create a lazy pool to avoid initialization errors during client bundling
+let pool: Pool | null = null
+
+function getPool() {
+  if (!pool) {
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL environment variable is required')
+    }
+    pool = new Pool({
+      connectionString: databaseUrl,
+    })
+  }
+  return pool
 }
 
-const pool = new Pool({
-  connectionString: databaseUrl,
-})
-export const db = drizzle(pool, { schema })
+// Export a lazy db instance that only initializes when accessed on the server
+export const db = drizzle(getPool, { schema })
