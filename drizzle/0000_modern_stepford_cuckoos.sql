@@ -26,7 +26,7 @@ CREATE TABLE "invitation" (
 );
 --> statement-breakpoint
 CREATE TABLE "member" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" text NOT NULL,
 	"organizationId" text NOT NULL,
 	"userId" text NOT NULL,
 	"role" text DEFAULT 'member' NOT NULL,
