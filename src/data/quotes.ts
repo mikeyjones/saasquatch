@@ -22,6 +22,8 @@ export interface QuoteLineItem {
 	unitPrice: number
 	/** Total price for this line (quantity × unitPrice) in cents */
 	total: number
+	/** Optional product plan ID - if present, a subscription will be created when invoice is paid */
+	productPlanId?: string
 }
 
 /**

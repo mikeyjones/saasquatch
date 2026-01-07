@@ -7,9 +7,11 @@ import {
   tenantOrganization,
   organization,
   productPlan,
+  productPricing,
 } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
+import type { InvoiceLineItem } from '@/lib/invoice-pdf'
 
 function generateId(): string {
   return crypto.randomUUID().replace(/-/g, '').substring(0, 24)
@@ -60,6 +62,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/invoices/$invoiceId/pa
               subscriptionId: invoice.subscriptionId,
               tenantOrganizationId: invoice.tenantOrganizationId,
               total: invoice.total,
+              lineItems: invoice.lineItems,
             })
             .from(invoice)
             .where(
@@ -200,6 +203,164 @@ export const Route = createFileRoute('/api/tenant/$tenant/invoices/$invoiceId/pa
             }
           }
 
+          // Create subscriptions from line items with productPlanId
+          const createdSubscriptions: Array<{
+            id: string
+            subscriptionNumber: string
+            status: string
+            planName: string
+          }> = []
+
+          if (inv.lineItems) {
+            let lineItems: InvoiceLineItem[]
+            try {
+              lineItems = JSON.parse(inv.lineItems) as InvoiceLineItem[]
+            } catch {
+              lineItems = []
+            }
+
+            // Filter line items that have a productPlanId and aren't already linked to a subscription
+            const lineItemsWithPlans = lineItems.filter(
+              (item) => item.productPlanId && !inv.subscriptionId
+            )
+
+            for (const lineItem of lineItemsWithPlans) {
+              // Fetch the product plan details
+              const planDetails = await db
+                .select({
+                  id: productPlan.id,
+                  name: productPlan.name,
+                })
+                .from(productPlan)
+                .where(eq(productPlan.id, lineItem.productPlanId!))
+                .limit(1)
+
+              if (planDetails.length === 0) {
+                console.warn(`Product plan not found: ${lineItem.productPlanId}`)
+                continue
+              }
+
+              const plan = planDetails[0]
+
+              // Get pricing for MRR calculation
+              const pricingData = await db
+                .select({
+                  amount: productPricing.amount,
+                  interval: productPricing.interval,
+                  perSeatAmount: productPricing.perSeatAmount,
+                })
+                .from(productPricing)
+                .where(eq(productPricing.productPlanId, plan.id))
+
+              // Calculate MRR and determine billing cycle from pricing
+              // Default to line item total as the monthly amount
+              let mrr = lineItem.total
+              let billingCycle: 'monthly' | 'yearly' = 'monthly'
+
+              if (pricingData.length > 0) {
+                // If we have pricing data, find monthly or calculate from yearly
+                const monthlyPricing = pricingData.find((p) => p.interval === 'monthly')
+                const yearlyPricing = pricingData.find((p) => p.interval === 'yearly')
+
+                if (monthlyPricing) {
+                  mrr = monthlyPricing.amount
+                  billingCycle = 'monthly'
+                } else if (yearlyPricing) {
+                  mrr = Math.round(yearlyPricing.amount / 12)
+                  billingCycle = 'yearly'
+                }
+              }
+
+              // Generate subscription number
+              const existingCount = await db
+                .select({ count: sql<number>`count(*)::int` })
+                .from(subscription)
+                .where(eq(subscription.organizationId, orgId))
+
+              const subNumber = `SUB-${(existingCount[0]?.count || 0) + 1000}`
+
+              // Calculate billing period
+              const periodStart = now
+              const periodEnd = new Date(now)
+              if (billingCycle === 'yearly') {
+                periodEnd.setFullYear(periodEnd.getFullYear() + 1)
+              } else {
+                periodEnd.setMonth(periodEnd.getMonth() + 1)
+              }
+
+              const subscriptionId = generateId()
+
+              // Create subscription (active since invoice is paid)
+              await db.insert(subscription).values({
+                id: subscriptionId,
+                organizationId: orgId,
+                tenantOrganizationId: inv.tenantOrganizationId,
+                subscriptionNumber: subNumber,
+                productPlanId: plan.id,
+                status: 'active',
+                billingCycle,
+                currentPeriodStart: periodStart,
+                currentPeriodEnd: periodEnd,
+                mrr,
+                seats: lineItem.quantity,
+                createdAt: now,
+                updatedAt: now,
+              })
+
+              // Create subscription activity
+              await db.insert(subscriptionActivity).values({
+                id: generateId(),
+                subscriptionId,
+                activityType: 'created',
+                description: `Subscription ${subNumber} created from invoice ${inv.invoiceNumber}`,
+                userId: session.user.id,
+                metadata: JSON.stringify({
+                  plan: plan.name,
+                  mrr,
+                  seats: lineItem.quantity,
+                  billingCycle,
+                  invoiceId: inv.id,
+                }),
+                createdAt: now,
+              })
+
+              // Create activation activity
+              await db.insert(subscriptionActivity).values({
+                id: generateId(),
+                subscriptionId,
+                activityType: 'activated',
+                description: `Subscription ${subNumber} activated for ${tenantOrgData[0]?.name || 'customer'}`,
+                userId: session.user.id,
+                metadata: JSON.stringify({
+                  plan: plan.name,
+                  billingCycle,
+                  periodStart: periodStart.toISOString(),
+                  periodEnd: periodEnd.toISOString(),
+                }),
+                createdAt: now,
+              })
+
+              createdSubscriptions.push({
+                id: subscriptionId,
+                subscriptionNumber: subNumber,
+                status: 'active',
+                planName: plan.name,
+              })
+            }
+
+            // Update tenant organization if subscriptions were created
+            if (createdSubscriptions.length > 0) {
+              await db
+                .update(tenantOrganization)
+                .set({
+                  subscriptionStatus: 'active',
+                  subscriptionPlan: createdSubscriptions[0].planName,
+                  updatedAt: now,
+                })
+                .where(eq(tenantOrganization.id, inv.tenantOrganizationId))
+            }
+          }
+
           const responseData: {
             success: boolean
             invoice: {
@@ -215,6 +376,12 @@ export const Route = createFileRoute('/api/tenant/$tenant/invoices/$invoiceId/pa
               currentPeriodStart: string
               currentPeriodEnd: string
             }
+            createdSubscriptions?: Array<{
+              id: string
+              subscriptionNumber: string
+              status: string
+              planName: string
+            }>
           } = {
             success: true,
             invoice: {
@@ -223,6 +390,11 @@ export const Route = createFileRoute('/api/tenant/$tenant/invoices/$invoiceId/pa
               status: 'paid',
               paidAt: now.toISOString(),
             },
+          }
+
+          // Include created subscriptions from line items
+          if (createdSubscriptions.length > 0) {
+            responseData.createdSubscriptions = createdSubscriptions
           }
 
           // Include subscription data if invoice is linked to a subscription

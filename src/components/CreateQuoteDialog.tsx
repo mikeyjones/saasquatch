@@ -440,11 +440,13 @@ export function CreateQuoteDialog({
 
 		try {
 			// Convert dollars to cents for API
+			// Include productPlanId if a plan was selected - this enables automatic subscription creation when invoice is paid
 			const lineItemsInCents = validLineItems.map((item) => ({
 				description: item.description.trim(),
 				quantity: item.quantity,
 				unitPrice: Math.round(item.unitPrice * 100),
 				total: Math.round(item.total * 100),
+				...(item.planId && { productPlanId: item.planId }),
 			}))
 
 			const quoteData: CreateQuoteInput = {

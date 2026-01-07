@@ -7,6 +7,8 @@ export interface InvoiceLineItem {
   quantity: number
   unitPrice: number
   total: number
+  /** Optional product plan ID - if present, a subscription will be created when invoice is paid */
+  productPlanId?: string
 }
 
 export interface Invoice {
