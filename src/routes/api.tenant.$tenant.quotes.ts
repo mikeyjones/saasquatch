@@ -36,6 +36,8 @@ const quoteLineItemSchema = z.object({
 	quantity: z.number().int().positive('Quantity must be greater than 0'),
 	unitPrice: z.number().int().min(0, 'Unit price must be non-negative'),
 	total: z.number().int().min(0, 'Total must be non-negative'),
+	/** Optional product plan ID - if present, a subscription will be created when invoice is paid */
+	productPlanId: z.string().optional(),
 }).refine(
 	(data) => {
 		const expectedTotal = data.quantity * data.unitPrice
