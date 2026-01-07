@@ -466,9 +466,24 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						rejectedAt: null,
 					})
 
-					// Fetch the created quote
+					// Fetch the created quote with explicit fields
 					const createdQuote = await db
-						.select()
+						.select({
+							id: quote.id,
+							quoteNumber: quote.quoteNumber,
+							status: quote.status,
+							version: quote.version,
+							subtotal: quote.subtotal,
+							tax: quote.tax,
+							total: quote.total,
+							currency: quote.currency,
+							validUntil: quote.validUntil,
+							lineItems: quote.lineItems,
+							tenantOrganizationId: quote.tenantOrganizationId,
+							dealId: quote.dealId,
+							productPlanId: quote.productPlanId,
+							createdAt: quote.createdAt,
+						})
 						.from(quote)
 						.where(eq(quote.id, quoteId))
 						.limit(1)
