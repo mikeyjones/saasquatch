@@ -7,20 +7,12 @@ import * as schema from './schema.ts'
 // In development, it's loaded via vite's env handling or the app's entry point
 const databaseUrl = process.env.DATABASE_URL
 
-// Create a lazy pool to avoid initialization errors during client bundling
-let pool: Pool | null = null
-
-function getPool() {
-  if (!pool) {
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL environment variable is required')
-    }
-    pool = new Pool({
-      connectionString: databaseUrl,
-    })
-  }
-  return pool
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL environment variable is required')
 }
 
-// Export a lazy db instance that only initializes when accessed on the server
-export const db = drizzle(getPool, { schema })
+const pool = new Pool({
+  connectionString: databaseUrl,
+})
+
+export const db = drizzle(pool, { schema })
