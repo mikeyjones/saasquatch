@@ -277,7 +277,6 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 							{ status: 401, headers: { 'Content-Type': 'application/json' } }
 						)
 					}
-
 					// Get the organization by slug
 					const org = await db
 						.select({ id: organization.id, slug: organization.slug })
@@ -297,7 +296,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 
 					// Verify user is a member of this organization
 					const membership = await db
-						.select({ id: member.id })
+						.select({ role: member.role })
 						.from(member)
 						.where(
 							and(
@@ -313,7 +312,6 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 							{ status: 403, headers: { 'Content-Type': 'application/json' } }
 						)
 					}
-
 				// Parse and validate request body with Zod
 				const body = await request.json()
 				const validationResult = createQuoteSchema.safeParse(body)
@@ -435,7 +433,6 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 
 				// Generate quote ID using cryptographically secure UUID
 				const quoteId = `quote_${crypto.randomUUID()}`
-
 				// Create quote with recalculated line items
 				await db.insert(quote).values({
 					id: quoteId,
