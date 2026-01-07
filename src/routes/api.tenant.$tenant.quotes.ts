@@ -317,10 +317,11 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 				const validationResult = createQuoteSchema.safeParse(body)
 
 				if (!validationResult.success) {
-					const errors = validationResult.error.errors.map((err) => {
+					const zodError = validationResult.error
+					const errors = zodError?.errors?.map((err) => {
 						const path = err.path.join('.')
 						return path ? `${path}: ${err.message}` : err.message
-					})
+					}) || [zodError?.message || 'Validation failed']
 					return new Response(
 						JSON.stringify({
 							error: 'Validation failed',
