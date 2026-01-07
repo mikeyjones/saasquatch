@@ -453,7 +453,8 @@ export function CreateQuoteDialog({
 				tenantOrganizationId: selectedCompanyId,
 				lineItems: lineItemsInCents,
 				tax: Math.round(tax * 100), // Convert to cents
-				validUntil,
+				// Convert date-only string to full ISO datetime for Zod validation
+				validUntil: validUntil ? new Date(validUntil).toISOString() : undefined,
 				notes: notes.trim() || undefined,
 			}
 
