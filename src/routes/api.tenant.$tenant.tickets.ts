@@ -64,9 +64,9 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 						const statusCondition = and(
 							whereCondition,
 							eq(ticket.status, status),
-						)
+						);
 						if (statusCondition) {
-							whereCondition = statusCondition
+							whereCondition = statusCondition;
 						}
 					}
 
@@ -75,9 +75,9 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 						const priorityCondition = and(
 							whereCondition,
 							eq(ticket.priority, priority),
-						)
+						);
 						if (priorityCondition) {
-							whereCondition = priorityCondition
+							whereCondition = priorityCondition;
 						}
 					}
 
@@ -86,9 +86,9 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 						const customerCondition = and(
 							whereCondition,
 							eq(ticket.tenantUserId, customerId),
-						)
+						);
 						if (customerCondition) {
-							whereCondition = customerCondition
+							whereCondition = customerCondition;
 						}
 					}
 
@@ -97,9 +97,9 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 						const assignedCondition = and(
 							whereCondition,
 							eq(ticket.assignedToUserId, assignedToUserId),
-						)
+						);
 						if (assignedCondition) {
-							whereCondition = assignedCondition
+							whereCondition = assignedCondition;
 						}
 					}
 
@@ -108,9 +108,9 @@ export const Route = createFileRoute("/api/tenant/$tenant/tickets")({
 						const unassignedCondition = and(
 							whereCondition,
 							isNull(ticket.assignedToUserId),
-						)
+						);
 						if (unassignedCondition) {
-							whereCondition = unassignedCondition
+							whereCondition = unassignedCondition;
 						}
 					}
 

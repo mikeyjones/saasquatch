@@ -23,13 +23,10 @@ export const Route = createFileRoute(
 					});
 
 					if (!session?.user) {
-						return new Response(
-							JSON.stringify({ error: "Unauthorized" }),
-							{
-								status: 401,
-								headers: { "Content-Type": "application/json" },
-							},
-						);
+						return new Response(JSON.stringify({ error: "Unauthorized" }), {
+							status: 401,
+							headers: { "Content-Type": "application/json" },
+						});
 					}
 
 					// Get the organization ID from tenant slug
@@ -109,7 +106,10 @@ export const Route = createFileRoute(
 							createdAt: subscription.createdAt,
 						})
 						.from(subscription)
-						.innerJoin(productPlan, eq(subscription.productPlanId, productPlan.id))
+						.innerJoin(
+							productPlan,
+							eq(subscription.productPlanId, productPlan.id),
+						)
 						.where(
 							and(
 								eq(subscription.tenantOrganizationId, params.organizationId),
@@ -196,8 +196,12 @@ export const Route = createFileRoute(
 					const openTickets = tickets.filter(
 						(t) => t.status === "open" || t.status === "pending",
 					).length;
-					const closedTickets = tickets.filter((t) => t.status === "closed").length;
-					const urgentTickets = tickets.filter((t) => t.priority === "urgent").length;
+					const closedTickets = tickets.filter(
+						(t) => t.status === "closed",
+					).length;
+					const urgentTickets = tickets.filter(
+						(t) => t.priority === "urgent",
+					).length;
 
 					// Calculate tickets this month
 					const now = new Date();
@@ -233,20 +237,30 @@ export const Route = createFileRoute(
 								subscriptionStatus: customer.subscriptionStatus,
 								tags: (() => {
 									if (!customer.tags) return [];
-									if (typeof customer.tags === 'string') {
-										try { return JSON.parse(customer.tags); } catch { return []; }
+									if (typeof customer.tags === "string") {
+										try {
+											return JSON.parse(customer.tags);
+										} catch {
+											return [];
+										}
 									}
 									return customer.tags;
 								})(),
 								notes: customer.notes,
 								metadata: (() => {
 									if (!customer.metadata) return {};
-									if (typeof customer.metadata === 'string') {
-										try { return JSON.parse(customer.metadata); } catch { return {}; }
+									if (typeof customer.metadata === "string") {
+										try {
+											return JSON.parse(customer.metadata);
+										} catch {
+											return {};
+										}
 									}
 									return customer.metadata;
 								})(),
-								createdAt: customer.createdAt ? customer.createdAt.toISOString() : null,
+								createdAt: customer.createdAt
+									? customer.createdAt.toISOString()
+									: null,
 								updatedAt: customer.updatedAt?.toISOString() || null,
 							},
 							subscriptions: subscriptions.map((s) => ({
@@ -260,7 +274,10 @@ export const Route = createFileRoute(
 								seats: s.seats,
 								startDate: s.startDate ? s.startDate.toISOString() : null,
 								renewalDate: s.renewalDate ? s.renewalDate.toISOString() : null,
-								canceledAt: s.status === 'canceled' && s.updatedAt ? s.updatedAt.toISOString() : null,
+								canceledAt:
+									s.status === "canceled" && s.updatedAt
+										? s.updatedAt.toISOString()
+										: null,
 								createdAt: s.createdAt ? s.createdAt.toISOString() : null,
 							})),
 							contacts: contacts.map((c) => ({
@@ -317,12 +334,15 @@ export const Route = createFileRoute(
 					);
 				} catch (error) {
 					console.error("Error fetching support organization:", error);
-					console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
+					console.error(
+						"Error stack:",
+						error instanceof Error ? error.stack : "No stack",
+					);
 					console.error("Error details:", JSON.stringify(error, null, 2));
 					return new Response(
 						JSON.stringify({
 							error: "Internal server error",
-							message: error instanceof Error ? error.message : String(error)
+							message: error instanceof Error ? error.message : String(error),
 						}),
 						{
 							status: 500,

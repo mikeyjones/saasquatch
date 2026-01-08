@@ -4,6 +4,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { InvoiceDetailDialog } from "./InvoiceDetailDialog";
 import type { Invoice } from "./InvoiceList";
 
+// Mock the router hooks
+vi.mock("@tanstack/react-router", () => ({
+	useParams: vi.fn(() => ({ tenant: "acme" })),
+	Link: ({
+		children,
+		to,
+		params,
+		className,
+	}: {
+		children: React.ReactNode;
+		to: string;
+		params: Record<string, string>;
+		className?: string;
+	}) => (
+		<a
+			href={`${to.replace("$tenant", params.tenant).replace("$customerId", params.customerId)}`}
+			className={className}
+		>
+			{children}
+		</a>
+	),
+}));
+
 const mockInvoice: Invoice = {
 	id: "inv-1",
 	invoiceNumber: "INV-2024-001",
@@ -36,6 +59,7 @@ const mockInvoice: Invoice = {
 	tenantOrganization: {
 		id: "org-1",
 		name: "Acme Corp",
+		slug: "acme-corp",
 	},
 	createdAt: "2024-01-15T10:00:00Z",
 	updatedAt: "2024-01-15T10:00:00Z",
@@ -75,7 +99,7 @@ describe("InvoiceDetailDialog", () => {
 			expect(container.firstChild).toBeNull();
 		});
 
-		it("should display customer name", () => {
+		it("should display customer name as a link to customer detail page", () => {
 			render(
 				<InvoiceDetailDialog
 					open={true}
@@ -84,7 +108,12 @@ describe("InvoiceDetailDialog", () => {
 				/>,
 			);
 
-			expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+			const customerLink = screen.getByRole("link", { name: "Acme Corp" });
+			expect(customerLink).toBeInTheDocument();
+			expect(customerLink).toHaveAttribute(
+				"href",
+				"/acme/app/sales/crm/acme-corp",
+			);
 		});
 
 		it("should display billing email", () => {

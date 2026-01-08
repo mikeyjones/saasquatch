@@ -18,12 +18,12 @@
  * formatCurrency(1500, 'USD') // Returns "$15.00"
  * formatCurrency(1000, 'EUR') // Returns "€10.00"
  */
-export function formatCurrency(cents: number, currency = 'USD'): string {
-	const amount = cents / 100
-	return new Intl.NumberFormat('en-US', {
-		style: 'currency',
+export function formatCurrency(cents: number, currency = "USD"): string {
+	const amount = cents / 100;
+	return new Intl.NumberFormat("en-US", {
+		style: "currency",
 		currency,
-	}).format(amount)
+	}).format(amount);
 }
 
 /**
@@ -37,12 +37,12 @@ export function formatCurrency(cents: number, currency = 'USD'): string {
  * formatDateShort(null) // Returns "N/A"
  */
 export function formatDateShort(dateString: string | null | undefined): string {
-	if (!dateString) return 'N/A'
-	return new Date(dateString).toLocaleDateString('en-US', {
-		month: 'short',
-		day: '2-digit',
-		year: 'numeric',
-	})
+	if (!dateString) return "N/A";
+	return new Date(dateString).toLocaleDateString("en-US", {
+		month: "short",
+		day: "2-digit",
+		year: "numeric",
+	});
 }
 
 /**
@@ -56,11 +56,10 @@ export function formatDateShort(dateString: string | null | undefined): string {
  * formatDateLong(null) // Returns "N/A"
  */
 export function formatDateLong(dateString: string | null | undefined): string {
-	if (!dateString) return 'N/A'
-	return new Date(dateString).toLocaleDateString('en-US', {
-		month: 'long',
-		day: 'numeric',
-		year: 'numeric',
-	})
+	if (!dateString) return "N/A";
+	return new Date(dateString).toLocaleDateString("en-US", {
+		month: "long",
+		day: "numeric",
+		year: "numeric",
+	});
 }
-

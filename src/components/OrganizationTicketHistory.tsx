@@ -199,8 +199,9 @@ export function OrganizationTicketHistory({
 									<td className="px-4 py-3">
 										<span
 											className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded capitalize ${
-												statusStyles[ticket.status as keyof typeof statusStyles] ||
-												"bg-gray-100 text-gray-600"
+												statusStyles[
+													ticket.status as keyof typeof statusStyles
+												] || "bg-gray-100 text-gray-600"
 											}`}
 										>
 											{ticket.status.replace("_", " ")}
@@ -240,9 +241,7 @@ export function OrganizationTicketHistory({
 									</td>
 									<td className="px-4 py-3">
 										<span className="text-sm text-gray-500">
-											{ticket.updatedAt
-												? formatDate(ticket.updatedAt)
-												: "-"}
+											{ticket.updatedAt ? formatDate(ticket.updatedAt) : "-"}
 										</span>
 									</td>
 								</tr>

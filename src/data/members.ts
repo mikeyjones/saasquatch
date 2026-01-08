@@ -7,7 +7,7 @@
 
 /**
  * Represents a tenant user (customer) member.
- * 
+ *
  * Members are tenant users - they do NOT have login accounts.
  * They are fetched from the tenant_user table in the database.
  */
@@ -30,10 +30,10 @@ export interface Member {
 
 /**
  * Fetch members (tenant users) from API.
- * 
+ *
  * Scoped to the current tenant organization. Optionally includes open ticket
  * counts for each member.
- * 
+ *
  * @param tenantSlug - The tenant organization slug
  * @param search - Optional search query to filter members by name or email
  * @returns Promise resolving to an array of members
@@ -114,10 +114,10 @@ export async function fetchMembers(
 
 /**
  * Generate initials from a name.
- * 
+ *
  * Takes the first letter of each word, converts to uppercase, and returns
  * up to 2 characters.
- * 
+ *
  * @param name - The full name to generate initials from
  * @returns The initials string (up to 2 characters)
  */
@@ -132,7 +132,7 @@ export function getInitials(name: string): string {
 
 /**
  * Static members data (fallback/demo data).
- * 
+ *
  * Used when database is not available or for testing purposes.
  */
 export const members: Member[] = [

@@ -18,8 +18,8 @@ import {
 	Mail,
 	Tag,
 	XCircle,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -27,33 +27,32 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from '@/components/ui/dialog'
-import type { Quote } from '@/data/quotes'
-import { formatCurrency, formatDateLong } from '@/lib/format'
-import { quoteStatusDetailConfig } from '@/lib/quote-status'
+} from "@/components/ui/dialog";
+import type { Quote } from "@/data/quotes";
+import { formatCurrency, formatDateLong } from "@/lib/format";
+import { quoteStatusDetailConfig } from "@/lib/quote-status";
 
 /**
  * Props for the QuoteDetailDialog component.
  */
 interface QuoteDetailDialogProps {
 	/** Whether the dialog is currently visible */
-	open: boolean
+	open: boolean;
 	/** Callback to control the dialog's open state */
-	onOpenChange: (open: boolean) => void
+	onOpenChange: (open: boolean) => void;
 	/** The quote to display; pass null to render nothing */
-	quote: Quote | null
+	quote: Quote | null;
 	/** Callback invoked when user clicks "Send Quote" (draft quotes only) */
-	onSendQuote?: (quote: Quote) => void
+	onSendQuote?: (quote: Quote) => void;
 	/** Callback invoked when user clicks "Accept" (sent quotes only) */
-	onAcceptQuote?: (quote: Quote) => void
+	onAcceptQuote?: (quote: Quote) => void;
 	/** Callback invoked when user clicks "Reject" (sent quotes only) */
-	onRejectQuote?: (quote: Quote) => void
+	onRejectQuote?: (quote: Quote) => void;
 	/** Callback invoked when user clicks "Download PDF" */
-	onDownloadPDF?: (quote: Quote) => void
+	onDownloadPDF?: (quote: Quote) => void;
 	/** When true, disables action buttons and shows loading text */
-	isProcessing?: boolean
+	isProcessing?: boolean;
 }
-
 
 /**
  * QuoteDetailDialog displays comprehensive quote information in a modal dialog.
@@ -97,10 +96,10 @@ export function QuoteDetailDialog({
 	onDownloadPDF,
 	isProcessing,
 }: QuoteDetailDialogProps) {
-	if (!quote) return null
+	if (!quote) return null;
 
-	const status = quoteStatusDetailConfig[quote.status]
-	const StatusIcon = status.icon
+	const status = quoteStatusDetailConfig[quote.status];
+	const StatusIcon = status.icon;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,7 +122,11 @@ export function QuoteDetailDialog({
 
 				<div className="space-y-6 py-4">
 					{/* Customer & Deal Info */}
-					<div className={quote.deal ? 'grid grid-cols-2 gap-6' : 'grid grid-cols-1 gap-6'}>
+					<div
+						className={
+							quote.deal ? "grid grid-cols-2 gap-6" : "grid grid-cols-1 gap-6"
+						}
+					>
 						<div className="space-y-1">
 							<div className="flex items-center gap-2 text-sm font-medium text-gray-500">
 								<Building size={14} />
@@ -156,7 +159,9 @@ export function QuoteDetailDialog({
 								<Tag size={14} />
 								Product Plan
 							</div>
-							<p className="font-semibold text-gray-900">{quote.productPlan.name}</p>
+							<p className="font-semibold text-gray-900">
+								{quote.productPlan.name}
+							</p>
 						</div>
 					)}
 
@@ -167,7 +172,9 @@ export function QuoteDetailDialog({
 								<Calendar size={12} />
 								Created
 							</div>
-							<p className="font-medium text-gray-900">{formatDateLong(quote.createdAt)}</p>
+							<p className="font-medium text-gray-900">
+								{formatDateLong(quote.createdAt)}
+							</p>
 						</div>
 						{quote.validUntil && (
 							<div>
@@ -186,7 +193,9 @@ export function QuoteDetailDialog({
 									<Send size={12} />
 									Sent On
 								</div>
-								<p className="font-medium text-blue-700">{formatDateLong(quote.sentAt)}</p>
+								<p className="font-medium text-blue-700">
+									{formatDateLong(quote.sentAt)}
+								</p>
 							</div>
 						)}
 					</div>
@@ -197,7 +206,9 @@ export function QuoteDetailDialog({
 								<CheckCircle size={14} />
 								Accepted On
 							</div>
-							<p className="text-emerald-900">{formatDateLong(quote.acceptedAt)}</p>
+							<p className="text-emerald-900">
+								{formatDateLong(quote.acceptedAt)}
+							</p>
 							{quote.convertedInvoice && (
 								<p className="text-xs text-emerald-600 mt-1">
 									Converted to Invoice: {quote.convertedInvoice.invoiceNumber}
@@ -218,7 +229,9 @@ export function QuoteDetailDialog({
 
 					{/* Line Items */}
 					<div>
-						<h4 className="text-sm font-medium text-gray-700 mb-3">Line Items</h4>
+						<h4 className="text-sm font-medium text-gray-700 mb-3">
+							Line Items
+						</h4>
 						<div className="border border-gray-200 rounded-lg overflow-hidden">
 							<table className="w-full">
 								<thead className="bg-gray-50">
@@ -301,17 +314,17 @@ export function QuoteDetailDialog({
 							Download PDF
 						</Button>
 					)}
-					{quote.status === 'draft' && onSendQuote && (
+					{quote.status === "draft" && onSendQuote && (
 						<Button
 							className="bg-blue-500 hover:bg-blue-600 text-white"
 							onClick={() => onSendQuote(quote)}
 							disabled={isProcessing}
 						>
 							<Send size={16} className="mr-2" />
-							{isProcessing ? 'Sending...' : 'Send Quote'}
+							{isProcessing ? "Sending..." : "Send Quote"}
 						</Button>
 					)}
-					{quote.status === 'sent' && (
+					{quote.status === "sent" && (
 						<>
 							{onAcceptQuote && (
 								<Button
@@ -320,7 +333,9 @@ export function QuoteDetailDialog({
 									disabled={isProcessing}
 								>
 									<CheckCircle size={16} className="mr-2" />
-									{isProcessing ? 'Processing...' : 'Accept & Convert to Invoice'}
+									{isProcessing
+										? "Processing..."
+										: "Accept & Convert to Invoice"}
 								</Button>
 							)}
 							{onRejectQuote && (
@@ -330,7 +345,7 @@ export function QuoteDetailDialog({
 									disabled={isProcessing}
 								>
 									<XCircle size={16} className="mr-2" />
-									{isProcessing ? 'Processing...' : 'Reject'}
+									{isProcessing ? "Processing..." : "Reject"}
 								</Button>
 							)}
 						</>
@@ -341,6 +356,5 @@ export function QuoteDetailDialog({
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
-	)
+	);
 }
-

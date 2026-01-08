@@ -28,7 +28,10 @@ export function CRMFilters({
 	industries,
 }: CRMFiltersProps) {
 	const hasActiveFilters =
-		filters.search || filters.industry !== "all" || filters.status !== "all" || filters.importance !== "all";
+		filters.search ||
+		filters.industry !== "all" ||
+		filters.status !== "all" ||
+		filters.importance !== "all";
 
 	const clearFilters = () => {
 		onFiltersChange({
@@ -135,4 +138,3 @@ export function CRMFilters({
 		</div>
 	);
 }
-

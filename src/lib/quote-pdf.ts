@@ -9,10 +9,10 @@
  * @module quote-pdf
  */
 
-import PDFDocument from 'pdfkit'
-import * as fs from 'node:fs'
-import * as path from 'node:path'
-import type { QuoteLineItem } from '@/data/quotes'
+import PDFDocument from "pdfkit";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import type { QuoteLineItem } from "@/data/quotes";
 
 /**
  * Data required to generate a quote PDF.
@@ -20,31 +20,31 @@ import type { QuoteLineItem } from '@/data/quotes'
  */
 export interface QuotePDFData {
 	/** Unique quote identifier displayed on the PDF (e.g., "QUO-ACME-1001") */
-	quoteNumber: string
+	quoteNumber: string;
 	/** Expiration date for the quote, displayed if provided */
-	validUntil?: Date
+	validUntil?: Date;
 	/** Name of the organization sending the quote (appears in header) */
-	organizationName: string
+	organizationName: string;
 	/** Slug/identifier for the organization (used in footer and contact info) */
-	organizationSlug: string
+	organizationSlug: string;
 	/** Name of the customer receiving the quote */
-	customerName: string
+	customerName: string;
 	/** Customer's email address, displayed in billing section */
-	customerEmail?: string
+	customerEmail?: string;
 	/** Customer's billing address, displayed in billing section */
-	customerAddress?: string
+	customerAddress?: string;
 	/** Array of products/services being quoted */
-	lineItems: QuoteLineItem[]
+	lineItems: QuoteLineItem[];
 	/** Sum of all line item totals in cents */
-	subtotal: number
+	subtotal: number;
 	/** Tax amount in cents */
-	tax: number
+	tax: number;
 	/** Grand total (subtotal + tax) in cents */
-	total: number
+	total: number;
 	/** Currency code for formatting (e.g., "USD", "EUR") */
-	currency: string
+	currency: string;
 	/** Additional notes or terms to display on the quote */
-	notes?: string
+	notes?: string;
 }
 
 /**
@@ -58,12 +58,12 @@ export interface QuotePDFData {
  * formatCurrency(1500, 'USD') // Returns "$15.00"
  * formatCurrency(1000, 'EUR') // Returns "€10.00"
  */
-function formatCurrency(cents: number, currency = 'USD'): string {
-	const amount = cents / 100
-	return new Intl.NumberFormat('en-US', {
-		style: 'currency',
+function formatCurrency(cents: number, currency = "USD"): string {
+	const amount = cents / 100;
+	return new Intl.NumberFormat("en-US", {
+		style: "currency",
 		currency,
-	}).format(amount)
+	}).format(amount);
 }
 
 /**
@@ -73,11 +73,11 @@ function formatCurrency(cents: number, currency = 'USD'): string {
  * @returns Formatted date string (e.g., "January 15, 2024")
  */
 function formatDate(date: Date): string {
-	return date.toLocaleDateString('en-US', {
-		year: 'numeric',
-		month: 'long',
-		day: 'numeric',
-	})
+	return date.toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	});
 }
 
 /**
@@ -114,100 +114,116 @@ function formatDate(date: Date): string {
  */
 export async function generateQuotePDF(
 	data: QuotePDFData,
-	organizationId: string
+	organizationId: string,
 ): Promise<string> {
 	// Create directory structure
-	const quoteDir = path.join(process.cwd(), 'public', 'quotes', organizationId)
+	const quoteDir = path.join(process.cwd(), "public", "quotes", organizationId);
 
 	if (!fs.existsSync(quoteDir)) {
-		fs.mkdirSync(quoteDir, { recursive: true })
+		fs.mkdirSync(quoteDir, { recursive: true });
 	}
 
-	const fileName = `${data.quoteNumber}.pdf`
-	const filePath = path.join(quoteDir, fileName)
-	const relativePath = `/quotes/${organizationId}/${fileName}`
+	const fileName = `${data.quoteNumber}.pdf`;
+	const filePath = path.join(quoteDir, fileName);
+	const relativePath = `/quotes/${organizationId}/${fileName}`;
 
 	// Create PDF document
 	const doc = new PDFDocument({
-		size: 'A4',
+		size: "A4",
 		margin: 50,
 		info: {
 			Title: `Quote ${data.quoteNumber}`,
 			Author: data.organizationName,
 		},
-	})
+	});
 
 	// Pipe to file
-	const writeStream = fs.createWriteStream(filePath)
-	doc.pipe(writeStream)
+	const writeStream = fs.createWriteStream(filePath);
+	doc.pipe(writeStream);
 
 	// Colors
-	const primaryColor = '#4F46E5' // Indigo
-	const textColor = '#1F2937'
-	const mutedColor = '#6B7280'
-	const borderColor = '#E5E7EB'
+	const primaryColor = "#4F46E5"; // Indigo
+	const textColor = "#1F2937";
+	const mutedColor = "#6B7280";
+	const borderColor = "#E5E7EB";
 
 	// Header with organization info
-	doc.fontSize(24).fillColor(primaryColor).text(data.organizationName.toUpperCase(), 50, 50, {
-		align: 'left',
-	})
+	doc
+		.fontSize(24)
+		.fillColor(primaryColor)
+		.text(data.organizationName.toUpperCase(), 50, 50, {
+			align: "left",
+		});
 
 	// QUOTE label
-	doc.fontSize(32).fillColor(textColor).text('QUOTE', 350, 50, { align: 'right' })
+	doc
+		.fontSize(32)
+		.fillColor(textColor)
+		.text("QUOTE", 350, 50, { align: "right" });
 
 	// Quote details box (right side)
 	doc
 		.fontSize(10)
 		.fillColor(mutedColor)
-		.text('Quote Number:', 350, 100, { align: 'right' })
+		.text("Quote Number:", 350, 100, { align: "right" })
 		.fillColor(textColor)
-		.text(data.quoteNumber, 350, 115, { align: 'right' })
+		.text(data.quoteNumber, 350, 115, { align: "right" });
 
 	if (data.validUntil) {
 		doc
 			.fillColor(mutedColor)
-			.text('Valid Until:', 350, 135, { align: 'right' })
+			.text("Valid Until:", 350, 135, { align: "right" })
 			.fillColor(textColor)
-			.text(formatDate(data.validUntil), 350, 150, { align: 'right' })
+			.text(formatDate(data.validUntil), 350, 150, { align: "right" });
 	}
 
 	// Customer details (left side, below organization)
-	let currentY = 150
-	doc.fontSize(12).fillColor(textColor).text('Bill To:', 50, currentY)
-	currentY += 20
+	let currentY = 150;
+	doc.fontSize(12).fillColor(textColor).text("Bill To:", 50, currentY);
+	currentY += 20;
 
-	doc.fontSize(11).fillColor(textColor).text(data.customerName, 50, currentY)
-	currentY += 15
+	doc.fontSize(11).fillColor(textColor).text(data.customerName, 50, currentY);
+	currentY += 15;
 
 	if (data.customerEmail) {
-		doc.fontSize(10).fillColor(mutedColor).text(data.customerEmail, 50, currentY)
-		currentY += 15
+		doc
+			.fontSize(10)
+			.fillColor(mutedColor)
+			.text(data.customerEmail, 50, currentY);
+		currentY += 15;
 	}
 
 	if (data.customerAddress) {
-		doc.fontSize(10).fillColor(mutedColor).text(data.customerAddress, 50, currentY, {
-			width: 200,
-		})
-		currentY += 30
+		doc
+			.fontSize(10)
+			.fillColor(mutedColor)
+			.text(data.customerAddress, 50, currentY, {
+				width: 200,
+			});
+		currentY += 30;
 	}
 
 	// Line items table
-	currentY = Math.max(currentY, 250)
-	const tableTop = currentY
-	const itemHeight = 30
-	const descriptionWidth = 300
-	const quantityWidth = 60
-	const priceWidth = 80
-	const totalWidth = 80
+	currentY = Math.max(currentY, 250);
+	const tableTop = currentY;
+	const itemHeight = 30;
+	const descriptionWidth = 300;
+	const quantityWidth = 60;
+	const priceWidth = 80;
+	const totalWidth = 80;
 
 	// Table header
 	doc
 		.fontSize(10)
 		.fillColor(mutedColor)
-		.text('Description', 50, tableTop)
-		.text('Qty', 50 + descriptionWidth, tableTop)
-		.text('Unit Price', 50 + descriptionWidth + quantityWidth, tableTop)
-		.text('Total', 50 + descriptionWidth + quantityWidth + priceWidth, tableTop)
+		.text("Description", 50, tableTop)
+		.text("Qty", 50 + descriptionWidth, tableTop)
+		.text("Unit Price", 50 + descriptionWidth + quantityWidth, tableTop)
+		.text(
+			"Total",
+			50 + descriptionWidth + quantityWidth + priceWidth,
+			tableTop,
+		);
 
 	// Draw header line
 	doc
@@ -215,37 +231,49 @@ export async function generateQuotePDF(
 		.lineTo(550, tableTop + 15)
 		.strokeColor(borderColor)
 		.lineWidth(1)
-		.stroke()
+		.stroke();
 
 	// Line items
-	let itemY = tableTop + 30
+	let itemY = tableTop + 30;
 	for (const item of data.lineItems) {
 		doc
 			.fontSize(10)
 			.fillColor(textColor)
 			.text(item.description, 50, itemY, { width: descriptionWidth })
 			.text(item.quantity.toString(), 50 + descriptionWidth, itemY)
-			.text(formatCurrency(item.unitPrice, data.currency), 50 + descriptionWidth + quantityWidth, itemY)
-			.text(formatCurrency(item.total, data.currency), 50 + descriptionWidth + quantityWidth + priceWidth, itemY)
+			.text(
+				formatCurrency(item.unitPrice, data.currency),
+				50 + descriptionWidth + quantityWidth,
+				itemY,
+			)
+			.text(
+				formatCurrency(item.total, data.currency),
+				50 + descriptionWidth + quantityWidth + priceWidth,
+				itemY,
+			);
 
-		itemY += itemHeight
+		itemY += itemHeight;
 	}
 
 	// Totals section (right aligned)
-	const totalsY = itemY + 20
-	doc.fontSize(10).fillColor(mutedColor)
+	const totalsY = itemY + 20;
+	doc.fontSize(10).fillColor(mutedColor);
 
-	doc.text('Subtotal:', 400, totalsY, { align: 'right' })
+	doc.text("Subtotal:", 400, totalsY, { align: "right" });
 	doc
 		.fillColor(textColor)
-		.text(formatCurrency(data.subtotal, data.currency), 550, totalsY, { align: 'right' })
+		.text(formatCurrency(data.subtotal, data.currency), 550, totalsY, {
+			align: "right",
+		});
 
 	if (data.tax > 0) {
 		doc
 			.fillColor(mutedColor)
-			.text('Tax:', 400, totalsY + 20, { align: 'right' })
+			.text("Tax:", 400, totalsY + 20, { align: "right" })
 			.fillColor(textColor)
-			.text(formatCurrency(data.tax, data.currency), 550, totalsY + 20, { align: 'right' })
+			.text(formatCurrency(data.tax, data.currency), 550, totalsY + 20, {
+				align: "right",
+			});
 	}
 
 	// Total line
@@ -254,20 +282,26 @@ export async function generateQuotePDF(
 		.lineTo(550, totalsY + 45)
 		.strokeColor(borderColor)
 		.lineWidth(1)
-		.stroke()
+		.stroke();
 
 	doc
 		.fontSize(14)
-		.font('Helvetica-Bold')
+		.font("Helvetica-Bold")
 		.fillColor(textColor)
-		.text('Total:', 400, totalsY + 50, { align: 'right' })
-		.text(formatCurrency(data.total, data.currency), 550, totalsY + 50, { align: 'right' })
+		.text("Total:", 400, totalsY + 50, { align: "right" })
+		.text(formatCurrency(data.total, data.currency), 550, totalsY + 50, {
+			align: "right",
+		});
 
 	// Notes section
 	if (data.notes) {
-		const notesY = totalsY + 100
-		doc.fontSize(10).font('Helvetica').fillColor(mutedColor).text('NOTES', 50, notesY)
-		doc.fillColor(textColor).text(data.notes, 50, notesY + 15, { width: 400 })
+		const notesY = totalsY + 100;
+		doc
+			.fontSize(10)
+			.font("Helvetica")
+			.fillColor(mutedColor)
+			.text("NOTES", 50, notesY);
+		doc.fillColor(textColor).text(data.notes, 50, notesY + 15, { width: 400 });
 	}
 
 	// Footer
@@ -278,17 +312,17 @@ export async function generateQuotePDF(
 			`Generated by ${data.organizationName} • Quote ${data.quoteNumber}`,
 			50,
 			750,
-			{ align: 'center', width: 495 }
-		)
+			{ align: "center", width: 495 },
+		);
 
 	// Finalize PDF
-	doc.end()
+	doc.end();
 
 	// Wait for write to complete
 	return new Promise((resolve, reject) => {
-		writeStream.on('finish', () => resolve(relativePath))
-		writeStream.on('error', reject)
-	})
+		writeStream.on("finish", () => resolve(relativePath));
+		writeStream.on("error", reject);
+	});
 }
 
 /**
@@ -296,7 +330,7 @@ export async function generateQuotePDF(
  * Used for path traversal validation.
  * Resolved to absolute path for consistent comparison.
  */
-const QUOTE_PDF_BASE_DIR = path.resolve(process.cwd(), 'public', 'quotes')
+const QUOTE_PDF_BASE_DIR = path.resolve(process.cwd(), "public", "quotes");
 
 /**
  * Validates that a resolved PDF path stays within the public/quotes directory.
@@ -312,22 +346,24 @@ const QUOTE_PDF_BASE_DIR = path.resolve(process.cwd(), 'public', 'quotes')
  */
 export function getQuotePDFPath(pdfPath: string): string {
 	// Remove leading slash and normalize the path
-	const normalizedPath = pdfPath.replace(/^\//, '')
-	
+	const normalizedPath = pdfPath.replace(/^\//, "");
+
 	// Resolve to absolute path
-	const resolvedPath = path.resolve(process.cwd(), 'public', normalizedPath)
-	
+	const resolvedPath = path.resolve(process.cwd(), "public", normalizedPath);
+
 	// Validate that resolved path stays within the public/quotes directory
 	// This prevents path traversal attacks (e.g., "../../../etc/passwd")
 	// Normalize both paths and ensure resolved path starts with base directory
 	// Add path.sep to base to prevent matching parent directories (e.g., public/quotes-backup)
-	const normalizedBaseDir = QUOTE_PDF_BASE_DIR + path.sep
-	const normalizedResolvedPath = resolvedPath + path.sep
+	const normalizedBaseDir = QUOTE_PDF_BASE_DIR + path.sep;
+	const normalizedResolvedPath = resolvedPath + path.sep;
 	if (!normalizedResolvedPath.startsWith(normalizedBaseDir)) {
-		throw new Error(`Invalid PDF path: path traversal detected in "${pdfPath}"`)
+		throw new Error(
+			`Invalid PDF path: path traversal detected in "${pdfPath}"`,
+		);
 	}
-	
-	return resolvedPath
+
+	return resolvedPath;
 }
 
 /**
@@ -344,11 +380,11 @@ export function getQuotePDFPath(pdfPath: string): string {
  */
 export function quotePDFExists(pdfPath: string): boolean {
 	try {
-		const fullPath = getQuotePDFPath(pdfPath)
-		return fs.existsSync(fullPath)
+		const fullPath = getQuotePDFPath(pdfPath);
+		return fs.existsSync(fullPath);
 	} catch (error) {
 		// If path validation fails, treat as non-existent
-		return false
+		return false;
 	}
 }
 
@@ -363,9 +399,8 @@ export function quotePDFExists(pdfPath: string): boolean {
  * deleteQuotePDF('/quotes/org-123/QUO-ACME-1001.pdf')
  */
 export function deleteQuotePDF(pdfPath: string): void {
-	const fullPath = getQuotePDFPath(pdfPath)
+	const fullPath = getQuotePDFPath(pdfPath);
 	if (fs.existsSync(fullPath)) {
-		fs.unlinkSync(fullPath)
+		fs.unlinkSync(fullPath);
 	}
 }
-

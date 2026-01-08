@@ -213,13 +213,13 @@ function MembersPage() {
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
-				<button
-					type="button"
-					onClick={handleRefresh}
-					disabled={isLoading}
-					className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-					title="Refresh members"
-				>
+					<button
+						type="button"
+						onClick={handleRefresh}
+						disabled={isLoading}
+						className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+						title="Refresh members"
+					>
 						<RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
 					</button>
 					<div className="w-72">
@@ -236,11 +236,11 @@ function MembersPage() {
 								className="pl-9 h-9 text-sm bg-gray-50 border-gray-200"
 							/>
 							{searchQuery && (
-							<button
-								type="button"
-								onClick={() => setSearchQuery("")}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-							>
+								<button
+									type="button"
+									onClick={() => setSearchQuery("")}
+									className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+								>
 									✕
 								</button>
 							)}
@@ -377,7 +377,10 @@ function MemberRow({
 						</span>
 					</div>
 					<div>
-						<Link to="/$tenant/app/support/members/$memberId" params={{ tenant, memberId: member.id }}>
+						<Link
+							to="/$tenant/app/support/members/$memberId"
+							params={{ tenant, memberId: member.id }}
+						>
 							<p className="font-medium text-gray-900 text-sm hover:text-indigo-600 cursor-pointer">
 								<HighlightedText text={member.name} query={searchQuery} />
 							</p>
@@ -449,7 +452,10 @@ function MemberRow({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuItem asChild>
-							<Link to="/$tenant/app/support/members/$memberId" params={{ tenant, memberId: member.id }}>
+							<Link
+								to="/$tenant/app/support/members/$memberId"
+								params={{ tenant, memberId: member.id }}
+							>
 								View Details
 							</Link>
 						</DropdownMenuItem>

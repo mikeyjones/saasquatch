@@ -170,7 +170,9 @@ function OrganizationSupportPage() {
 						</Link>
 					</div>
 					<div className="flex items-center justify-center h-64">
-						<div className="text-red-600">{error || "Organization not found"}</div>
+						<div className="text-red-600">
+							{error || "Organization not found"}
+						</div>
 					</div>
 				</div>
 			</main>
@@ -411,7 +413,10 @@ function OrganizationSupportPage() {
 									) : (
 										<div className="space-y-3">
 											{contacts.slice(0, 3).map((contact) => (
-												<div key={contact.id} className="flex items-start gap-3">
+												<div
+													key={contact.id}
+													className="flex items-start gap-3"
+												>
 													<div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shrink-0">
 														<span className="text-white text-sm font-medium">
 															{contact.name
@@ -616,9 +621,7 @@ function OrganizationSupportPage() {
 							<div className="bg-white rounded-lg border border-gray-200 p-6">
 								<h2 className="text-lg font-semibold mb-4">Recent Invoices</h2>
 								{invoices.length === 0 ? (
-									<p className="text-gray-500 text-center py-8">
-										No invoices
-									</p>
+									<p className="text-gray-500 text-center py-8">No invoices</p>
 								) : (
 									<table className="w-full">
 										<thead>
@@ -643,7 +646,9 @@ function OrganizationSupportPage() {
 													key={invoice.id}
 													className="border-b border-gray-50"
 												>
-													<td className="py-3 text-sm">{invoice.invoiceNumber}</td>
+													<td className="py-3 text-sm">
+														{invoice.invoiceNumber}
+													</td>
 													<td className="py-3">
 														<span
 															className={`px-2 py-1 text-xs rounded capitalize ${

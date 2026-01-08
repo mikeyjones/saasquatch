@@ -10,7 +10,12 @@ vi.mock("@tanstack/react-router", () => ({
 		to,
 		onClick,
 		...props
-	}: { children: React.ReactNode; to: string; onClick?: () => void; [key: string]: unknown }) => (
+	}: {
+		children: React.ReactNode;
+		to: string;
+		onClick?: () => void;
+		[key: string]: unknown;
+	}) => (
 		<a href={to} onClick={onClick} {...props}>
 			{children}
 		</a>

@@ -14,14 +14,16 @@
  * @module api/quotes/send
  */
 
-import { createFileRoute } from '@tanstack/react-router'
-import { db } from '@/db'
-import { quote, organization, tenantOrganization } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
-import { auth } from '@/lib/auth'
-import { generateQuotePDF } from '@/lib/quote-pdf'
+import { createFileRoute } from "@tanstack/react-router";
+import { db } from "@/db";
+import { quote, organization, tenantOrganization } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { generateQuotePDF } from "@/lib/quote-pdf";
 
-export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')({
+export const Route = createFileRoute(
+	"/api/tenant/$tenant/quotes/$quoteId/send",
+)({
 	server: {
 		handlers: {
 			/**
@@ -32,32 +34,36 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')
 				try {
 					const session = await auth.api.getSession({
 						headers: request.headers,
-					})
+					});
 
 					if (!session?.user) {
-						return new Response(
-							JSON.stringify({ error: 'Unauthorized' }),
-							{ status: 401, headers: { 'Content-Type': 'application/json' } }
-						)
+						return new Response(JSON.stringify({ error: "Unauthorized" }), {
+							status: 401,
+							headers: { "Content-Type": "application/json" },
+						});
 					}
 
 					// Get the organization by slug (include name for PDF generation)
 					const org = await db
-						.select({ id: organization.id, name: organization.name, slug: organization.slug })
+						.select({
+							id: organization.id,
+							name: organization.name,
+							slug: organization.slug,
+						})
 						.from(organization)
 						.where(eq(organization.slug, params.tenant))
-						.limit(1)
+						.limit(1);
 
 					if (org.length === 0) {
 						return new Response(
-							JSON.stringify({ error: 'Organization not found' }),
-							{ status: 404, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({ error: "Organization not found" }),
+							{ status: 404, headers: { "Content-Type": "application/json" } },
+						);
 					}
 
-					const orgId = org[0].id
-					const orgName = org[0].name
-					const orgSlug = org[0].slug
+					const orgId = org[0].id;
+					const orgName = org[0].name;
+					const orgSlug = org[0].slug;
 
 					// Fetch the quote with customer info
 					const quoteData = await db
@@ -83,34 +89,37 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')
 						.from(quote)
 						.innerJoin(
 							tenantOrganization,
-							eq(quote.tenantOrganizationId, tenantOrganization.id)
+							eq(quote.tenantOrganizationId, tenantOrganization.id),
 						)
 						.where(
-							and(eq(quote.id, params.quoteId), eq(quote.organizationId, orgId))
+							and(
+								eq(quote.id, params.quoteId),
+								eq(quote.organizationId, orgId),
+							),
 						)
-						.limit(1)
+						.limit(1);
 
 					if (quoteData.length === 0) {
-						return new Response(
-							JSON.stringify({ error: 'Quote not found' }),
-							{ status: 404, headers: { 'Content-Type': 'application/json' } }
-						)
+						return new Response(JSON.stringify({ error: "Quote not found" }), {
+							status: 404,
+							headers: { "Content-Type": "application/json" },
+						});
 					}
 
-					const q = quoteData[0]
+					const q = quoteData[0];
 
 					// Only allow sending draft quotes
-					if (q.status !== 'draft') {
+					if (q.status !== "draft") {
 						return new Response(
-							JSON.stringify({ error: 'Only draft quotes can be sent' }),
-							{ status: 400, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({ error: "Only draft quotes can be sent" }),
+							{ status: 400, headers: { "Content-Type": "application/json" } },
+						);
 					}
 
 					// Generate PDF
-					let pdfPath: string | null = null
+					let pdfPath: string | null = null;
 					try {
-						const lineItems = JSON.parse(q.lineItems)
+						const lineItems = JSON.parse(q.lineItems);
 						pdfPath = await generateQuotePDF(
 							{
 								quoteNumber: q.quoteNumber,
@@ -127,25 +136,25 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')
 								currency: q.currency,
 								notes: q.notes || undefined,
 							},
-							orgId
-						)
+							orgId,
+						);
 					} catch (pdfError) {
-						console.error('Error generating quote PDF:', pdfError)
+						console.error("Error generating quote PDF:", pdfError);
 						// Continue without PDF - it can be regenerated later
 					}
 
-					const now = new Date()
+					const now = new Date();
 
 					// Update quote status to sent
 					await db
 						.update(quote)
 						.set({
-							status: 'sent',
+							status: "sent",
 							sentAt: now,
 							pdfPath,
 							updatedAt: now,
 						})
-						.where(eq(quote.id, q.id))
+						.where(eq(quote.id, q.id));
 
 					return new Response(
 						JSON.stringify({
@@ -153,21 +162,20 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes/$quoteId/send')
 							quote: {
 								id: q.id,
 								quoteNumber: q.quoteNumber,
-								status: 'sent',
+								status: "sent",
 								sentAt: now.toISOString(),
 							},
 						}),
-						{ status: 200, headers: { 'Content-Type': 'application/json' } }
-					)
+						{ status: 200, headers: { "Content-Type": "application/json" } },
+					);
 				} catch (error) {
-					console.error('Error sending quote:', error)
+					console.error("Error sending quote:", error);
 					return new Response(
-						JSON.stringify({ error: 'Internal server error' }),
-						{ status: 500, headers: { 'Content-Type': 'application/json' } }
-					)
+						JSON.stringify({ error: "Internal server error" }),
+						{ status: 500, headers: { "Content-Type": "application/json" } },
+					);
 				}
 			},
 		},
 	},
-})
-
+});

@@ -7,29 +7,28 @@
  * @module QuoteList
  */
 
-import { FileText, Download, Eye, Send } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import type { Quote } from '@/data/quotes'
-import { formatCurrency, formatDateShort } from '@/lib/format'
-import { quoteStatusConfig } from '@/lib/quote-status'
+import { FileText, Download, Eye, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Quote } from "@/data/quotes";
+import { formatCurrency, formatDateShort } from "@/lib/format";
+import { quoteStatusConfig } from "@/lib/quote-status";
 
 /**
  * Props for the QuoteList component.
  */
 interface QuoteListProps {
 	/** Array of quotes to display in the list */
-	quotes: Quote[]
+	quotes: Quote[];
 	/** Callback invoked when user clicks to view a quote's details */
-	onViewQuote?: (quote: Quote) => void
+	onViewQuote?: (quote: Quote) => void;
 	/** Callback invoked when user clicks to send a draft quote to customer */
-	onSendQuote?: (quote: Quote) => void
+	onSendQuote?: (quote: Quote) => void;
 	/** Callback invoked when user clicks to download the quote as PDF */
-	onDownloadPDF?: (quote: Quote) => void
+	onDownloadPDF?: (quote: Quote) => void;
 	/** ID of the quote currently being sent (shows loading state) */
-	isSending?: string | null
+	isSending?: string | null;
 }
-
 
 /**
  * QuoteList displays a responsive list of quotes with status indicators and actions.
@@ -66,7 +65,7 @@ export function QuoteList({
 				<FileText size={48} className="mb-4 text-gray-300" />
 				<p>No quotes found</p>
 			</div>
-		)
+		);
 	}
 
 	return (
@@ -83,9 +82,9 @@ export function QuoteList({
 
 			{/* Quote Rows */}
 			{quotes.map((quote) => {
-				const status = quoteStatusConfig[quote.status]
-				const StatusIcon = status.icon
-				const isThisQuoteSending = isSending === quote.id
+				const status = quoteStatusConfig[quote.status];
+				const StatusIcon = status.icon;
+				const isThisQuoteSending = isSending === quote.id;
 
 				return (
 					<Card
@@ -104,7 +103,7 @@ export function QuoteList({
 											</span>
 										</div>
 										<p className="text-sm text-gray-500 mt-1">
-											{quote.tenantOrganization?.name || 'Unknown Customer'}
+											{quote.tenantOrganization?.name || "Unknown Customer"}
 										</p>
 									</div>
 									<span
@@ -141,7 +140,7 @@ export function QuoteList({
 											View
 										</Button>
 									)}
-									{quote.status === 'draft' && onSendQuote && (
+									{quote.status === "draft" && onSendQuote && (
 										<Button
 											variant="default"
 											size="sm"
@@ -186,10 +185,12 @@ export function QuoteList({
 								</div>
 								<div className="col-span-3">
 									<p className="text-sm text-gray-900">
-										{quote.tenantOrganization?.name || 'Unknown Customer'}
+										{quote.tenantOrganization?.name || "Unknown Customer"}
 									</p>
 									{quote.deal && (
-										<p className="text-xs text-gray-500">Deal: {quote.deal.name}</p>
+										<p className="text-xs text-gray-500">
+											Deal: {quote.deal.name}
+										</p>
 									)}
 								</div>
 								<div className="col-span-2">
@@ -221,7 +222,7 @@ export function QuoteList({
 											View
 										</Button>
 									)}
-									{quote.status === 'draft' && onSendQuote && (
+									{quote.status === "draft" && onSendQuote && (
 										<Button
 											variant="default"
 											size="sm"
@@ -254,9 +255,8 @@ export function QuoteList({
 							</div>
 						</CardContent>
 					</Card>
-				)
+				);
 			})}
 		</div>
-	)
+	);
 }
-

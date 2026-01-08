@@ -72,10 +72,14 @@ function TicketsPage() {
 	useEffect(() => {
 		const loadTickets = async () => {
 			setIsLoading(true);
-			
+
 			// Build filters based on activeFilter
-			const filters: { status?: string; assignedToUserId?: string; unassigned?: boolean } = {};
-			
+			const filters: {
+				status?: string;
+				assignedToUserId?: string;
+				unassigned?: boolean;
+			} = {};
+
 			if (activeFilter === "my-open") {
 				// Filter for open tickets assigned to current user
 				filters.status = "open";
@@ -94,7 +98,7 @@ function TicketsPage() {
 			} else if (activeFilter === "urgent") {
 				// Note: priority filter is handled client-side for now
 			}
-			
+
 			await fetchTickets(tenant, filters);
 			setIsLoading(false);
 		};
@@ -128,8 +132,11 @@ function TicketsPage() {
 				else if (activeFilter === "my-open") {
 					// Already filtered by API (open + assigned to current user)
 					// Just verify it's still open and assigned (in case of race conditions)
-					matchesFilter = ticket.status === "open" && 
-						(session?.user?.id ? ticket.assignedToUserId === session.user.id : false);
+					matchesFilter =
+						ticket.status === "open" &&
+						(session?.user?.id
+							? ticket.assignedToUserId === session.user.id
+							: false);
 				} else if (activeFilter === "unassigned") {
 					// Already filtered by API (unassigned tickets)
 					// Just verify it's still unassigned (in case of race conditions)
@@ -191,7 +198,10 @@ function TicketsPage() {
 								className="pl-9 h-9 text-sm bg-gray-50 border-gray-200"
 							/>
 						</div>
-						<button type="button" className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+						<button
+							type="button"
+							className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+						>
 							<Filter size={18} className="text-gray-500" />
 						</button>
 					</div>
@@ -204,7 +214,8 @@ function TicketsPage() {
 							<Button variant="outline" size="sm" className="gap-2">
 								<Filter size={14} />
 								<span>
-									{filterOptions.find((f) => f.id === activeFilter)?.label || "All"}
+									{filterOptions.find((f) => f.id === activeFilter)?.label ||
+										"All"}
 								</span>
 								<ChevronDown size={14} />
 							</Button>
@@ -314,10 +325,15 @@ function TicketCard({
 			</div>
 
 			<div className="flex items-center gap-2 mb-2">
-				{(ticket.organizationId || ticket.customer?.organizationId) ? (
+				{ticket.organizationId || ticket.customer?.organizationId ? (
 					<Link
 						to="/$tenant/app/support/organizations/$organizationId"
-						params={{ tenant, organizationId: (ticket.organizationId || ticket.customer?.organizationId) ?? '' }}
+						params={{
+							tenant,
+							organizationId:
+								(ticket.organizationId || ticket.customer?.organizationId) ??
+								"",
+						}}
 						className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
 						onClick={(e) => e.stopPropagation()}
 					>
@@ -372,18 +388,22 @@ function TicketDetail({
 	const [supportMembers, setSupportMembers] = useState<SupportMember[]>([]);
 	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 	const [isAssigning, setIsAssigning] = useState(false);
-	const [activeTab, setActiveTab] = useState<'messages' | 'activity'>('messages');
-	const [auditLogs, setAuditLogs] = useState<Array<{
-		id: string;
-		performedByUserId: string | null;
-		performedByName: string;
-		action: string;
-		fieldName: string | null;
-		oldValue: string | null;
-		newValue: string | null;
-		metadata: string | null;
-		createdAt: string;
-	}>>([]);
+	const [activeTab, setActiveTab] = useState<"messages" | "activity">(
+		"messages",
+	);
+	const [auditLogs, setAuditLogs] = useState<
+		Array<{
+			id: string;
+			performedByUserId: string | null;
+			performedByName: string;
+			action: string;
+			fieldName: string | null;
+			oldValue: string | null;
+			newValue: string | null;
+			metadata: string | null;
+			createdAt: string;
+		}>
+	>([]);
 	const [isLoadingAuditLogs, setIsLoadingAuditLogs] = useState(false);
 	const { data: session } = useSession();
 
@@ -402,7 +422,7 @@ function TicketDetail({
 	// Fetch audit logs when activity tab is selected
 	useEffect(() => {
 		const fetchAuditLogs = async () => {
-			if (activeTab !== 'activity' || !tenant || !detail?.id) {
+			if (activeTab !== "activity" || !tenant || !detail?.id) {
 				return;
 			}
 
@@ -416,7 +436,7 @@ function TicketDetail({
 					setAuditLogs(result.logs || []);
 				}
 			} catch (err) {
-				console.error('Error fetching audit logs:', err);
+				console.error("Error fetching audit logs:", err);
 			} finally {
 				setIsLoadingAuditLogs(false);
 			}
@@ -451,13 +471,13 @@ function TicketDetail({
 		if (!detail?.id) return;
 
 		// Show confirmation dialog
-		if (!confirm('Are you sure you want to resolve this ticket?')) {
+		if (!confirm("Are you sure you want to resolve this ticket?")) {
 			return;
 		}
 
 		setIsResolving(true);
 		const success = await updateTicket(tenant, detail.id, {
-			status: 'closed',
+			status: "closed",
 		});
 
 		if (success) {
@@ -564,10 +584,13 @@ function TicketDetail({
 								<div className="flex items-center gap-2">
 									<div className="w-6 h-6 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
 										<span className="text-white text-xs font-medium">
-											{detail.assignedTo.initials || getInitials(detail.assignedTo.name)}
+											{detail.assignedTo.initials ||
+												getInitials(detail.assignedTo.name)}
 										</span>
 									</div>
-									<span className="font-medium text-gray-900">{detail.assignedTo.name}</span>
+									<span className="font-medium text-gray-900">
+										{detail.assignedTo.name}
+									</span>
 								</div>
 							) : (
 								<span className="text-gray-500">Unassigned</span>
@@ -577,7 +600,11 @@ function TicketDetail({
 						{/* Assignment Dropdown */}
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="sm" disabled={isAssigning || isLoadingMembers}>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={isAssigning || isLoadingMembers}
+								>
 									{isAssigning ? (
 										<Loader2 size={14} className="mr-1 animate-spin" />
 									) : (
@@ -597,7 +624,9 @@ function TicketDetail({
 											className="cursor-pointer bg-emerald-50 hover:bg-emerald-100"
 										>
 											<UserPlus size={14} className="mr-2 text-emerald-600" />
-											<span className="font-medium text-emerald-900">Assign to me</span>
+											<span className="font-medium text-emerald-900">
+												Assign to me
+											</span>
 											{detail?.assignedTo?.id === currentUser.id && (
 												<Check size={14} className="ml-auto text-emerald-600" />
 											)}
@@ -638,7 +667,9 @@ function TicketDetail({
 											</div>
 											<div className="flex flex-col">
 												<span className="font-medium">{member.name}</span>
-												<span className="text-xs text-gray-500">{member.email}</span>
+												<span className="text-xs text-gray-500">
+													{member.email}
+												</span>
 											</div>
 											{detail?.assignedTo?.id === member.id && (
 												<Check size={14} className="ml-auto text-emerald-500" />
@@ -653,17 +684,17 @@ function TicketDetail({
 							size="sm"
 							className="bg-emerald-500 hover:bg-emerald-600 text-white"
 							onClick={handleResolve}
-							disabled={isResolving || detail?.status === 'closed'}
+							disabled={isResolving || detail?.status === "closed"}
 						>
 							{isResolving ? (
 								<>
 									<Loader2 size={14} className="mr-2 animate-spin" />
 									Resolving...
 								</>
-							) : detail?.status === 'closed' ? (
-								'Resolved'
+							) : detail?.status === "closed" ? (
+								"Resolved"
 							) : (
-								'Resolve'
+								"Resolve"
 							)}
 						</Button>
 					</div>
@@ -675,22 +706,22 @@ function TicketDetail({
 				<nav className="flex space-x-8 px-4">
 					<button
 						type="button"
-						onClick={() => setActiveTab('messages')}
+						onClick={() => setActiveTab("messages")}
 						className={`py-4 px-1 border-b-2 font-medium text-sm ${
-							activeTab === 'messages'
-								? 'border-primary text-primary'
-								: 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+							activeTab === "messages"
+								? "border-primary text-primary"
+								: "border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300"
 						}`}
 					>
 						Messages
 					</button>
 					<button
 						type="button"
-						onClick={() => setActiveTab('activity')}
+						onClick={() => setActiveTab("activity")}
 						className={`py-4 px-1 border-b-2 font-medium text-sm ${
-							activeTab === 'activity'
-								? 'border-primary text-primary'
-								: 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+							activeTab === "activity"
+								? "border-primary text-primary"
+								: "border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300"
 						}`}
 					>
 						Activity
@@ -708,149 +739,165 @@ function TicketDetail({
 					</div>
 				) : detail ? (
 					<>
-						{activeTab === 'messages' && (
+						{activeTab === "messages" && (
 							<>
 								{/* Messages */}
 								{detail.messages?.map((message, index) => (
-							<div key={message.id || `message-${index}-${message.timestamp}-${message.type}`} className="flex gap-3">
-								<div
-									className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-										message.type === "customer"
-											? "bg-linear-to-br from-blue-400 to-blue-600"
-											: message.type === "ai"
-												? "bg-linear-to-br from-violet-400 to-violet-600"
-												: message.isInternal
-													? "bg-linear-to-br from-amber-400 to-amber-600"
-													: "bg-linear-to-br from-emerald-400 to-emerald-600"
-									}`}
-								>
-									{message.type === "ai" ? (
-										<Bot size={20} className="text-white" />
-									) : message.isInternal ? (
-										<Lock size={18} className="text-white" />
-									) : (
-										<span className="text-white text-sm font-medium">
-											{message.author?.charAt(0) || "U"}
-										</span>
-									)}
-								</div>
-								<div className="flex-1">
-									<div className="flex items-center gap-2 mb-1">
-										{message.type === "customer" && message.authorTenantUserId ? (
-											<Link
-												to="/$tenant/app/support/members/$memberId"
-												params={{ tenant, memberId: message.authorTenantUserId }}
-												className="font-medium text-gray-900 hover:underline"
-											>
-												{message.author}
-											</Link>
-										) : (
-											<span className="font-medium text-gray-900">
-												{message.author}
-											</span>
-										)}
-										{message.type === "customer" && (
-											detail.customer?.organizationId ? (
-												<Link
-													to="/$tenant/app/support/organizations/$organizationId"
-													params={{ tenant, organizationId: detail.customer.organizationId }}
-													className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
-												>
-													{detail.customer.company || ""}
-												</Link>
-											) : (
-												<span className="text-sm text-gray-500">
-													{detail.customer?.company || ""}
-												</span>
-											)
-										)}
-										{message.type === "ai" && (
-											<span className="text-sm text-gray-500">
-												AI Assistant
-											</span>
-										)}
-										{message.type === "agent" && !message.isInternal && (
-											<span className="text-sm text-gray-500">
-												Support Agent
-											</span>
-										)}
-										{message.isInternal && (
-											<span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
-												Internal Note
-											</span>
-										)}
-										<span className="text-sm text-gray-400">
-											• {message.timestamp}
-										</span>
-									</div>
 									<div
-										className={`rounded-lg border p-4 ${
-											message.type === "ai"
-												? "bg-violet-50 border-violet-200"
-												: message.isInternal
-													? "bg-amber-50 border-amber-200"
-													: "bg-white border-gray-200"
-										}`}
+										key={
+											message.id ||
+											`message-${index}-${message.timestamp}-${message.type}`
+										}
+										className="flex gap-3"
 									>
-										<p className="text-gray-700 whitespace-pre-line">
-											{message.content}
-										</p>
-									</div>
-								</div>
-							</div>
-						))}
-
-						{/* AI Triage Summary */}
-						{detail.aiTriage && (
-							<div className="flex gap-3">
-								<div className="w-10 h-10 rounded-full bg-linear-to-br from-violet-400 to-violet-600 flex items-center justify-center shrink-0">
-									<Bot size={20} className="text-white" />
-								</div>
-								<div className="flex-1">
-									<div className="flex items-center gap-2 mb-1">
-										<span className="font-medium text-gray-900">
-											Apollo (AI)
-										</span>
-										<span className="text-sm text-gray-500">Internal Note</span>
-										<span className="text-sm text-gray-400">• 1h ago</span>
-									</div>
-									<div className="bg-violet-50 rounded-lg border border-violet-200 p-4">
-										<h4 className="font-medium text-violet-900 mb-2">
-											AI Triage Summary:
-										</h4>
-										<ul className="space-y-1 text-sm text-violet-800">
-											<li>
-												<span className="font-medium">Category:</span>{" "}
-												{detail.aiTriage.category}
-											</li>
-											<li>
-												<span className="font-medium">Sentiment:</span>{" "}
-												{detail.aiTriage.sentiment}
-											</li>
-											<li>
-												<span className="font-medium">Suggested Action:</span>{" "}
-												{detail.aiTriage.suggestedAction}
-											</li>
-											{detail.aiTriage.playbook && (
-												<li>
-													<span className="font-medium">Playbook:</span>{" "}
-													<a
-														href={detail.aiTriage.playbookLink}
-														className="text-blue-600 hover:underline"
-													>
-														{detail.aiTriage.playbook}
-													</a>
-												</li>
+										<div
+											className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+												message.type === "customer"
+													? "bg-linear-to-br from-blue-400 to-blue-600"
+													: message.type === "ai"
+														? "bg-linear-to-br from-violet-400 to-violet-600"
+														: message.isInternal
+															? "bg-linear-to-br from-amber-400 to-amber-600"
+															: "bg-linear-to-br from-emerald-400 to-emerald-600"
+											}`}
+										>
+											{message.type === "ai" ? (
+												<Bot size={20} className="text-white" />
+											) : message.isInternal ? (
+												<Lock size={18} className="text-white" />
+											) : (
+												<span className="text-white text-sm font-medium">
+													{message.author?.charAt(0) || "U"}
+												</span>
 											)}
-										</ul>
+										</div>
+										<div className="flex-1">
+											<div className="flex items-center gap-2 mb-1">
+												{message.type === "customer" &&
+												message.authorTenantUserId ? (
+													<Link
+														to="/$tenant/app/support/members/$memberId"
+														params={{
+															tenant,
+															memberId: message.authorTenantUserId,
+														}}
+														className="font-medium text-gray-900 hover:underline"
+													>
+														{message.author}
+													</Link>
+												) : (
+													<span className="font-medium text-gray-900">
+														{message.author}
+													</span>
+												)}
+												{message.type === "customer" &&
+													(detail.customer?.organizationId ? (
+														<Link
+															to="/$tenant/app/support/organizations/$organizationId"
+															params={{
+																tenant,
+																organizationId: detail.customer.organizationId,
+															}}
+															className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+														>
+															{detail.customer.company || ""}
+														</Link>
+													) : (
+														<span className="text-sm text-gray-500">
+															{detail.customer?.company || ""}
+														</span>
+													))}
+												{message.type === "ai" && (
+													<span className="text-sm text-gray-500">
+														AI Assistant
+													</span>
+												)}
+												{message.type === "agent" && !message.isInternal && (
+													<span className="text-sm text-gray-500">
+														Support Agent
+													</span>
+												)}
+												{message.isInternal && (
+													<span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+														Internal Note
+													</span>
+												)}
+												<span className="text-sm text-gray-400">
+													• {message.timestamp}
+												</span>
+											</div>
+											<div
+												className={`rounded-lg border p-4 ${
+													message.type === "ai"
+														? "bg-violet-50 border-violet-200"
+														: message.isInternal
+															? "bg-amber-50 border-amber-200"
+															: "bg-white border-gray-200"
+												}`}
+											>
+												<p className="text-gray-700 whitespace-pre-line">
+													{message.content}
+												</p>
+											</div>
+										</div>
 									</div>
-								</div>
-							</div>
-						)}
+								))}
+
+								{/* AI Triage Summary */}
+								{detail.aiTriage && (
+									<div className="flex gap-3">
+										<div className="w-10 h-10 rounded-full bg-linear-to-br from-violet-400 to-violet-600 flex items-center justify-center shrink-0">
+											<Bot size={20} className="text-white" />
+										</div>
+										<div className="flex-1">
+											<div className="flex items-center gap-2 mb-1">
+												<span className="font-medium text-gray-900">
+													Apollo (AI)
+												</span>
+												<span className="text-sm text-gray-500">
+													Internal Note
+												</span>
+												<span className="text-sm text-gray-400">• 1h ago</span>
+											</div>
+											<div className="bg-violet-50 rounded-lg border border-violet-200 p-4">
+												<h4 className="font-medium text-violet-900 mb-2">
+													AI Triage Summary:
+												</h4>
+												<ul className="space-y-1 text-sm text-violet-800">
+													<li>
+														<span className="font-medium">Category:</span>{" "}
+														{detail.aiTriage.category}
+													</li>
+													<li>
+														<span className="font-medium">Sentiment:</span>{" "}
+														{detail.aiTriage.sentiment}
+													</li>
+													<li>
+														<span className="font-medium">
+															Suggested Action:
+														</span>{" "}
+														{detail.aiTriage.suggestedAction}
+													</li>
+													{detail.aiTriage.playbook && (
+														<li>
+															<span className="font-medium">Playbook:</span>{" "}
+															<a
+																href={detail.aiTriage.playbookLink}
+																className="text-blue-600 hover:underline"
+															>
+																{detail.aiTriage.playbook}
+															</a>
+														</li>
+													)}
+												</ul>
+											</div>
+										</div>
+									</div>
+								)}
 							</>
 						)}
 
-						{activeTab === 'activity' && (
+						{activeTab === "activity" && (
 							<AuditLog logs={auditLogs} isLoading={isLoadingAuditLogs} />
 						)}
 					</>
@@ -891,18 +938,20 @@ function TicketDetail({
 					<textarea
 						value={replyText}
 						onChange={(e) => setReplyText(e.target.value)}
-						placeholder={isPrivateNote ? "Type your internal note..." : "Type your reply or use AI to draft..."}
+						placeholder={
+							isPrivateNote
+								? "Type your internal note..."
+								: "Type your reply or use AI to draft..."
+						}
 						className={`w-full h-24 px-4 py-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:border-transparent text-sm ${
-							isPrivateNote 
-								? "border-amber-300 focus:ring-amber-500 bg-amber-50" 
+							isPrivateNote
+								? "border-amber-300 focus:ring-amber-500 bg-amber-50"
 								: "border-gray-200 focus:ring-emerald-500"
 						}`}
 						disabled={isSending}
 					/>
 				</div>
-				{error && (
-					<div className="mt-2 text-sm text-red-600">{error}</div>
-				)}
+				{error && <div className="mt-2 text-sm text-red-600">{error}</div>}
 				<div className="flex justify-end mt-3">
 					<Button
 						onClick={handleSendReply}

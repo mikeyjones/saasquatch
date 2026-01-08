@@ -10,9 +10,9 @@
  * @module api/quotes
  */
 
-import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
-import { db } from '@/db'
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { db } from "@/db";
 import {
 	quote,
 	tenantOrganization,
@@ -21,49 +21,55 @@ import {
 	organization,
 	invoice,
 	member,
-} from '@/db/schema'
-import { eq, and, desc, sql } from 'drizzle-orm'
-import { auth } from '@/lib/auth'
-import type { QuoteLineItem } from '@/data/quotes'
+} from "@/db/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import type { QuoteLineItem } from "@/data/quotes";
 
 /**
  * Zod schema for validating quote line items.
  * Note: We validate the total matches quantity × unitPrice, but we recalculate
  * it server-side to prevent client manipulation.
  */
-const quoteLineItemSchema = z.object({
-	description: z.string().min(1, 'Description is required'),
-	quantity: z.number().int().positive('Quantity must be greater than 0'),
-	unitPrice: z.number().int().min(0, 'Unit price must be non-negative'),
-	total: z.number().int().min(0, 'Total must be non-negative'),
-	/** Optional product plan ID - if present, a subscription will be created when invoice is paid */
-	productPlanId: z.string().optional(),
-}).refine(
-	(data) => {
-		const expectedTotal = data.quantity * data.unitPrice
-		// Allow 1 cent tolerance for rounding
-		return Math.abs(data.total - expectedTotal) <= 1
-	},
-	{
-		message: 'Total must equal quantity × unit price',
-		path: ['total'],
-	}
-)
+const quoteLineItemSchema = z
+	.object({
+		description: z.string().min(1, "Description is required"),
+		quantity: z.number().int().positive("Quantity must be greater than 0"),
+		unitPrice: z.number().int().min(0, "Unit price must be non-negative"),
+		total: z.number().int().min(0, "Total must be non-negative"),
+		/** Optional product plan ID - if present, a subscription will be created when invoice is paid */
+		productPlanId: z.string().optional(),
+	})
+	.refine(
+		(data) => {
+			const expectedTotal = data.quantity * data.unitPrice;
+			// Allow 1 cent tolerance for rounding
+			return Math.abs(data.total - expectedTotal) <= 1;
+		},
+		{
+			message: "Total must equal quantity × unit price",
+			path: ["total"],
+		},
+	);
 
 /**
  * Zod schema for validating create quote request body.
  */
 const createQuoteSchema = z.object({
-	tenantOrganizationId: z.string().min(1, 'Customer organization ID is required'),
-	lineItems: z.array(quoteLineItemSchema).min(1, 'At least one line item is required'),
+	tenantOrganizationId: z
+		.string()
+		.min(1, "Customer organization ID is required"),
+	lineItems: z
+		.array(quoteLineItemSchema)
+		.min(1, "At least one line item is required"),
 	dealId: z.string().optional(),
 	productPlanId: z.string().optional(),
 	validUntil: z.string().datetime().optional().or(z.null()),
-	tax: z.number().int().min(0, 'Tax must be non-negative').optional(),
+	tax: z.number().int().min(0, "Tax must be non-negative").optional(),
 	notes: z.string().optional().or(z.null()),
-})
+});
 
-export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
+export const Route = createFileRoute("/api/tenant/$tenant/quotes")({
 	server: {
 		handlers: {
 			/**
@@ -78,13 +84,13 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 				try {
 					const session = await auth.api.getSession({
 						headers: request.headers,
-					})
+					});
 
 					if (!session?.user) {
 						return new Response(
-							JSON.stringify({ error: 'Unauthorized', quotes: [] }),
-							{ status: 401, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({ error: "Unauthorized", quotes: [] }),
+							{ status: 401, headers: { "Content-Type": "application/json" } },
+						);
 					}
 
 					// Get the organization by slug
@@ -92,16 +98,16 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						.select({ id: organization.id, slug: organization.slug })
 						.from(organization)
 						.where(eq(organization.slug, params.tenant))
-						.limit(1)
+						.limit(1);
 
 					if (org.length === 0) {
 						return new Response(
-							JSON.stringify({ error: 'Organization not found', quotes: [] }),
-							{ status: 404, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({ error: "Organization not found", quotes: [] }),
+							{ status: 404, headers: { "Content-Type": "application/json" } },
+						);
 					}
 
-					const orgId = org[0].id
+					const orgId = org[0].id;
 
 					// Verify user is a member of this organization
 					const membership = await db
@@ -110,37 +116,40 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						.where(
 							and(
 								eq(member.organizationId, orgId),
-								eq(member.userId, session.user.id)
-							)
+								eq(member.userId, session.user.id),
+							),
 						)
-						.limit(1)
+						.limit(1);
 
 					if (membership.length === 0) {
 						return new Response(
-							JSON.stringify({ error: 'Forbidden: Not a member of this organization', quotes: [] }),
-							{ status: 403, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({
+								error: "Forbidden: Not a member of this organization",
+								quotes: [],
+							}),
+							{ status: 403, headers: { "Content-Type": "application/json" } },
+						);
 					}
 
 					// Parse query params
-					const url = new URL(request.url)
-					const statusFilter = url.searchParams.get('status')
-					const tenantOrgId = url.searchParams.get('tenantOrgId')
-					const dealIdFilter = url.searchParams.get('dealId')
+					const url = new URL(request.url);
+					const statusFilter = url.searchParams.get("status");
+					const tenantOrgId = url.searchParams.get("tenantOrgId");
+					const dealIdFilter = url.searchParams.get("dealId");
 
 					// Build conditions
-					const conditions = [eq(quote.organizationId, orgId)]
+					const conditions = [eq(quote.organizationId, orgId)];
 
 					if (statusFilter) {
-						conditions.push(eq(quote.status, statusFilter))
+						conditions.push(eq(quote.status, statusFilter));
 					}
 
 					if (tenantOrgId) {
-						conditions.push(eq(quote.tenantOrganizationId, tenantOrgId))
+						conditions.push(eq(quote.tenantOrganizationId, tenantOrgId));
 					}
 
 					if (dealIdFilter) {
-						conditions.push(eq(quote.dealId, dealIdFilter))
+						conditions.push(eq(quote.dealId, dealIdFilter));
 					}
 
 					// Fetch quotes with related data
@@ -181,25 +190,25 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						.from(quote)
 						.innerJoin(
 							tenantOrganization,
-							eq(quote.tenantOrganizationId, tenantOrganization.id)
+							eq(quote.tenantOrganizationId, tenantOrganization.id),
 						)
 						.leftJoin(deal, eq(quote.dealId, deal.id))
 						.leftJoin(productPlan, eq(quote.productPlanId, productPlan.id))
 						.leftJoin(invoice, eq(quote.convertedToInvoiceId, invoice.id))
 						.where(and(...conditions))
-						.orderBy(desc(quote.createdAt))
+						.orderBy(desc(quote.createdAt));
 
 					// Transform to response format
 					const response = quotes.map((q) => ({
 						id: q.id,
 						quoteNumber: q.quoteNumber,
 						status: q.status as
-							| 'draft'
-							| 'sent'
-							| 'accepted'
-							| 'rejected'
-							| 'expired'
-							| 'converted',
+							| "draft"
+							| "sent"
+							| "accepted"
+							| "rejected"
+							| "expired"
+							| "converted",
 						version: q.version,
 						subtotal: q.subtotal,
 						tax: q.tax,
@@ -238,18 +247,18 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 							: null,
 						createdAt: q.createdAt.toISOString(),
 						updatedAt: q.updatedAt.toISOString(),
-					}))
+					}));
 
 					return new Response(JSON.stringify({ quotes: response }), {
 						status: 200,
-						headers: { 'Content-Type': 'application/json' },
-					})
+						headers: { "Content-Type": "application/json" },
+					});
 				} catch (error) {
-					console.error('Error fetching quotes:', error)
+					console.error("Error fetching quotes:", error);
 					return new Response(
-						JSON.stringify({ error: 'Internal server error', quotes: [] }),
-						{ status: 500, headers: { 'Content-Type': 'application/json' } }
-					)
+						JSON.stringify({ error: "Internal server error", quotes: [] }),
+						{ status: 500, headers: { "Content-Type": "application/json" } },
+					);
 				}
 			},
 
@@ -269,30 +278,30 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 				try {
 					const session = await auth.api.getSession({
 						headers: request.headers,
-					})
+					});
 
 					if (!session?.user) {
-						return new Response(
-							JSON.stringify({ error: 'Unauthorized' }),
-							{ status: 401, headers: { 'Content-Type': 'application/json' } }
-						)
+						return new Response(JSON.stringify({ error: "Unauthorized" }), {
+							status: 401,
+							headers: { "Content-Type": "application/json" },
+						});
 					}
 					// Get the organization by slug
 					const org = await db
 						.select({ id: organization.id, slug: organization.slug })
 						.from(organization)
 						.where(eq(organization.slug, params.tenant))
-						.limit(1)
+						.limit(1);
 
 					if (org.length === 0) {
 						return new Response(
-							JSON.stringify({ error: 'Organization not found' }),
-							{ status: 404, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({ error: "Organization not found" }),
+							{ status: 404, headers: { "Content-Type": "application/json" } },
+						);
 					}
 
-					const orgId = org[0].id
-					const orgSlug = org[0].slug
+					const orgId = org[0].id;
+					const orgSlug = org[0].slug;
 
 					// Verify user is a member of this organization
 					const membership = await db
@@ -301,45 +310,47 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						.where(
 							and(
 								eq(member.organizationId, orgId),
-								eq(member.userId, session.user.id)
-							)
+								eq(member.userId, session.user.id),
+							),
 						)
-						.limit(1)
+						.limit(1);
 
 					if (membership.length === 0) {
 						return new Response(
-							JSON.stringify({ error: 'Forbidden: Not a member of this organization' }),
-							{ status: 403, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({
+								error: "Forbidden: Not a member of this organization",
+							}),
+							{ status: 403, headers: { "Content-Type": "application/json" } },
+						);
 					}
-				// Parse and validate request body with Zod
-				const body = await request.json()
-				const validationResult = createQuoteSchema.safeParse(body)
+					// Parse and validate request body with Zod
+					const body = await request.json();
+					const validationResult = createQuoteSchema.safeParse(body);
 
-				if (!validationResult.success) {
-					const zodError = validationResult.error
-					const errors = zodError?.errors?.map((err) => {
-						const path = err.path.join('.')
-						return path ? `${path}: ${err.message}` : err.message
-					}) || [zodError?.message || 'Validation failed']
-					return new Response(
-						JSON.stringify({
-							error: 'Validation failed',
-							details: errors,
-						}),
-						{ status: 400, headers: { 'Content-Type': 'application/json' } }
-					)
-				}
+					if (!validationResult.success) {
+						const zodError = validationResult.error;
+						const errors = zodError?.errors?.map((err) => {
+							const path = err.path.join(".");
+							return path ? `${path}: ${err.message}` : err.message;
+						}) || [zodError?.message || "Validation failed"];
+						return new Response(
+							JSON.stringify({
+								error: "Validation failed",
+								details: errors,
+							}),
+							{ status: 400, headers: { "Content-Type": "application/json" } },
+						);
+					}
 
-				const {
-					tenantOrganizationId,
-					lineItems,
-					dealId,
-					productPlanId,
-					validUntil,
-					tax,
-					notes,
-				} = validationResult.data
+					const {
+						tenantOrganizationId,
+						lineItems,
+						dealId,
+						productPlanId,
+						validUntil,
+						tax,
+						notes,
+					} = validationResult.data;
 
 					// Verify customer organization exists and belongs to this organization
 					const customer = await db
@@ -353,16 +364,16 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						.where(
 							and(
 								eq(tenantOrganization.id, tenantOrganizationId),
-								eq(tenantOrganization.organizationId, orgId)
-							)
+								eq(tenantOrganization.organizationId, orgId),
+							),
 						)
-						.limit(1)
+						.limit(1);
 
 					if (customer.length === 0) {
 						return new Response(
-							JSON.stringify({ error: 'Customer not found' }),
-							{ status: 404, headers: { 'Content-Type': 'application/json' } }
-						)
+							JSON.stringify({ error: "Customer not found" }),
+							{ status: 404, headers: { "Content-Type": "application/json" } },
+						);
 					}
 
 					// Validate deal if provided
@@ -371,13 +382,13 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 							.select({ id: deal.id })
 							.from(deal)
 							.where(and(eq(deal.id, dealId), eq(deal.organizationId, orgId)))
-							.limit(1)
+							.limit(1);
 
 						if (dealExists.length === 0) {
-							return new Response(
-								JSON.stringify({ error: 'Deal not found' }),
-								{ status: 404, headers: { 'Content-Type': 'application/json' } }
-							)
+							return new Response(JSON.stringify({ error: "Deal not found" }), {
+								status: 404,
+								headers: { "Content-Type": "application/json" },
+							});
 						}
 					}
 
@@ -387,70 +398,85 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 							.select({ id: productPlan.id })
 							.from(productPlan)
 							.where(
-								and(eq(productPlan.id, productPlanId), eq(productPlan.organizationId, orgId))
+								and(
+									eq(productPlan.id, productPlanId),
+									eq(productPlan.organizationId, orgId),
+								),
 							)
-							.limit(1)
+							.limit(1);
 
 						if (planExists.length === 0) {
 							return new Response(
-								JSON.stringify({ error: 'Product plan not found' }),
-								{ status: 404, headers: { 'Content-Type': 'application/json' } }
-							)
+								JSON.stringify({ error: "Product plan not found" }),
+								{
+									status: 404,
+									headers: { "Content-Type": "application/json" },
+								},
+							);
 						}
 					}
 
-				// Recalculate totals server-side (don't trust client-provided totals)
-				// Recalculate each line item total from quantity × unitPrice
-				const recalculatedLineItems = lineItems.map((item) => ({
-					...item,
-					total: item.quantity * item.unitPrice,
-				}))
+					// Recalculate totals server-side (don't trust client-provided totals)
+					// Recalculate each line item total from quantity × unitPrice
+					const recalculatedLineItems = lineItems.map((item) => ({
+						...item,
+						total: item.quantity * item.unitPrice,
+					}));
 
-				// Calculate subtotal from recalculated line items
-				const subtotal = recalculatedLineItems.reduce((sum, item) => sum + item.total, 0)
-				const taxAmount = tax || 0
-				const total = subtotal + taxAmount
+					// Calculate subtotal from recalculated line items
+					const subtotal = recalculatedLineItems.reduce(
+						(sum, item) => sum + item.total,
+						0,
+					);
+					const taxAmount = tax || 0;
+					const total = subtotal + taxAmount;
 
 					// Generate quote number
 					const quoteCount = await db
 						.select({ count: sql<number>`count(*)::int` })
 						.from(quote)
-						.where(eq(quote.organizationId, orgId))
+						.where(eq(quote.organizationId, orgId));
 
-					const count = quoteCount[0]?.count || 0
-					const quoteNumber = `QUO-${orgSlug.toUpperCase()}-${(count + 1001).toString()}`
+					const count = quoteCount[0]?.count || 0;
+					const quoteNumber = `QUO-${orgSlug.toUpperCase()}-${(count + 1001).toString()}`;
 
-				// Set validity date (validate if provided)
-				let validUntilObj: Date | null = null
-				if (validUntil) {
-					validUntilObj = new Date(validUntil)
-					if (isNaN(validUntilObj.getTime())) {
-						return new Response(
-							JSON.stringify({ error: 'Invalid validUntil date format. Expected ISO 8601 date string.' }),
-							{ status: 400, headers: { 'Content-Type': 'application/json' } }
-						)
+					// Set validity date (validate if provided)
+					let validUntilObj: Date | null = null;
+					if (validUntil) {
+						validUntilObj = new Date(validUntil);
+						if (isNaN(validUntilObj.getTime())) {
+							return new Response(
+								JSON.stringify({
+									error:
+										"Invalid validUntil date format. Expected ISO 8601 date string.",
+								}),
+								{
+									status: 400,
+									headers: { "Content-Type": "application/json" },
+								},
+							);
+						}
 					}
-				}
 
-				// Generate quote ID using cryptographically secure UUID
-				const quoteId = `quote_${crypto.randomUUID()}`
-				// Create quote with recalculated line items
-				await db.insert(quote).values({
-					id: quoteId,
-					organizationId: orgId,
-					tenantOrganizationId,
-					dealId: dealId || null,
-					productPlanId: productPlanId || null,
-					quoteNumber,
-					status: 'draft',
-					version: 1,
-					parentQuoteId: null,
-					subtotal,
-					tax: taxAmount,
-					total,
-					currency: 'USD',
-					validUntil: validUntilObj,
-					lineItems: JSON.stringify(recalculatedLineItems),
+					// Generate quote ID using cryptographically secure UUID
+					const quoteId = `quote_${crypto.randomUUID()}`;
+					// Create quote with recalculated line items
+					await db.insert(quote).values({
+						id: quoteId,
+						organizationId: orgId,
+						tenantOrganizationId,
+						dealId: dealId || null,
+						productPlanId: productPlanId || null,
+						quoteNumber,
+						status: "draft",
+						version: 1,
+						parentQuoteId: null,
+						subtotal,
+						tax: taxAmount,
+						total,
+						currency: "USD",
+						validUntil: validUntilObj,
+						lineItems: JSON.stringify(recalculatedLineItems),
 						convertedToInvoiceId: null,
 						pdfPath: null,
 						billingName: customer[0].name,
@@ -462,7 +488,7 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						sentAt: null,
 						acceptedAt: null,
 						rejectedAt: null,
-					})
+					});
 
 					// Fetch the created quote with explicit fields
 					const createdQuote = await db
@@ -484,9 +510,9 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 						})
 						.from(quote)
 						.where(eq(quote.id, quoteId))
-						.limit(1)
+						.limit(1);
 
-					const q = createdQuote[0]
+					const q = createdQuote[0];
 
 					return new Response(
 						JSON.stringify({
@@ -508,17 +534,16 @@ export const Route = createFileRoute('/api/tenant/$tenant/quotes')({
 								createdAt: q.createdAt.toISOString(),
 							},
 						}),
-						{ status: 201, headers: { 'Content-Type': 'application/json' } }
-					)
+						{ status: 201, headers: { "Content-Type": "application/json" } },
+					);
 				} catch (error) {
-					console.error('Error creating quote:', error)
+					console.error("Error creating quote:", error);
 					return new Response(
-						JSON.stringify({ error: 'Internal server error' }),
-						{ status: 500, headers: { 'Content-Type': 'application/json' } }
-					)
+						JSON.stringify({ error: "Internal server error" }),
+						{ status: 500, headers: { "Content-Type": "application/json" } },
+					);
 				}
 			},
 		},
 	},
-})
-
+});

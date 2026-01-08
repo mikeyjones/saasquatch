@@ -339,10 +339,10 @@ describe("OrganizationTicketHistory", () => {
 		it("should display dash for null updated date", () => {
 			render(<OrganizationTicketHistory tickets={mockTickets} tenant="acme" />);
 
-		// TKT-002 has null updatedAt
-		screen.getAllByRole("row");
-		// Find the row for TKT-002 and check it has a dash
-		expect(screen.getAllByText("-")).toHaveLength(1);
+			// TKT-002 has null updatedAt
+			screen.getAllByRole("row");
+			// Find the row for TKT-002 and check it has a dash
+			expect(screen.getAllByText("-")).toHaveLength(1);
 		});
 	});
 });

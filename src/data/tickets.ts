@@ -2,7 +2,7 @@ import { Store } from "@tanstack/store";
 
 /**
  * Represents a support ticket with basic information.
- * 
+ *
  * Used for ticket lists and overview displays. For full ticket details
  * including all messages and metadata, use TicketDetail.
  */
@@ -41,7 +41,7 @@ export interface Ticket {
 
 /**
  * Represents a support ticket with full details including all messages.
- * 
+ *
  * Includes complete message history, AI triage information, SLA deadlines,
  * and assignment details.
  */
@@ -102,7 +102,7 @@ export interface TicketDetail {
 
 /**
  * Input data for creating a new support ticket.
- * 
+ *
  * Includes the ticket title, priority, initial message, and customer information.
  */
 export interface CreateTicketInput {
@@ -119,7 +119,7 @@ export interface CreateTicketInput {
 
 /**
  * Store for tickets (used for optimistic updates).
- * 
+ *
  * Provides reactive state management for ticket lists, allowing components
  * to subscribe to ticket updates.
  */
@@ -127,10 +127,10 @@ export const ticketsStore = new Store<Ticket[]>([]);
 
 /**
  * Fetch all tickets from the API.
- * 
+ *
  * Supports filtering by status, priority, search query, assignment, and
  * unassigned tickets. Updates the tickets store with fetched data.
- * 
+ *
  * @param tenantSlug - The tenant organization slug
  * @param filters - Optional filters for tickets
  * @param filters.status - Filter by ticket status
@@ -142,7 +142,13 @@ export const ticketsStore = new Store<Ticket[]>([]);
  */
 export async function fetchTickets(
 	tenantSlug: string,
-	filters?: { status?: string; priority?: string; search?: string; assignedToUserId?: string; unassigned?: boolean },
+	filters?: {
+		status?: string;
+		priority?: string;
+		search?: string;
+		assignedToUserId?: string;
+		unassigned?: boolean;
+	},
 ): Promise<Ticket[]> {
 	try {
 		const url = new URL(
@@ -153,7 +159,8 @@ export async function fetchTickets(
 		if (filters?.status) url.searchParams.set("status", filters.status);
 		if (filters?.priority) url.searchParams.set("priority", filters.priority);
 		if (filters?.search) url.searchParams.set("search", filters.search);
-		if (filters?.assignedToUserId) url.searchParams.set("assignedToUserId", filters.assignedToUserId);
+		if (filters?.assignedToUserId)
+			url.searchParams.set("assignedToUserId", filters.assignedToUserId);
 		if (filters?.unassigned) url.searchParams.set("unassigned", "true");
 
 		const response = await fetch(url.toString(), {
@@ -180,7 +187,7 @@ export async function fetchTickets(
 
 /**
  * Fetch a single ticket with all details including full message history.
- * 
+ *
  * @param tenantSlug - The tenant organization slug
  * @param ticketId - The ID of the ticket to fetch
  * @returns Promise resolving to the ticket details or null if not found
@@ -210,9 +217,9 @@ export async function fetchTicket(
 
 /**
  * Create a new ticket via API.
- * 
+ *
  * Creates a ticket and adds it to the tickets store optimistically.
- * 
+ *
  * @param tenantSlug - The tenant organization slug
  * @param input - The ticket data to create
  * @returns Promise resolving to the created ticket or null on error
@@ -278,9 +285,9 @@ export async function createTicket(
 
 /**
  * Update ticket status, priority, or assignment.
- * 
+ *
  * Updates the ticket via API and optimistically updates the tickets store.
- * 
+ *
  * @param tenantSlug - The tenant organization slug
  * @param ticketId - The ID of the ticket to update
  * @param updates - The fields to update
@@ -337,7 +344,7 @@ export async function updateTicket(
 
 /**
  * Post a message to a ticket (support staff reply or internal note).
- * 
+ *
  * @param tenantSlug - The tenant organization slug
  * @param ticketId - The ID of the ticket to post to
  * @param content - The message content
@@ -397,9 +404,9 @@ export async function postTicketMessage(
 
 /**
  * Legacy function for backward compatibility with CreateTicketDialog.
- * 
+ *
  * Creates a ticket locally without API call. For new code, use createTicket instead.
- * 
+ *
  * @param input - The ticket data (without customerId)
  * @returns The created ticket object
  */
@@ -446,7 +453,7 @@ export const filterOptions = [
 
 /**
  * Support staff member for ticket assignment.
- * 
+ *
  * Represents a support team member who can be assigned to tickets.
  */
 export interface SupportMember {
@@ -459,7 +466,7 @@ export interface SupportMember {
 
 /**
  * Fetch support staff members for ticket assignment dropdown.
- * 
+ *
  * @param tenantSlug - The tenant organization slug
  * @returns Promise resolving to an array of support staff members
  */

@@ -8,7 +8,11 @@ vi.mock("@tanstack/react-router", () => ({
 		children,
 		to,
 		...props
-	}: { children: React.ReactNode; to: string; [key: string]: unknown }) => (
+	}: {
+		children: React.ReactNode;
+		to: string;
+		[key: string]: unknown;
+	}) => (
 		<a href={to} {...props}>
 			{children}
 		</a>

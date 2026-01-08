@@ -7,14 +7,14 @@
  * @module CreateQuoteDialog
  */
 
-import { useState, useMemo, useId, useEffect } from 'react'
-import { useParams } from '@tanstack/react-router'
-import { FileText, Plus, Trash2 } from 'lucide-react'
+import { useState, useMemo, useId, useEffect } from "react";
+import { useParams } from "@tanstack/react-router";
+import { FileText, Plus, Trash2 } from "lucide-react";
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	Dialog,
 	DialogContent,
@@ -22,17 +22,22 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from '@/components/ui/dialog'
+} from "@/components/ui/dialog";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from '@/components/ui/select'
-import { Combobox } from '@/components/ui/combobox'
-import { createQuote, type CreateQuoteInput } from '@/data/quotes'
-import { fetchPlans, fetchProducts, type Product, type ProductTier } from '@/data/products'
+} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
+import { createQuote, type CreateQuoteInput } from "@/data/quotes";
+import {
+	fetchPlans,
+	fetchProducts,
+	type Product,
+	type ProductTier,
+} from "@/data/products";
 
 /**
  * Represents a single line item in the quote form.
@@ -40,19 +45,19 @@ import { fetchPlans, fetchProducts, type Product, type ProductTier } from '@/dat
  */
 interface LineItem {
 	/** Unique identifier for this line item in the form */
-	id: string
+	id: string;
 	/** Selected product ID for this line item */
-	productId?: string
+	productId?: string;
 	/** Selected plan ID for this line item */
-	planId?: string
+	planId?: string;
 	/** Description text (auto-populated from plan name) */
-	description: string
+	description: string;
 	/** Number of units */
-	quantity: number
+	quantity: number;
 	/** Price per unit in dollars (not cents) */
-	unitPrice: number
+	unitPrice: number;
 	/** Total price for this line (quantity × unitPrice) in dollars */
-	total: number
+	total: number;
 }
 
 /**
@@ -60,9 +65,9 @@ interface LineItem {
  */
 interface Company {
 	/** Unique company identifier */
-	id: string
+	id: string;
 	/** Company display name */
-	name: string
+	name: string;
 }
 
 /**
@@ -70,9 +75,9 @@ interface Company {
  */
 interface Deal {
 	/** Unique deal identifier */
-	id: string
+	id: string;
 	/** Deal display name */
-	name: string
+	name: string;
 }
 
 /**
@@ -81,13 +86,13 @@ interface Deal {
  */
 interface CustomerSubscription {
 	/** Subscription ID */
-	id: string
+	id: string;
 	/** Product ID for this subscription */
-	productId: string | null
+	productId: string | null;
 	/** Product name for display */
-	productName: string | null
+	productName: string | null;
 	/** Subscription status (active, trial, etc.) */
-	status: string
+	status: string;
 }
 
 /**
@@ -95,15 +100,15 @@ interface CustomerSubscription {
  */
 interface CreateQuoteDialogProps {
 	/** Whether the dialog is currently visible */
-	open: boolean
+	open: boolean;
 	/** Callback to control the dialog's open state */
-	onOpenChange: (open: boolean) => void
+	onOpenChange: (open: boolean) => void;
 	/** Callback invoked after successful quote creation */
-	onQuoteCreated?: () => void
+	onQuoteCreated?: () => void;
 	/** Pre-select a company by ID when dialog opens */
-	preSelectedCompanyId?: string | null
+	preSelectedCompanyId?: string | null;
 	/** Pre-select a deal by ID when dialog opens */
-	preSelectedDealId?: string | null
+	preSelectedDealId?: string | null;
 }
 
 /**
@@ -142,301 +147,341 @@ export function CreateQuoteDialog({
 	preSelectedCompanyId,
 	preSelectedDealId,
 }: CreateQuoteDialogProps) {
-	const params = useParams({ strict: false }) as { tenant?: string }
-	const tenant = params.tenant || ''
-	const validUntilId = useId()
-	const taxId = useId()
-	const notesId = useId()
+	const params = useParams({ strict: false }) as { tenant?: string };
+	const tenant = params.tenant || "";
+	const validUntilId = useId();
+	const taxId = useId();
+	const notesId = useId();
 
-	const [isSubmitting, setIsSubmitting] = useState(false)
-	const [error, setError] = useState<string | null>(null)
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const [lineItems, setLineItems] = useState<LineItem[]>([
-		{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0, total: 0 },
-	])
-	const [tax, setTax] = useState<number>(0) // in dollars
-	const [notes, setNotes] = useState('')
+		{
+			id: crypto.randomUUID(),
+			description: "",
+			quantity: 1,
+			unitPrice: 0,
+			total: 0,
+		},
+	]);
+	const [tax, setTax] = useState<number>(0); // in dollars
+	const [notes, setNotes] = useState("");
 	const [validUntil, setValidUntil] = useState(
-		new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-	)
+		new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+	);
 
 	// Company selection
-	const [companies, setCompanies] = useState<Company[]>([])
+	const [companies, setCompanies] = useState<Company[]>([]);
 	const [selectedCompanyId, setSelectedCompanyId] = useState<string>(
-		preSelectedCompanyId || ''
-	)
-	const [isLoadingCompanies, setIsLoadingCompanies] = useState(false)
-	const [customerSubscriptions, setCustomerSubscriptions] = useState<CustomerSubscription[]>([])
+		preSelectedCompanyId || "",
+	);
+	const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
+	const [customerSubscriptions, setCustomerSubscriptions] = useState<
+		CustomerSubscription[]
+	>([]);
 
 	// Deal selection
-	const [deals, setDeals] = useState<Deal[]>([])
-	const [selectedDealId, setSelectedDealId] = useState<string | undefined>(preSelectedDealId || undefined)
-	const [isLoadingDeals, setIsLoadingDeals] = useState(false)
+	const [deals, setDeals] = useState<Deal[]>([]);
+	const [selectedDealId, setSelectedDealId] = useState<string | undefined>(
+		preSelectedDealId || undefined,
+	);
+	const [isLoadingDeals, setIsLoadingDeals] = useState(false);
 
 	// Products and plans (for all line items)
-	const [products, setProducts] = useState<Product[]>([])
-	const [plans, setPlans] = useState<ProductTier[]>([])
-	const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+	const [products, setProducts] = useState<Product[]>([]);
+	const [plans, setPlans] = useState<ProductTier[]>([]);
+	const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
 	// Load companies
 	useEffect(() => {
-		if (!open || !tenant) return
+		if (!open || !tenant) return;
 
 		const loadCompanies = async () => {
-			setIsLoadingCompanies(true)
+			setIsLoadingCompanies(true);
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/crm/customers`)
+				const response = await fetch(`/api/tenant/${tenant}/crm/customers`);
 				if (response.ok) {
-					const data = await response.json()
-					setCompanies(data.customers || [])
+					const data = await response.json();
+					setCompanies(data.customers || []);
 					// Set pre-selected company only if provided and not already set
 					if (preSelectedCompanyId) {
-						setSelectedCompanyId(preSelectedCompanyId)
+						setSelectedCompanyId(preSelectedCompanyId);
 					}
 				}
 			} catch (err) {
-				console.error('Failed to load companies:', err)
+				console.error("Failed to load companies:", err);
 			} finally {
-				setIsLoadingCompanies(false)
+				setIsLoadingCompanies(false);
 			}
-		}
+		};
 
-		loadCompanies()
-	}, [open, tenant, preSelectedCompanyId])
+		loadCompanies();
+	}, [open, tenant, preSelectedCompanyId]);
 
 	// Load customer subscriptions when company is selected
 	useEffect(() => {
 		if (!selectedCompanyId || !tenant) {
-			setCustomerSubscriptions([])
-			return
+			setCustomerSubscriptions([]);
+			return;
 		}
 
 		const loadSubscriptions = async () => {
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/crm/customers/${selectedCompanyId}`)
+				const response = await fetch(
+					`/api/tenant/${tenant}/crm/customers/${selectedCompanyId}`,
+				);
 				if (response.ok) {
-					const data = await response.json()
+					const data = await response.json();
 					const subs = (data.subscriptions || [])
-						.filter((s: any) => s.status === 'active' || s.status === 'trial')
+						.filter((s: any) => s.status === "active" || s.status === "trial")
 						.map((s: any) => ({
 							id: s.id,
 							productId: s.productId,
 							productName: s.productName,
 							status: s.status,
-						}))
-					setCustomerSubscriptions(subs)
+						}));
+					setCustomerSubscriptions(subs);
 				}
 			} catch (err) {
-				console.error('Failed to load customer subscriptions:', err)
+				console.error("Failed to load customer subscriptions:", err);
 			}
-		}
+		};
 
-		loadSubscriptions()
-	}, [selectedCompanyId, tenant])
+		loadSubscriptions();
+	}, [selectedCompanyId, tenant]);
 
 	// Load deals
 	useEffect(() => {
-		if (!open || !tenant) return
+		if (!open || !tenant) return;
 
 		const loadDeals = async () => {
-			setIsLoadingDeals(true)
+			setIsLoadingDeals(true);
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/deals`)
+				const response = await fetch(`/api/tenant/${tenant}/deals`);
 				if (response.ok) {
-					const data = await response.json()
-					setDeals(data.deals || [])
+					const data = await response.json();
+					setDeals(data.deals || []);
 					// Set pre-selected deal only if provided and not already set
 					if (preSelectedDealId) {
-						setSelectedDealId(preSelectedDealId)
+						setSelectedDealId(preSelectedDealId);
 					}
 				}
 			} catch (err) {
-				console.error('Failed to load deals:', err)
+				console.error("Failed to load deals:", err);
 			} finally {
-				setIsLoadingDeals(false)
+				setIsLoadingDeals(false);
 			}
-		}
+		};
 
-		loadDeals()
-	}, [open, tenant, preSelectedDealId])
+		loadDeals();
+	}, [open, tenant, preSelectedDealId]);
 
 	// Load products and plans
 	useEffect(() => {
-		if (!open || !tenant) return
+		if (!open || !tenant) return;
 
 		const loadProducts = async () => {
-			setIsLoadingProducts(true)
+			setIsLoadingProducts(true);
 			try {
-				const productsData = await fetchProducts(tenant, { status: 'active' })
-				setProducts(productsData)
+				const productsData = await fetchProducts(tenant, { status: "active" });
+				setProducts(productsData);
 
-				const plansData = await fetchPlans(tenant, { status: 'active' })
-				setPlans(plansData)
+				const plansData = await fetchPlans(tenant, { status: "active" });
+				setPlans(plansData);
 			} catch (err) {
-				console.error('Failed to load products:', err)
+				console.error("Failed to load products:", err);
 			} finally {
-				setIsLoadingProducts(false)
+				setIsLoadingProducts(false);
 			}
-		}
+		};
 
-		loadProducts()
-	}, [open, tenant])
+		loadProducts();
+	}, [open, tenant]);
 
 	// Convert companies to combobox options
 	const companyOptions = useMemo(() => {
 		return companies.map((company) => ({
 			value: company.id,
 			label: company.name,
-		}))
-	}, [companies])
+		}));
+	}, [companies]);
 
 	// Get available products for a specific line item (excluding already subscribed and already added)
 	const getAvailableProductsForLine = (lineItemId: string) => {
-		const subscribedProductIds = customerSubscriptions.map((s) => s.productId).filter(Boolean)
+		const subscribedProductIds = customerSubscriptions
+			.map((s) => s.productId)
+			.filter(Boolean);
 		const usedProductIds = lineItems
 			.filter((item) => item.id !== lineItemId && item.productId)
-			.map((item) => item.productId)
+			.map((item) => item.productId);
 
 		return products.filter(
-			(product) => !subscribedProductIds.includes(product.id) && !usedProductIds.includes(product.id)
-		)
-	}
+			(product) =>
+				!subscribedProductIds.includes(product.id) &&
+				!usedProductIds.includes(product.id),
+		);
+	};
 
 	// Get available plans for a product in a specific line item
 	const getAvailablePlansForProduct = (productId: string) => {
-		return plans.filter((plan) => plan.productId === productId)
-	}
+		return plans.filter((plan) => plan.productId === productId);
+	};
 
 	// Calculate totals
 	const subtotal = useMemo(() => {
-		return lineItems.reduce((sum, item) => sum + item.total, 0)
-	}, [lineItems])
+		return lineItems.reduce((sum, item) => sum + item.total, 0);
+	}, [lineItems]);
 
 	const total = useMemo(() => {
-		return subtotal + tax
-	}, [subtotal, tax])
+		return subtotal + tax;
+	}, [subtotal, tax]);
 
 	const resetForm = () => {
 		setLineItems([
-			{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0, total: 0 },
-		])
-		setTax(0)
-		setNotes('')
-		setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-		setSelectedCompanyId(preSelectedCompanyId || '')
-		setSelectedDealId(preSelectedDealId || undefined)
-		setCustomerSubscriptions([])
-		setError(null)
-	}
+			{
+				id: crypto.randomUUID(),
+				description: "",
+				quantity: 1,
+				unitPrice: 0,
+				total: 0,
+			},
+		]);
+		setTax(0);
+		setNotes("");
+		setValidUntil(
+			new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+				.toISOString()
+				.split("T")[0],
+		);
+		setSelectedCompanyId(preSelectedCompanyId || "");
+		setSelectedDealId(preSelectedDealId || undefined);
+		setCustomerSubscriptions([]);
+		setError(null);
+	};
 
 	const handleDialogClose = (isOpen: boolean) => {
 		if (!isOpen) {
-			resetForm()
+			resetForm();
 		}
-		onOpenChange(isOpen)
-	}
+		onOpenChange(isOpen);
+	};
 
 	const addLineItem = () => {
 		setLineItems([
 			...lineItems,
-			{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0, total: 0 },
-		])
-	}
+			{
+				id: crypto.randomUUID(),
+				description: "",
+				quantity: 1,
+				unitPrice: 0,
+				total: 0,
+			},
+		]);
+	};
 
 	const removeLineItem = (id: string) => {
 		if (lineItems.length > 1) {
-			setLineItems(lineItems.filter((item) => item.id !== id))
+			setLineItems(lineItems.filter((item) => item.id !== id));
 		}
-	}
+	};
 
 	const updateLineItem = (
 		id: string,
-		field: keyof Omit<LineItem, 'id'>,
-		value: string | number
+		field: keyof Omit<LineItem, "id">,
+		value: string | number,
 	) => {
 		const updated = lineItems.map((item) => {
-			if (item.id !== id) return item
+			if (item.id !== id) return item;
 
-			const updatedItem = { ...item, [field]: value }
+			const updatedItem = { ...item, [field]: value };
 
 			// Recalculate total for this line item
-			if (field === 'quantity' || field === 'unitPrice') {
-				const qty = field === 'quantity' ? Number(value) : updatedItem.quantity
-				const price = field === 'unitPrice' ? Number(value) : updatedItem.unitPrice
-				updatedItem.total = qty * price
+			if (field === "quantity" || field === "unitPrice") {
+				const qty = field === "quantity" ? Number(value) : updatedItem.quantity;
+				const price =
+					field === "unitPrice" ? Number(value) : updatedItem.unitPrice;
+				updatedItem.total = qty * price;
 			}
 
-			return updatedItem
-		})
+			return updatedItem;
+		});
 
-		setLineItems(updated)
-	}
+		setLineItems(updated);
+	};
 
-	const handleLineItemProductChange = (lineItemId: string, productId: string) => {
+	const handleLineItemProductChange = (
+		lineItemId: string,
+		productId: string,
+	) => {
 		const updated = lineItems.map((item) => {
-			if (item.id !== lineItemId) return item
+			if (item.id !== lineItemId) return item;
 
-			const product = products.find((p) => p.id === productId)
+			const product = products.find((p) => p.id === productId);
 			return {
 				...item,
 				productId,
 				planId: undefined,
-				description: product?.name || '',
+				description: product?.name || "",
 				unitPrice: 0,
 				total: 0,
-			}
-		})
+			};
+		});
 
-		setLineItems(updated)
-	}
+		setLineItems(updated);
+	};
 
 	const handleLineItemPlanChange = (lineItemId: string, planId: string) => {
 		const updated = lineItems.map((item) => {
-			if (item.id !== lineItemId) return item
+			if (item.id !== lineItemId) return item;
 
-			const plan = plans.find((p) => p.id === planId)
-			const unitPrice = plan?.basePrice?.amount || 0
+			const plan = plans.find((p) => p.id === planId);
+			const unitPrice = plan?.basePrice?.amount || 0;
 
 			return {
 				...item,
 				planId,
-				description: plan?.name || '',
+				description: plan?.name || "",
 				unitPrice,
 				total: item.quantity * unitPrice,
-			}
-		})
+			};
+		});
 
-		setLineItems(updated)
-	}
+		setLineItems(updated);
+	};
 
 	const canSubmit = useMemo(() => {
 		// Must have selected company and at least one line item with product and plan
-		const hasValidLineItem = lineItems.some((item) => item.productId && item.planId)
-		return selectedCompanyId && hasValidLineItem && !isSubmitting
-	}, [lineItems, selectedCompanyId, isSubmitting])
+		const hasValidLineItem = lineItems.some(
+			(item) => item.productId && item.planId,
+		);
+		return selectedCompanyId && hasValidLineItem && !isSubmitting;
+	}, [lineItems, selectedCompanyId, isSubmitting]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
-		e.stopPropagation()
+		e.preventDefault();
+		e.stopPropagation();
 
 		// Validation
 		if (!tenant) {
-			setError('Tenant is required')
-			return
+			setError("Tenant is required");
+			return;
 		}
 
 		if (!selectedCompanyId) {
-			setError('Please select a company')
-			return
+			setError("Please select a company");
+			return;
 		}
 
-		const validLineItems = lineItems.filter((item) => item.description.trim() !== '')
+		const validLineItems = lineItems.filter(
+			(item) => item.description.trim() !== "",
+		);
 		if (validLineItems.length === 0) {
-			setError('At least one line item with a description is required')
-			return
+			setError("At least one line item with a description is required");
+			return;
 		}
 
-		setIsSubmitting(true)
-		setError(null)
+		setIsSubmitting(true);
+		setError(null);
 
 		try {
 			// Convert dollars to cents for API
@@ -447,7 +492,7 @@ export function CreateQuoteDialog({
 				unitPrice: Math.round(item.unitPrice * 100),
 				total: Math.round(item.total * 100),
 				...(item.planId && { productPlanId: item.planId }),
-			}))
+			}));
 
 			const quoteData: CreateQuoteInput = {
 				tenantOrganizationId: selectedCompanyId,
@@ -456,32 +501,32 @@ export function CreateQuoteDialog({
 				// Convert date-only string to full ISO datetime for Zod validation
 				validUntil: validUntil ? new Date(validUntil).toISOString() : undefined,
 				notes: notes.trim() || undefined,
-			}
+			};
 
 			if (selectedDealId) {
-				quoteData.dealId = selectedDealId
+				quoteData.dealId = selectedDealId;
 			}
 
-			const result = await createQuote(tenant, quoteData)
+			const result = await createQuote(tenant, quoteData);
 
 			if (!result.success) {
-				throw new Error(result.error || 'Failed to create quote')
+				throw new Error(result.error || "Failed to create quote");
 			}
 
 			// Success - add small delay to ensure any portal cleanup completes
-			resetForm()
-			onQuoteCreated?.()
+			resetForm();
+			onQuoteCreated?.();
 			// Use setTimeout to avoid race conditions with dialog/select portal cleanup
 			setTimeout(() => {
-				onOpenChange(false)
-			}, 100)
+				onOpenChange(false);
+			}, 100);
 		} catch (err) {
-			console.error('Error creating quote:', err)
-			setError(err instanceof Error ? err.message : 'Failed to create quote')
+			console.error("Error creating quote:", err);
+			setError(err instanceof Error ? err.message : "Failed to create quote");
 		} finally {
-			setIsSubmitting(false)
+			setIsSubmitting(false);
 		}
-	}
+	};
 
 	return (
 		<Dialog open={open} onOpenChange={handleDialogClose}>
@@ -527,8 +572,8 @@ export function CreateQuoteDialog({
 					{/* Deal Selection (Optional) */}
 					<div className="space-y-2">
 						<Label htmlFor="deal">Deal (Optional)</Label>
-						<Select 
-							value={selectedDealId} 
+						<Select
+							value={selectedDealId}
 							onValueChange={(value) => setSelectedDealId(value)}
 						>
 							<SelectTrigger id="deal">
@@ -590,8 +635,10 @@ export function CreateQuoteDialog({
 
 						<div className="space-y-3">
 							{lineItems.map((item, index) => {
-								const availableProducts = getAvailableProductsForLine(item.id)
-								const availablePlans = item.productId ? getAvailablePlansForProduct(item.productId) : []
+								const availableProducts = getAvailableProductsForLine(item.id);
+								const availablePlans = item.productId
+									? getAvailablePlansForProduct(item.productId)
+									: [];
 
 								return (
 									<div
@@ -602,16 +649,27 @@ export function CreateQuoteDialog({
 											<div className="flex-1 space-y-3">
 												{/* Product Selection */}
 												<div className="space-y-2">
-													<Label htmlFor={`product-${index}`} className="text-xs">
+													<Label
+														htmlFor={`product-${index}`}
+														className="text-xs"
+													>
 														Product *
 													</Label>
 													<Select
 														value={item.productId}
-														onValueChange={(value) => handleLineItemProductChange(item.id, value)}
+														onValueChange={(value) =>
+															handleLineItemProductChange(item.id, value)
+														}
 														disabled={!selectedCompanyId || isLoadingProducts}
 													>
 														<SelectTrigger id={`product-${index}`}>
-															<SelectValue placeholder={!selectedCompanyId ? "Select a company first" : "Select a product"} />
+															<SelectValue
+																placeholder={
+																	!selectedCompanyId
+																		? "Select a company first"
+																		: "Select a product"
+																}
+															/>
 														</SelectTrigger>
 														<SelectContent>
 															{availableProducts.length === 0 ? (
@@ -620,7 +678,10 @@ export function CreateQuoteDialog({
 																</SelectItem>
 															) : (
 																availableProducts.map((product) => (
-																	<SelectItem key={product.id} value={product.id}>
+																	<SelectItem
+																		key={product.id}
+																		value={product.id}
+																	>
 																		{product.name}
 																	</SelectItem>
 																))
@@ -636,11 +697,19 @@ export function CreateQuoteDialog({
 													</Label>
 													<Select
 														value={item.planId}
-														onValueChange={(value) => handleLineItemPlanChange(item.id, value)}
+														onValueChange={(value) =>
+															handleLineItemPlanChange(item.id, value)
+														}
 														disabled={!item.productId}
 													>
 														<SelectTrigger id={`plan-${index}`}>
-															<SelectValue placeholder={!item.productId ? "Select a product first" : "Select a plan"} />
+															<SelectValue
+																placeholder={
+																	!item.productId
+																		? "Select a product first"
+																		: "Select a plan"
+																}
+															/>
 														</SelectTrigger>
 														<SelectContent>
 															{availablePlans.length === 0 ? (
@@ -672,45 +741,60 @@ export function CreateQuoteDialog({
 										</div>
 
 										<div className="grid grid-cols-3 gap-3">
-										<div className="space-y-2">
-											<Label htmlFor={`quantity-${index}`} className="text-xs">
-												Quantity
-											</Label>
-											<Input
-												id={`quantity-${index}`}
-												type="number"
-												min="1"
-												step="1"
-												value={item.quantity}
-												onChange={(e) =>
-													updateLineItem(item.id, 'quantity', Number(e.target.value))
-												}
-											/>
-										</div>
-										<div className="space-y-2">
-											<Label htmlFor={`unitPrice-${index}`} className="text-xs">
-												Unit Price ($)
-											</Label>
-											<Input
-												id={`unitPrice-${index}`}
-												type="number"
-												min="0"
-												step="0.01"
-												value={item.unitPrice}
-												onChange={(e) =>
-													updateLineItem(item.id, 'unitPrice', Number(e.target.value))
-												}
-											/>
-										</div>
-										<div className="space-y-2">
-											<Label className="text-xs">Total</Label>
-											<div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center justify-end font-medium">
-												${item.total.toFixed(2)}
+											<div className="space-y-2">
+												<Label
+													htmlFor={`quantity-${index}`}
+													className="text-xs"
+												>
+													Quantity
+												</Label>
+												<Input
+													id={`quantity-${index}`}
+													type="number"
+													min="1"
+													step="1"
+													value={item.quantity}
+													onChange={(e) =>
+														updateLineItem(
+															item.id,
+															"quantity",
+															Number(e.target.value),
+														)
+													}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label
+													htmlFor={`unitPrice-${index}`}
+													className="text-xs"
+												>
+													Unit Price ($)
+												</Label>
+												<Input
+													id={`unitPrice-${index}`}
+													type="number"
+													min="0"
+													step="0.01"
+													value={item.unitPrice}
+													onChange={(e) =>
+														updateLineItem(
+															item.id,
+															"unitPrice",
+															Number(e.target.value),
+														)
+													}
+												/>
+											</div>
+											<div className="space-y-2">
+												<Label className="text-xs">Total</Label>
+												<div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center justify-end font-medium">
+													${item.total.toFixed(2)}
+												</div>
 											</div>
 										</div>
 									</div>
-								</div>
-							)})}
+								);
+							})}
 						</div>
 					</div>
 
@@ -772,13 +856,12 @@ export function CreateQuoteDialog({
 									Creating...
 								</>
 							) : (
-								'Create Quote'
+								"Create Quote"
 							)}
 						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>
 		</Dialog>
-	)
+	);
 }
-

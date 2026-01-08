@@ -1,9 +1,35 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type Invoice, InvoiceList } from "./InvoiceList";
 
+// Mock the router hooks
+vi.mock("@tanstack/react-router", () => ({
+	useParams: vi.fn(() => ({ tenant: "acme" })),
+	Link: ({
+		children,
+		to,
+		params,
+		className,
+	}: {
+		children: React.ReactNode;
+		to: string;
+		params: Record<string, string>;
+		className?: string;
+	}) => (
+		<a
+			href={`${to.replace("$tenant", params.tenant).replace("$customerId", params.customerId)}`}
+			className={className}
+		>
+			{children}
+		</a>
+	),
+}));
+
 describe("InvoiceList", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
 	const mockOnViewInvoice = vi.fn();
 	const mockOnMarkAsPaid = vi.fn();
 	const mockOnDownloadPDF = vi.fn();
@@ -40,6 +66,7 @@ describe("InvoiceList", () => {
 		tenantOrganization: {
 			id: "org-1",
 			name: "Acme Corp",
+			slug: "acme-corp",
 		},
 		createdAt: "2024-01-01",
 		updatedAt: "2024-01-01",
@@ -195,6 +222,22 @@ describe("InvoiceList", () => {
 
 			const inv002Elements = screen.getAllByText("INV-002");
 			expect(inv002Elements.length).toBeGreaterThan(0);
+		});
+	});
+
+	describe("Navigation", () => {
+		it("should link customer name to the customer detail page", () => {
+			render(<InvoiceList invoices={[mockInvoice]} />);
+
+			// Customer name should be a link
+			const customerLinks = screen.getAllByRole("link", { name: "Acme Corp" });
+			expect(customerLinks.length).toBeGreaterThan(0);
+
+			// Check that the link points to the correct URL
+			expect(customerLinks[0]).toHaveAttribute(
+				"href",
+				"/acme/app/sales/crm/acme-corp",
+			);
 		});
 	});
 });

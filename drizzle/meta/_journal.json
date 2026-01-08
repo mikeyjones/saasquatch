@@ -148,6 +148,13 @@
       "when": 1767368096000,
       "tag": "0020_quotes",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1736366400000,
+      "tag": "0021_rename_columns_to_snake_case",
+      "breakpoints": true
     }
   ]
 }
