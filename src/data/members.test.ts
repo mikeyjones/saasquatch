@@ -89,7 +89,7 @@ describe("fetchMembers", () => {
 		const result = await fetchMembers("acme");
 
 		expect(fetch).toHaveBeenCalledWith(
-			expect.stringContaining("/api/tenant/acme/users"),
+			expect.stringContaining("/acme/api/users"),
 			expect.objectContaining({
 				credentials: "include",
 			}),
@@ -214,7 +214,7 @@ describe("fetchMembers", () => {
 
 		// Check second call (tickets fetch)
 		const ticketsCallUrl = mockFetch().mock.calls[1][0] as string;
-		expect(ticketsCallUrl).toContain("/api/tenant/acme/tickets");
+		expect(ticketsCallUrl).toContain("/acme/api/tickets");
 		expect(ticketsCallUrl).toContain("customerId=member-1");
 		expect(ticketsCallUrl).toContain("status=open");
 	});

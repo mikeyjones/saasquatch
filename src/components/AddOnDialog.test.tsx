@@ -201,7 +201,7 @@ describe("AddOnDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/product-catalog/add-ons"),
+					expect.stringContaining("/acme/api/product-catalog/add-ons"),
 					expect.objectContaining({
 						method: "POST",
 					}),

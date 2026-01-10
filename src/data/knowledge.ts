@@ -127,7 +127,7 @@ export async function fetchArticles(
 ): Promise<KnowledgeArticle[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/knowledge/articles`,
+			`/${tenantSlug}/api/knowledge/articles`,
 			window.location.origin,
 		);
 
@@ -175,7 +175,7 @@ export async function createArticle(
 ): Promise<{ success: boolean; article?: KnowledgeArticle; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/knowledge/articles`,
+			`/${tenantSlug}/api/knowledge/articles`,
 			{
 				method: "POST",
 				credentials: "include",
@@ -227,7 +227,7 @@ export async function updateArticle(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/knowledge/articles`,
+			`/${tenantSlug}/api/knowledge/articles`,
 			{
 				method: "PUT",
 				credentials: "include",
@@ -265,7 +265,7 @@ export async function deleteArticle(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/knowledge/articles?id=${articleId}`,
+			`/${tenantSlug}/api/knowledge/articles?id=${articleId}`,
 			{
 				method: "DELETE",
 				credentials: "include",
@@ -305,7 +305,7 @@ export async function fetchPlaybooks(
 ): Promise<Playbook[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/knowledge/playbooks`,
+			`/${tenantSlug}/api/knowledge/playbooks`,
 			window.location.origin,
 		);
 
@@ -358,7 +358,7 @@ export async function createPlaybook(
 ): Promise<{ success: boolean; playbook?: Playbook; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/knowledge/playbooks`,
+			`/${tenantSlug}/api/knowledge/playbooks`,
 			{
 				method: "POST",
 				credentials: "include",
@@ -414,7 +414,7 @@ export async function updatePlaybook(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/knowledge/playbooks`,
+			`/${tenantSlug}/api/knowledge/playbooks`,
 			{
 				method: "PUT",
 				credentials: "include",
@@ -452,7 +452,7 @@ export async function deletePlaybook(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/knowledge/playbooks?id=${playbookId}`,
+			`/${tenantSlug}/api/knowledge/playbooks?id=${playbookId}`,
 			{
 				method: "DELETE",
 				credentials: "include",
@@ -506,7 +506,7 @@ export async function searchKnowledge(
 ): Promise<SearchResult[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/knowledge/search`,
+			`/${tenantSlug}/api/knowledge/search`,
 			window.location.origin,
 		);
 

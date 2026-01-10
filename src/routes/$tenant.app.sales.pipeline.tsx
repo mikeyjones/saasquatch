@@ -43,7 +43,7 @@ function PipelinePage() {
 
 		const loadPipelines = async () => {
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/pipelines`);
+				const response = await fetch(`/${tenant}/api/pipelines`);
 				const data = await response.json();
 				setPipelines(data.pipelines || []);
 

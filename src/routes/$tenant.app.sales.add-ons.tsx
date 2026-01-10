@@ -74,7 +74,7 @@ function AddOnsPage() {
 		setDeletingAddOnId(addOn.id);
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/product-catalog/add-ons?id=${addOn.id}`,
+				`/${tenant}/api/product-catalog/add-ons?id=${addOn.id}`,
 				{
 					method: "DELETE",
 					credentials: "include",

@@ -55,7 +55,7 @@ describe("Quotes Data Layer", () => {
 			const result = await fetchQuotes("acme");
 
 			// URL includes trailing ? even with no params due to URLSearchParams.toString()
-			expect(fetch).toHaveBeenCalledWith("/api/tenant/acme/quotes?");
+			expect(fetch).toHaveBeenCalledWith("/acme/api/quotes?");
 			expect(result).toEqual(mockQuotes);
 		});
 
@@ -67,7 +67,7 @@ describe("Quotes Data Layer", () => {
 			await fetchQuotes("acme", { status: "draft" });
 
 			expect(fetch).toHaveBeenCalledWith(
-				"/api/tenant/acme/quotes?status=draft",
+				"/acme/api/quotes?status=draft",
 			);
 		});
 
@@ -131,7 +131,7 @@ describe("Quotes Data Layer", () => {
 
 			const result = await fetchQuote("acme", "quote-1");
 
-			expect(fetch).toHaveBeenCalledWith("/api/tenant/acme/quotes/quote-1");
+			expect(fetch).toHaveBeenCalledWith("/acme/api/quotes/quote-1");
 			expect(result).toEqual(mockQuote);
 		});
 
@@ -186,7 +186,7 @@ describe("Quotes Data Layer", () => {
 
 			const result = await createQuote("acme", input);
 
-			expect(fetch).toHaveBeenCalledWith("/api/tenant/acme/quotes", {
+			expect(fetch).toHaveBeenCalledWith("/acme/api/quotes", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(input),
@@ -263,7 +263,7 @@ describe("Quotes Data Layer", () => {
 
 			const result = await updateQuote("acme", "quote-1", input);
 
-			expect(fetch).toHaveBeenCalledWith("/api/tenant/acme/quotes/quote-1", {
+			expect(fetch).toHaveBeenCalledWith("/acme/api/quotes/quote-1", {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(input),
@@ -301,7 +301,7 @@ describe("Quotes Data Layer", () => {
 
 			const result = await deleteQuote("acme", "quote-1");
 
-			expect(fetch).toHaveBeenCalledWith("/api/tenant/acme/quotes/quote-1", {
+			expect(fetch).toHaveBeenCalledWith("/acme/api/quotes/quote-1", {
 				method: "DELETE",
 			});
 			expect(result.success).toBe(true);
@@ -317,7 +317,7 @@ describe("Quotes Data Layer", () => {
 			const result = await sendQuote("acme", "quote-1");
 
 			expect(fetch).toHaveBeenCalledWith(
-				"/api/tenant/acme/quotes/quote-1/send",
+				"/acme/api/quotes/quote-1/send",
 				{
 					method: "POST",
 				},
@@ -338,7 +338,7 @@ describe("Quotes Data Layer", () => {
 			const result = await acceptQuote("acme", "quote-1");
 
 			expect(fetch).toHaveBeenCalledWith(
-				"/api/tenant/acme/quotes/quote-1/accept",
+				"/acme/api/quotes/quote-1/accept",
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -360,7 +360,7 @@ describe("Quotes Data Layer", () => {
 			const result = await acceptQuote("acme", "quote-1", options);
 
 			expect(fetch).toHaveBeenCalledWith(
-				"/api/tenant/acme/quotes/quote-1/accept",
+				"/acme/api/quotes/quote-1/accept",
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -380,7 +380,7 @@ describe("Quotes Data Layer", () => {
 			const result = await rejectQuote("acme", "quote-1");
 
 			expect(fetch).toHaveBeenCalledWith(
-				"/api/tenant/acme/quotes/quote-1/reject",
+				"/acme/api/quotes/quote-1/reject",
 				{
 					method: "POST",
 				},
@@ -392,7 +392,7 @@ describe("Quotes Data Layer", () => {
 	describe("getQuotePDFUrl", () => {
 		it("should return correct PDF URL", () => {
 			const url = getQuotePDFUrl("acme", "quote-1");
-			expect(url).toBe("/api/tenant/acme/quotes/quote-1/pdf");
+			expect(url).toBe("/acme/api/quotes/quote-1/pdf");
 		});
 	});
 });

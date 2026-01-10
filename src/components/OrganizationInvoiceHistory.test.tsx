@@ -298,7 +298,7 @@ describe("OrganizationInvoiceHistory", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					"/api/tenant/acme/invoices/inv-1/pdf",
+					"/acme/api/invoices/inv-1/pdf",
 				);
 			});
 
@@ -404,7 +404,7 @@ describe("OrganizationInvoiceHistory", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					"/api/tenant/acme/invoices/inv-2/finalize",
+					"/acme/api/invoices/inv-2/finalize",
 					{ method: "POST" },
 				);
 			});
@@ -501,7 +501,7 @@ describe("OrganizationInvoiceHistory", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					"/api/tenant/acme/invoices/inv-4/pay",
+					"/acme/api/invoices/inv-4/pay",
 					{ method: "POST" },
 				);
 			});

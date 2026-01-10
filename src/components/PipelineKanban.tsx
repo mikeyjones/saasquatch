@@ -139,7 +139,7 @@ export function PipelineKanban({
 
 		const loadPipelines = async () => {
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/pipelines`);
+				const response = await fetch(`/${tenant}/api/pipelines`);
 				const data = await response.json();
 				setPipelines(data.pipelines || []);
 
@@ -173,7 +173,7 @@ export function PipelineKanban({
 			setIsLoading(true);
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/deals?pipelineId=${selectedPipeline.id}`,
+					`/${tenant}/api/deals?pipelineId=${selectedPipeline.id}`,
 				);
 				const data = await response.json();
 				setDeals(data.deals || []);
@@ -309,7 +309,7 @@ export function PipelineKanban({
 			setIsUpdating(true);
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/deals/${activeId}`,
+					`/${tenant}/api/deals/${activeId}`,
 					{
 						method: "PUT",
 						headers: { "Content-Type": "application/json" },

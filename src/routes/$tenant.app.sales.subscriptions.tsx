@@ -31,7 +31,7 @@ function SubscriptionsPage() {
 	const { data, isLoading, error, refetch } = useQuery<SubscriptionsResponse>({
 		queryKey: ["subscriptions", tenant],
 		queryFn: async () => {
-			const response = await fetch(`/api/tenant/${tenant}/subscriptions`);
+			const response = await fetch(`/${tenant}/api/subscriptions`);
 			if (!response.ok) {
 				throw new Error("Failed to fetch subscriptions");
 			}

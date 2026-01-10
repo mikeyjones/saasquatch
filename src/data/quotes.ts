@@ -172,7 +172,7 @@ export async function fetchQuotes(
 	if (filters?.dealId) params.append("dealId", filters.dealId);
 
 	const response = await fetch(
-		`/api/tenant/${tenantSlug}/quotes?${params.toString()}`,
+		`/${tenantSlug}/api/quotes?${params.toString()}`,
 	);
 	if (!response.ok) {
 		throw new Error(`Failed to fetch quotes: ${response.statusText}`);
@@ -192,7 +192,7 @@ export async function fetchQuote(
 	tenantSlug: string,
 	quoteId: string,
 ): Promise<Quote | null> {
-	const response = await fetch(`/api/tenant/${tenantSlug}/quotes/${quoteId}`);
+	const response = await fetch(`/${tenantSlug}/api/quotes/${quoteId}`);
 	if (!response.ok) {
 		if (response.status === 404) return null;
 		throw new Error(`Failed to fetch quote: ${response.statusText}`);
@@ -213,7 +213,7 @@ export async function createQuote(
 	quoteData: CreateQuoteInput,
 ): Promise<{ success: boolean; quote?: Quote; error?: string }> {
 	try {
-		const response = await fetch(`/api/tenant/${tenantSlug}/quotes`, {
+		const response = await fetch(`/${tenantSlug}/api/quotes`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(quoteData),
@@ -248,7 +248,7 @@ export async function updateQuote(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/quotes/${quoteId}`,
+			`/${tenantSlug}/api/quotes/${quoteId}`,
 			{
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
@@ -282,7 +282,7 @@ export async function deleteQuote(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/quotes/${quoteId}`,
+			`/${tenantSlug}/api/quotes/${quoteId}`,
 			{
 				method: "DELETE",
 			},
@@ -314,7 +314,7 @@ export async function sendQuote(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/quotes/${quoteId}/send`,
+			`/${tenantSlug}/api/quotes/${quoteId}/send`,
 			{
 				method: "POST",
 			},
@@ -353,7 +353,7 @@ export async function acceptQuote(
 }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/quotes/${quoteId}/accept`,
+			`/${tenantSlug}/api/quotes/${quoteId}/accept`,
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -392,7 +392,7 @@ export async function rejectQuote(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/quotes/${quoteId}/reject`,
+			`/${tenantSlug}/api/quotes/${quoteId}/reject`,
 			{
 				method: "POST",
 			},
@@ -419,5 +419,5 @@ export async function rejectQuote(
  * @returns The URL to download the quote PDF.
  */
 export function getQuotePDFUrl(tenantSlug: string, quoteId: string): string {
-	return `/api/tenant/${tenantSlug}/quotes/${quoteId}/pdf`;
+	return `/${tenantSlug}/api/quotes/${quoteId}/pdf`;
 }

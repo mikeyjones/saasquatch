@@ -286,7 +286,7 @@ describe("PipelineKanban", () => {
 			render(<PipelineKanban />);
 
 			await waitFor(() => {
-				expect(fetch).toHaveBeenCalledWith("/api/tenant/acme/pipelines");
+				expect(fetch).toHaveBeenCalledWith("/acme/api/pipelines");
 			});
 		});
 
@@ -300,7 +300,7 @@ describe("PipelineKanban", () => {
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
 					expect.stringContaining(
-						"/api/tenant/acme/deals?pipelineId=pipeline-1",
+						"/acme/api/deals?pipelineId=pipeline-1",
 					),
 				);
 			});

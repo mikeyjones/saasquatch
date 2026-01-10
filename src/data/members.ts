@@ -44,7 +44,7 @@ export async function fetchMembers(
 ): Promise<Member[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/users`,
+			`/${tenantSlug}/api/users`,
 			window.location.origin,
 		);
 		if (search) {
@@ -68,7 +68,7 @@ export async function fetchMembers(
 			members.map(async (member: Member) => {
 				try {
 					const ticketsUrl = new URL(
-						`/api/tenant/${tenantSlug}/tickets`,
+						`/${tenantSlug}/api/tickets`,
 						window.location.origin,
 					);
 					ticketsUrl.searchParams.set("customerId", member.id);

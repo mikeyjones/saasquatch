@@ -121,7 +121,7 @@ function OrganizationSupportPage() {
 
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/support/organizations/${organizationId}`,
+					`/${tenant}/api/support/organizations/${organizationId}`,
 				);
 				const result = await response.json();
 

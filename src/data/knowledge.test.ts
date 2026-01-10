@@ -41,7 +41,7 @@ describe("knowledge data functions", () => {
 			await fetchArticles("acme");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/knowledge/articles"),
+				expect.stringContaining("/acme/api/knowledge/articles"),
 				expect.objectContaining({
 					credentials: "include",
 				}),
@@ -146,7 +146,7 @@ describe("knowledge data functions", () => {
 			});
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/knowledge/articles"),
+				expect.stringContaining("/acme/api/knowledge/articles"),
 				expect.objectContaining({
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -179,7 +179,7 @@ describe("knowledge data functions", () => {
 			});
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/knowledge/articles"),
+				expect.stringContaining("/acme/api/knowledge/articles"),
 				expect.objectContaining({
 					method: "PUT",
 				}),
@@ -197,7 +197,7 @@ describe("knowledge data functions", () => {
 
 			expect(fetch).toHaveBeenCalledWith(
 				expect.stringContaining(
-					"/api/tenant/acme/knowledge/articles?id=article-1",
+					"/acme/api/knowledge/articles?id=article-1",
 				),
 				expect.objectContaining({
 					method: "DELETE",
@@ -215,7 +215,7 @@ describe("knowledge data functions", () => {
 			await fetchPlaybooks("acme");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/knowledge/playbooks"),
+				expect.stringContaining("/acme/api/knowledge/playbooks"),
 				expect.any(Object),
 			);
 		});
@@ -261,7 +261,7 @@ describe("knowledge data functions", () => {
 			});
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/knowledge/playbooks"),
+				expect.stringContaining("/acme/api/knowledge/playbooks"),
 				expect.objectContaining({
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -294,7 +294,7 @@ describe("knowledge data functions", () => {
 			});
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/knowledge/playbooks"),
+				expect.stringContaining("/acme/api/knowledge/playbooks"),
 				expect.objectContaining({
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },
@@ -325,7 +325,7 @@ describe("knowledge data functions", () => {
 
 			expect(fetch).toHaveBeenCalledWith(
 				expect.stringContaining(
-					"/api/tenant/acme/knowledge/playbooks?id=playbook-1",
+					"/acme/api/knowledge/playbooks?id=playbook-1",
 				),
 				expect.objectContaining({
 					method: "DELETE",
@@ -352,7 +352,7 @@ describe("knowledge data functions", () => {
 			await searchKnowledge("acme", "test query");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/knowledge/search"),
+				expect.stringContaining("/acme/api/knowledge/search"),
 				expect.any(Object),
 			);
 

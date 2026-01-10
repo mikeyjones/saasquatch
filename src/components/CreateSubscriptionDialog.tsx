@@ -111,7 +111,7 @@ export function CreateSubscriptionDialog({
 			try {
 				// Fetch companies (tenant organizations)
 				const companiesResponse = await fetch(
-					`/api/tenant/${tenant}/crm/customers?segment=all`,
+					`/${tenant}/api/crm/customers?segment=all`,
 				);
 				if (companiesResponse.ok) {
 					const companiesData = await companiesResponse.json();
@@ -120,7 +120,7 @@ export function CreateSubscriptionDialog({
 
 				// Fetch product plans
 				const plansResponse = await fetch(
-					`/api/tenant/${tenant}/product-catalog/plans?status=active`,
+					`/${tenant}/api/product-catalog/plans?status=active`,
 				);
 				if (plansResponse.ok) {
 					const plansData = await plansResponse.json();
@@ -248,7 +248,7 @@ export function CreateSubscriptionDialog({
 							};
 
 							const response = await fetch(
-								`/api/tenant/${tenant}/subscriptions`,
+								`/${tenant}/api/subscriptions`,
 								{
 									method: "POST",
 									headers: { "Content-Type": "application/json" },

@@ -122,7 +122,7 @@ describe("CreateProductDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/product-catalog/products"),
+					expect.stringContaining("/acme/api/product-catalog/products"),
 					expect.objectContaining({ method: "POST" }),
 				);
 			});

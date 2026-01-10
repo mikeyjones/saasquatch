@@ -33,7 +33,7 @@ describe("products data functions", () => {
 			await fetchPlans("acme");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/product-catalog/plans"),
+				expect.stringContaining("/acme/api/product-catalog/plans"),
 				expect.objectContaining({
 					credentials: "include",
 				}),
@@ -108,7 +108,7 @@ describe("products data functions", () => {
 
 			expect(fetch).toHaveBeenCalledWith(
 				expect.stringContaining(
-					"/api/tenant/acme/product-catalog/plans/plan-1",
+					"/acme/api/product-catalog/plans/plan-1",
 				),
 				expect.any(Object),
 			);
@@ -154,7 +154,7 @@ describe("products data functions", () => {
 			});
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/product-catalog/plans"),
+				expect.stringContaining("/acme/api/product-catalog/plans"),
 				expect.objectContaining({
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -189,7 +189,7 @@ describe("products data functions", () => {
 			});
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/product-catalog/plans"),
+				expect.stringContaining("/acme/api/product-catalog/plans"),
 				expect.objectContaining({
 					method: "PUT",
 				}),
@@ -207,7 +207,7 @@ describe("products data functions", () => {
 
 			expect(fetch).toHaveBeenCalledWith(
 				expect.stringContaining(
-					"/api/tenant/acme/product-catalog/plans?id=plan-1",
+					"/acme/api/product-catalog/plans?id=plan-1",
 				),
 				expect.objectContaining({
 					method: "DELETE",
@@ -225,7 +225,7 @@ describe("products data functions", () => {
 			await fetchAddOns("acme");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/product-catalog/add-ons"),
+				expect.stringContaining("/acme/api/product-catalog/add-ons"),
 				expect.any(Object),
 			);
 		});

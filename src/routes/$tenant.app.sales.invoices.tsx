@@ -52,7 +52,7 @@ function InvoicesPage() {
 				params.set("status", statusFilter);
 			}
 			const response = await fetch(
-				`/api/tenant/${tenant}/invoices?${params.toString()}`,
+				`/${tenant}/api/invoices?${params.toString()}`,
 			);
 			if (!response.ok) {
 				throw new Error("Failed to fetch invoices");
@@ -64,7 +64,7 @@ function InvoicesPage() {
 	const finalizeMutation = useMutation({
 		mutationFn: async (invoiceId: string) => {
 			const response = await fetch(
-				`/api/tenant/${tenant}/invoices/${invoiceId}/finalize`,
+				`/${tenant}/api/invoices/${invoiceId}/finalize`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -93,7 +93,7 @@ function InvoicesPage() {
 	const markAsPaidMutation = useMutation({
 		mutationFn: async (invoiceId: string) => {
 			const response = await fetch(
-				`/api/tenant/${tenant}/invoices/${invoiceId}/pay`,
+				`/${tenant}/api/invoices/${invoiceId}/pay`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -141,7 +141,7 @@ function InvoicesPage() {
 
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/invoices/${invoice.id}/pdf`,
+				`/${tenant}/api/invoices/${invoice.id}/pdf`,
 			);
 			if (!response.ok) {
 				throw new Error("Failed to download PDF");

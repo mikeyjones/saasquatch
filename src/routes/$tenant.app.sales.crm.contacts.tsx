@@ -66,7 +66,7 @@ function ContactsPage() {
 				queryParams.set("status", statusFilter);
 
 			const response = await fetch(
-				`/api/tenant/${tenant}/crm/contacts?${queryParams.toString()}`,
+				`/${tenant}/api/crm/contacts?${queryParams.toString()}`,
 			);
 			const data: ContactsApiResponse = await response.json();
 
@@ -90,7 +90,7 @@ function ContactsPage() {
 
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/crm/customers?segment=all`,
+				`/${tenant}/api/crm/customers?segment=all`,
 			);
 			const data = await response.json();
 
@@ -128,7 +128,7 @@ function ContactsPage() {
 
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/crm/contacts/${contact.id}`,
+				`/${tenant}/api/crm/contacts/${contact.id}`,
 				{
 					method: "DELETE",
 				},

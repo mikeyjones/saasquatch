@@ -189,7 +189,7 @@ function OrganizationDetailPage() {
 		setError(null);
 
 		try {
-			const url = `/api/tenant/${tenant}/crm/customers/${customerId}`;
+			const url = `/${tenant}/api/crm/customers/${customerId}`;
 			const response = await fetch(url);
 			const result = await response.json();
 
@@ -217,7 +217,7 @@ function OrganizationDetailPage() {
 
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/crm/customers/${customerId}`,
+				`/${tenant}/api/crm/customers/${customerId}`,
 				{
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },

@@ -84,7 +84,7 @@ describe("CreateCouponDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/product-catalog/plans"),
+					expect.stringContaining("/acme/api/product-catalog/plans"),
 				);
 			});
 		});
@@ -142,7 +142,7 @@ describe("CreateCouponDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/coupons"),
+					expect.stringContaining("/acme/api/coupons"),
 					expect.objectContaining({
 						method: "POST",
 					}),

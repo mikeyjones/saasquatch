@@ -155,8 +155,8 @@ export function AddOnDialog({
 			};
 
 			const url = isEditMode
-				? `/api/tenant/${tenant}/product-catalog/add-ons`
-				: `/api/tenant/${tenant}/product-catalog/add-ons`;
+				? `/${tenant}/api/product-catalog/add-ons`
+				: `/${tenant}/api/product-catalog/add-ons`;
 
 			const response = await fetch(url, {
 				method: isEditMode ? "PUT" : "POST",

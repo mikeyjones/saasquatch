@@ -161,7 +161,7 @@ export function CreateCustomerDialog({
 			setIsLoadingCustomer(true);
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/crm/customers/${customerId}`,
+					`/${tenant}/api/crm/customers/${customerId}`,
 				);
 				if (response.ok) {
 					const data = await response.json();
@@ -192,7 +192,7 @@ export function CreateCustomerDialog({
 				// Only fetch plans if not in edit mode (subscription creation not available in edit)
 				if (!isEditMode) {
 					const plansResponse = await fetch(
-						`/api/tenant/${tenant}/product-catalog/plans?status=active`,
+						`/${tenant}/api/product-catalog/plans?status=active`,
 					);
 					if (plansResponse.ok) {
 						const plansData = await plansResponse.json();
@@ -201,7 +201,7 @@ export function CreateCustomerDialog({
 				}
 
 				// Fetch team members (organization members)
-				const membersResponse = await fetch(`/api/tenant/${tenant}/members`);
+				const membersResponse = await fetch(`/${tenant}/api/members`);
 				if (membersResponse.ok) {
 					const membersData = await membersResponse.json();
 					setTeamMembers(membersData.members || []);
@@ -280,7 +280,7 @@ export function CreateCustomerDialog({
 				if (isEditMode && customerId) {
 					// Update existing customer
 					const response = await fetch(
-						`/api/tenant/${tenant}/crm/customers/${customerId}`,
+						`/${tenant}/api/crm/customers/${customerId}`,
 						{
 							method: "PUT",
 							headers: { "Content-Type": "application/json" },
@@ -308,7 +308,7 @@ export function CreateCustomerDialog({
 						};
 					}
 
-					const response = await fetch(`/api/tenant/${tenant}/crm/customers`, {
+					const response = await fetch(`/${tenant}/api/crm/customers`, {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(requestBody),

@@ -83,7 +83,7 @@ function CRMPage() {
 				queryParams.set("importance", filters.importance);
 
 			const response = await fetch(
-				`/api/tenant/${tenant}/crm/customers?${queryParams.toString()}`,
+				`/${tenant}/api/crm/customers?${queryParams.toString()}`,
 			);
 			const data: CRMApiResponse = await response.json();
 

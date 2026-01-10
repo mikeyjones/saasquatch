@@ -28,7 +28,7 @@ describe("CRM Page Data Loading", () => {
 	it("should fetch customers from API on mount", () => {
 		const expectedApiCall = {
 			method: "GET",
-			endpoint: "/api/tenant/:tenant/crm/customers",
+			endpoint: "/:tenant/api/crm/customers",
 			queryParams: {
 				segment: "all",
 				// filters applied as query params
@@ -507,9 +507,9 @@ describe("CRM Page Tenant Context", () => {
 	});
 
 	it("should use tenant in API calls", () => {
-		const apiCall = (tenant: string) => `/api/tenant/${tenant}/crm/customers`;
-		expect(apiCall("acme")).toBe("/api/tenant/acme/crm/customers");
-		expect(apiCall("globex")).toBe("/api/tenant/globex/crm/customers");
+		const apiCall = (tenant: string) => `/${tenant}/api/crm/customers`;
+		expect(apiCall("acme")).toBe("/acme/api/crm/customers");
+		expect(apiCall("globex")).toBe("/globex/api/crm/customers");
 	});
 
 	it("should not fetch if tenant is empty", () => {

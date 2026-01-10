@@ -428,7 +428,7 @@ function TicketDetail({
 
 			setIsLoadingAuditLogs(true);
 			try {
-				const url = `/api/tenant/${tenant}/tickets/${detail.id}/audit-logs`;
+				const url = `/${tenant}/api/tickets/${detail.id}/audit-logs`;
 				const response = await fetch(url);
 				const result = await response.json();
 

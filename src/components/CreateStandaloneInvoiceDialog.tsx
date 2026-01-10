@@ -192,7 +192,7 @@ export function CreateStandaloneInvoiceDialog({
 				dueDate,
 			};
 
-			const response = await fetch(`/api/tenant/${tenant}/invoices`, {
+			const response = await fetch(`/${tenant}/api/invoices`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(requestBody),

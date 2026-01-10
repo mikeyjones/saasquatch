@@ -200,7 +200,7 @@ export async function fetchPlans(
 ): Promise<ProductTier[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/product-catalog/plans`,
+			`/${tenantSlug}/api/product-catalog/plans`,
 			window.location.origin,
 		);
 
@@ -236,7 +236,7 @@ export async function fetchPlan(
 ): Promise<ProductPlanDetail | null> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/product-catalog/plans/${planId}`,
+			`/${tenantSlug}/api/product-catalog/plans/${planId}`,
 			{
 				credentials: "include",
 			},
@@ -268,7 +268,7 @@ export async function createPlan(
 ): Promise<{ success: boolean; plan?: ProductTier; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/product-catalog/plans`,
+			`/${tenantSlug}/api/product-catalog/plans`,
 			{
 				method: "POST",
 				credentials: "include",
@@ -305,7 +305,7 @@ export async function updatePlan(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/product-catalog/plans`,
+			`/${tenantSlug}/api/product-catalog/plans`,
 			{
 				method: "PUT",
 				credentials: "include",
@@ -342,7 +342,7 @@ export async function deletePlan(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/product-catalog/plans?id=${planId}`,
+			`/${tenantSlug}/api/product-catalog/plans?id=${planId}`,
 			{
 				method: "DELETE",
 				credentials: "include",
@@ -378,7 +378,7 @@ export async function fetchAddOns(
 ): Promise<AvailableAddOn[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/product-catalog/add-ons`,
+			`/${tenantSlug}/api/product-catalog/add-ons`,
 			window.location.origin,
 		);
 
@@ -418,7 +418,7 @@ export async function fetchProducts(
 ): Promise<Product[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/product-catalog/products`,
+			`/${tenantSlug}/api/product-catalog/products`,
 			window.location.origin,
 		);
 
@@ -454,7 +454,7 @@ export async function createProduct(
 ): Promise<{ success: boolean; product?: Product; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/product-catalog/products`,
+			`/${tenantSlug}/api/product-catalog/products`,
 			{
 				method: "POST",
 				credentials: "include",
@@ -494,7 +494,7 @@ export async function updateProduct(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/product-catalog/products`,
+			`/${tenantSlug}/api/product-catalog/products`,
 			{
 				method: "PUT",
 				credentials: "include",
@@ -534,7 +534,7 @@ export async function deleteProduct(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/product-catalog/products?id=${productId}`,
+			`/${tenantSlug}/api/product-catalog/products?id=${productId}`,
 			{
 				method: "DELETE",
 				credentials: "include",

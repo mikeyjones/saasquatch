@@ -125,7 +125,7 @@ export function CreateContactDialog({
 			setIsLoadingContact(true);
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/crm/contacts/${contactId}`,
+					`/${tenant}/api/crm/contacts/${contactId}`,
 				);
 				if (response.ok) {
 					const data = await response.json();
@@ -194,7 +194,7 @@ export function CreateContactDialog({
 				if (isEditMode && contactId) {
 					// Update existing contact
 					const response = await fetch(
-						`/api/tenant/${tenant}/crm/contacts/${contactId}`,
+						`/${tenant}/api/crm/contacts/${contactId}`,
 						{
 							method: "PUT",
 							headers: { "Content-Type": "application/json" },
@@ -213,7 +213,7 @@ export function CreateContactDialog({
 				} else {
 					// Create new contact
 					const response = await fetch(
-						`/api/tenant/${tenant}/crm/customers/${customerId}/contacts`,
+						`/${tenant}/api/crm/customers/${customerId}/contacts`,
 						{
 							method: "POST",
 							headers: { "Content-Type": "application/json" },

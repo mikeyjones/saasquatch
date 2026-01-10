@@ -62,11 +62,11 @@ describe("CreateSubscriptionDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/crm/customers?segment=all"),
+					expect.stringContaining("/acme/api/crm/customers?segment=all"),
 				);
 				expect(fetch).toHaveBeenCalledWith(
 					expect.stringContaining(
-						"/api/tenant/acme/product-catalog/plans?status=active",
+						"/acme/api/product-catalog/plans?status=active",
 					),
 				);
 			});

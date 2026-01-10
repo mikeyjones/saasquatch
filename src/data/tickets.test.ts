@@ -62,7 +62,7 @@ describe("tickets data functions", () => {
 			const result = await fetchTickets("acme");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/tickets"),
+				expect.stringContaining("/acme/api/tickets"),
 				expect.objectContaining({
 					credentials: "include",
 				}),
@@ -203,7 +203,7 @@ describe("tickets data functions", () => {
 			const result = await fetchTicket("acme", "ticket-1");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/tickets/ticket-1"),
+				expect.stringContaining("/acme/api/tickets/ticket-1"),
 				expect.objectContaining({
 					credentials: "include",
 				}),
@@ -256,7 +256,7 @@ describe("tickets data functions", () => {
 			const result = await createTicket("acme", input);
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/tickets"),
+				expect.stringContaining("/acme/api/tickets"),
 				expect.objectContaining({
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -394,7 +394,7 @@ describe("tickets data functions", () => {
 			});
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/tickets/ticket-1"),
+				expect.stringContaining("/acme/api/tickets/ticket-1"),
 				expect.objectContaining({
 					method: "PATCH",
 					headers: { "Content-Type": "application/json" },
@@ -557,7 +557,7 @@ describe("tickets data functions", () => {
 			);
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/tickets/ticket-1"),
+				expect.stringContaining("/acme/api/tickets/ticket-1"),
 				expect.objectContaining({
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -672,7 +672,7 @@ describe("tickets data functions", () => {
 			const result = await fetchSupportMembers("acme");
 
 			expect(fetch).toHaveBeenCalledWith(
-				expect.stringContaining("/api/tenant/acme/members"),
+				expect.stringContaining("/acme/api/members"),
 				expect.objectContaining({
 					credentials: "include",
 				}),

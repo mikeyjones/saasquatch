@@ -233,7 +233,7 @@ describe("CreateStandaloneInvoiceDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					"/api/tenant/acme/invoices",
+					"/acme/api/invoices",
 					expect.objectContaining({
 						method: "POST",
 						headers: { "Content-Type": "application/json" },

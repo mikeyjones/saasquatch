@@ -68,7 +68,7 @@ export function CreateCouponDialog({
 		const loadCoupon = async () => {
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/coupons/${couponId}`,
+					`/${tenant}/api/coupons/${couponId}`,
 				);
 				if (response.ok) {
 					const data = await response.json();
@@ -92,7 +92,7 @@ export function CreateCouponDialog({
 			setIsLoadingPlans(true);
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/product-catalog/plans`,
+					`/${tenant}/api/product-catalog/plans`,
 				);
 				if (response.ok) {
 					const data = await response.json();
@@ -182,7 +182,7 @@ export function CreateCouponDialog({
 				if (isEditMode && couponId) {
 					// Update existing coupon
 					const response = await fetch(
-						`/api/tenant/${tenant}/coupons/${couponId}`,
+						`/${tenant}/api/coupons/${couponId}`,
 						{
 							method: "PUT",
 							headers: { "Content-Type": "application/json" },
@@ -208,7 +208,7 @@ export function CreateCouponDialog({
 					onCouponCreated?.();
 				} else {
 					// Create new coupon
-					const response = await fetch(`/api/tenant/${tenant}/coupons`, {
+					const response = await fetch(`/${tenant}/api/coupons`, {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify(requestBody),

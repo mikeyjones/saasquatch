@@ -222,7 +222,7 @@ describe("CreateContactDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/crm/contacts/contact-1"),
+					expect.stringContaining("/acme/api/crm/contacts/contact-1"),
 				);
 			});
 		});
@@ -330,7 +330,7 @@ describe("CreateContactDialog", () => {
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
 					expect.stringContaining(
-						"/api/tenant/acme/crm/customers/customer-1/contacts",
+						"/acme/api/crm/customers/customer-1/contacts",
 					),
 					expect.objectContaining({
 						method: "POST",
@@ -387,7 +387,7 @@ describe("CreateContactDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/crm/contacts/contact-1"),
+					expect.stringContaining("/acme/api/crm/contacts/contact-1"),
 					expect.objectContaining({
 						method: "PUT",
 					}),

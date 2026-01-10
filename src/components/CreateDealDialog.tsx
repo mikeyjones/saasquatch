@@ -195,7 +195,7 @@ export function CreateDealDialog({
 		const loadPipelines = async () => {
 			setIsLoadingPipelines(true);
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/pipelines`);
+				const response = await fetch(`/${tenant}/api/pipelines`);
 				const data = await response.json();
 				setAllPipelines(data.pipelines || []);
 
@@ -281,7 +281,7 @@ export function CreateDealDialog({
 				return;
 
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/deals`, {
+				const response = await fetch(`/${tenant}/api/deals`, {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({

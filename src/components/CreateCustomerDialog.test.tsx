@@ -119,11 +119,11 @@ describe("CreateCustomerDialog", () => {
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
 					expect.stringContaining(
-						"/api/tenant/acme/product-catalog/plans?status=active",
+						"/acme/api/product-catalog/plans?status=active",
 					),
 				);
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/members"),
+					expect.stringContaining("/acme/api/members"),
 				);
 			});
 		});
@@ -290,7 +290,7 @@ describe("CreateCustomerDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/crm/customers"),
+					expect.stringContaining("/acme/api/crm/customers"),
 					expect.objectContaining({
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
@@ -435,7 +435,7 @@ describe("CreateCustomerDialog", () => {
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
 					expect.stringContaining(
-						"/api/tenant/acme/crm/customers/customer-123",
+						"/acme/api/crm/customers/customer-123",
 					),
 				);
 			});
@@ -562,7 +562,7 @@ describe("CreateCustomerDialog", () => {
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
 					expect.stringContaining(
-						"/api/tenant/acme/crm/customers/customer-123",
+						"/acme/api/crm/customers/customer-123",
 					),
 					expect.objectContaining({
 						method: "PUT",

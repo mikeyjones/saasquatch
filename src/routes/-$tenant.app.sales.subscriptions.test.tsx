@@ -30,8 +30,8 @@ describe("Subscriptions Page", () => {
 
 			it("should fetch from correct API endpoint", () => {
 				const tenant = "acme-corp";
-				const endpoint = `/api/tenant/${tenant}/subscriptions`;
-				expect(endpoint).toBe("/api/tenant/acme-corp/subscriptions");
+				const endpoint = `/${tenant}/api/subscriptions`;
+				expect(endpoint).toBe("/acme-corp/api/subscriptions");
 			});
 
 			it("should use tenant from useParams hook", () => {

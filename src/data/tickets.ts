@@ -152,7 +152,7 @@ export async function fetchTickets(
 ): Promise<Ticket[]> {
 	try {
 		const url = new URL(
-			`/api/tenant/${tenantSlug}/tickets`,
+			`/${tenantSlug}/api/tickets`,
 			window.location.origin,
 		);
 
@@ -198,7 +198,7 @@ export async function fetchTicket(
 ): Promise<TicketDetail | null> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/tickets/${ticketId}`,
+			`/${tenantSlug}/api/tickets/${ticketId}`,
 			{ credentials: "include" },
 		);
 
@@ -229,7 +229,7 @@ export async function createTicket(
 	input: CreateTicketInput,
 ): Promise<Ticket | null> {
 	try {
-		const response = await fetch(`/api/tenant/${tenantSlug}/tickets`, {
+		const response = await fetch(`/${tenantSlug}/api/tickets`, {
 			method: "POST",
 			credentials: "include",
 			headers: { "Content-Type": "application/json" },
@@ -307,7 +307,7 @@ export async function updateTicket(
 ): Promise<boolean> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/tickets/${ticketId}`,
+			`/${tenantSlug}/api/tickets/${ticketId}`,
 			{
 				method: "PATCH",
 				credentials: "include",
@@ -370,7 +370,7 @@ export async function postTicketMessage(
 }> {
 	try {
 		const response = await fetch(
-			`/api/tenant/${tenantSlug}/tickets/${ticketId}`,
+			`/${tenantSlug}/api/tickets/${ticketId}`,
 			{
 				method: "POST",
 				credentials: "include",
@@ -474,7 +474,7 @@ export async function fetchSupportMembers(
 	tenantSlug: string,
 ): Promise<SupportMember[]> {
 	try {
-		const response = await fetch(`/api/tenant/${tenantSlug}/members`, {
+		const response = await fetch(`/${tenantSlug}/api/members`, {
 			credentials: "include",
 		});
 

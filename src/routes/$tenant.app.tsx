@@ -12,7 +12,7 @@ async function checkTenantMembership(
 	tenantSlug: string,
 ): Promise<{ isMember: boolean; role?: string; error?: string }> {
 	try {
-		const response = await fetch(`/api/tenant/${tenantSlug}/membership`, {
+		const response = await fetch(`/${tenantSlug}/api/membership`, {
 			method: "GET",
 			credentials: "include",
 			headers: {

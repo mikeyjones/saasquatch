@@ -166,7 +166,7 @@ export function OrganizationInvoiceHistory({
 		try {
 			// Use the PDF API endpoint instead of direct pdfPath
 			const response = await fetch(
-				`/api/tenant/${tenant}/invoices/${invoice.id}/pdf`,
+				`/${tenant}/api/invoices/${invoice.id}/pdf`,
 			);
 			if (!response.ok) {
 				if (response.status === 404) {
@@ -212,7 +212,7 @@ export function OrganizationInvoiceHistory({
 		setIsFinalizing(invoiceId);
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/invoices/${invoiceId}/finalize`,
+				`/${tenant}/api/invoices/${invoiceId}/finalize`,
 				{
 					method: "POST",
 				},
@@ -256,7 +256,7 @@ export function OrganizationInvoiceHistory({
 		setIsMarkingPaid(invoice.id);
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/invoices/${invoice.id}/pay`,
+				`/${tenant}/api/invoices/${invoice.id}/pay`,
 				{
 					method: "POST",
 				},
@@ -511,7 +511,7 @@ export function OrganizationInvoiceHistory({
 					try {
 						// Use the PDF API endpoint instead of direct pdfPath
 						const response = await fetch(
-							`/api/tenant/${tenant}/invoices/${inv.id}/pdf`,
+							`/${tenant}/api/invoices/${inv.id}/pdf`,
 						);
 						if (!response.ok) {
 							if (response.status === 404) {

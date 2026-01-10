@@ -92,7 +92,7 @@ function MemberDetailPage() {
 			setError(null);
 
 			try {
-				const url = `/api/tenant/${tenant}/members/${memberId}`;
+				const url = `/${tenant}/api/members/${memberId}`;
 				const response = await fetch(url);
 				const result = await response.json();
 
@@ -121,7 +121,7 @@ function MemberDetailPage() {
 
 			setIsLoadingAuditLogs(true);
 			try {
-				const url = `/api/tenant/${tenant}/members/${memberId}/audit-logs`;
+				const url = `/${tenant}/api/members/${memberId}/audit-logs`;
 				const response = await fetch(url);
 				const result = await response.json();
 
@@ -189,7 +189,7 @@ function MemberDetailPage() {
 		setSaveError(null);
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/members/${memberId}`,
+				`/${tenant}/api/members/${memberId}`,
 				{
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },
@@ -215,7 +215,7 @@ function MemberDetailPage() {
 			// Refresh audit logs if we're on activity tab
 			if (activeTab === "activity") {
 				const auditResponse = await fetch(
-					`/api/tenant/${tenant}/members/${memberId}/audit-logs`,
+					`/${tenant}/api/members/${memberId}/audit-logs`,
 				);
 				const auditResult = await auditResponse.json();
 				if (auditResponse.ok) {
@@ -246,7 +246,7 @@ function MemberDetailPage() {
 
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/members/${memberId}`,
+				`/${tenant}/api/members/${memberId}`,
 				{
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },

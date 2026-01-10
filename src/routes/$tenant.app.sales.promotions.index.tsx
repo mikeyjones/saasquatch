@@ -53,7 +53,7 @@ function PromotionsPage() {
 			}
 
 			const response = await fetch(
-				`/api/tenant/${tenant}/coupons?${queryParams.toString()}`,
+				`/${tenant}/api/coupons?${queryParams.toString()}`,
 			);
 
 			if (!response.ok) {
@@ -90,7 +90,7 @@ function PromotionsPage() {
 
 		try {
 			const response = await fetch(
-				`/api/tenant/${tenant}/coupons/${couponId}`,
+				`/${tenant}/api/coupons/${couponId}`,
 				{
 					method: "DELETE",
 				},

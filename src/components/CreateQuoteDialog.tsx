@@ -199,7 +199,7 @@ export function CreateQuoteDialog({
 		const loadCompanies = async () => {
 			setIsLoadingCompanies(true);
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/crm/customers`);
+				const response = await fetch(`/${tenant}/api/crm/customers`);
 				if (response.ok) {
 					const data = await response.json();
 					setCompanies(data.customers || []);
@@ -228,7 +228,7 @@ export function CreateQuoteDialog({
 		const loadSubscriptions = async () => {
 			try {
 				const response = await fetch(
-					`/api/tenant/${tenant}/crm/customers/${selectedCompanyId}`,
+					`/${tenant}/api/crm/customers/${selectedCompanyId}`,
 				);
 				if (response.ok) {
 					const data = await response.json();
@@ -257,7 +257,7 @@ export function CreateQuoteDialog({
 		const loadDeals = async () => {
 			setIsLoadingDeals(true);
 			try {
-				const response = await fetch(`/api/tenant/${tenant}/deals`);
+				const response = await fetch(`/${tenant}/api/deals`);
 				if (response.ok) {
 					const data = await response.json();
 					setDeals(data.deals || []);

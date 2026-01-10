@@ -96,7 +96,7 @@ describe("CreateDealDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/pipelines"),
+					expect.stringContaining("/acme/api/pipelines"),
 				);
 			});
 		});
@@ -652,7 +652,7 @@ describe("CreateDealDialog", () => {
 
 			await waitFor(() => {
 				expect(fetch).toHaveBeenCalledWith(
-					expect.stringContaining("/api/tenant/acme/deals"),
+					expect.stringContaining("/acme/api/deals"),
 					expect.objectContaining({
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
