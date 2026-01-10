@@ -297,7 +297,11 @@ export function SalesSidebar() {
 							<User size={16} />
 							Profile
 						</DropdownMenuItem>
-						<DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={() =>
+								navigate({ to: `/${tenantSlug}/app/settings/developers` })
+							}
+						>
 							<Settings size={16} />
 							Settings
 						</DropdownMenuItem>

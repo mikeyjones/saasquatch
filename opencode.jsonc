@@ -1,11 +1,3 @@
 {
-    "$schema": "https://opencode.ai/config.json",
-    "mcp": {
-        "chrome-devtools": {
-        "command": "bunx",
-        "args": ["chrome-devtools-mcp@latest"],
-        "type": "stdio"
-      }
-    
-  }
+  "$schema": "https://opencode.ai/config.json"
 }
